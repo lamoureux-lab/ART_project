@@ -11,10 +11,12 @@
 #************************************************************
 #PBS -S /bin/bash
 #PBS -V
-
+# memory usage
 #PBS -l mem=8000MB
+# number of cores
 #PBS -l nodes=1:ppn=12
 #-q default
+# hours of execution time
 #PBS -l walltime=050:00:00  
 
 #*****DO NOT CHANGE 2 FOLLOWING LINES************************
