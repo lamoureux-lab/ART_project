@@ -5,8 +5,6 @@
 #PBS -l walltime=050:00:00  
 # Adjust the mem and ppn above to match the requirements of your job
 
-# Sample Gaussian job script
-
 cd $PBS_O_WORKDIR
 
 echo "Current working directory is `pwd`" 
@@ -24,5 +22,4 @@ module load gaussian
 
 # Run g09 
 #g09 input.inp output.log
-#sh bart.sh >output.log 
 csh siestart.sh >output.log

@@ -12,7 +12,7 @@ setenv EVENT_TYPE  NEW     # Either 'NEW', 'REFINE_SADDLE' when further convergi
 			   # and check the final minimum
 
 #setenv LABEL_SIESTA SIGA_INT
-setenv NATOMS     24    # Number of atoms in the problem bharat 217 > 2
+setenv NATOMS     8    # Number of atoms in the problem bharat 217 > 2
 
 setenv Prefactor_Push_Over_Saddle 0.3 # The prefactor for pushing over the saddle point, fraction of distance from initial minimum to saddle point 0.15 (default) 0.3 (siesta)
 
@@ -91,7 +91,7 @@ setenv RESTART          restart.dat            # current data for restarting eve
 #/global/scratch/sharmabh/art/ART/art_dft_v3.1-distr-2/art_dft_v3.1-distr/source/gaussian_art_v7/artdft
 
 #PSI v7
-/home/sharmabh/ART/source_code/gaussian_art_v7/artdft
+/global/scratch/jwhatley/ART_project/gaussian_art_v8/artdft
 #
 # for negative forces opt=5steps
 #/global/scratch/sharmabh/art/ART/art_dft_v3.1-distr-2/art_dft_v3.1-distr/source/gaussian_art_v3_Force_Negative/artdft

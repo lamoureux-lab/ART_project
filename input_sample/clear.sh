@@ -1,3 +1,6 @@
+#!/bin/bash
+#This script can be used to clear files produced after a run
+
 #rm art2siesta log.file.1 siesta2art
 cp ethane refconfig.dat
 sed -i "/Counter:/c\Counter:      1000" filecounter
