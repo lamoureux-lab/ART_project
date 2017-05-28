@@ -10,7 +10,7 @@ sed -i '1d' art2gaussian.inp # removes chk point line
 #sed -i "s/rhf/b3lyp/g" art2gaussian.inp # change method
 #sed -i "s/3-21g/6-311++G(d,p)/g" art2gaussian.inp # change basis set
 
-#Maps from numerical value to letter for atoms
+# Maps from numerical value to letter for atoms
 # sed 's/\([^ ]*\) [0-9]*[1-9][0-9]* /\1 C /' temp.xyz > output.xyz
 # sed 's/\([^ ]*\) [6]*[6][6]* /\1 C /; s/\([^ ]*\) [1]*[1][1]* /\1 H /' temp.xyz > ethane_output.xyz
 # for temp.xyz STARTS
@@ -18,6 +18,7 @@ sed -i '1d' art2gaussian.inp # removes chk point line
 printf "$natoms\n" >>temp.xyz
 printf "MOLECULAR TITLE\n" >>temp.xyz
 
+#Coordinate line where the data begins
 coorLineNumber=5
 
 for ((i=1; i<=$natoms; i++)); do
@@ -30,7 +31,6 @@ sed -i '1 i %nproc=12' art2gaussian.inp
 sed -i '1 i %mem=8000MB' art2gaussian.inp
 
 # Loads the latest version of Gaussian and calls it through g09
-module load gaussian
 g09 < art2gaussian.inp > test.log
 #more test.log >>log1
 

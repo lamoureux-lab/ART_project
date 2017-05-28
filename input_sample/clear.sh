@@ -1,5 +1,6 @@
 #!/bin/bash
 #This script can be used to clear files produced after a run
+#TODO change output files to a distinct folder
 
 #rm art2siesta log.file.1 siesta2art
 cp ethane refconfig.dat

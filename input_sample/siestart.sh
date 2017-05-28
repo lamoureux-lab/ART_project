@@ -1,22 +1,25 @@
-#!/bin/csh 
+#!/bin/csh
+#Sets the environment variables for the molecules in question
 
-#bharat added STARTS
-setenv ENERGY_CALC GAU     #choose: DFT or SWP (Stillinger-Weber) or GAU
+
+#Code added by Bharat STARTS
+setenv ENERGY_CALC GAU      #choose: DFT or SWP (Stillinger-Weber) or GAU
 #setenv ENERGY_CALC DFT     #choose: DFT or SWP (Stillinger-Weber) or GAU
-# bharat added ENDS
+#Code added by Bharat ENDS
 
 
-setenv Temperature 0.4   # Temperature in kcal/mol, if negative always reject the event bharat 0.4 >> 0.1
-setenv EVENT_TYPE  NEW     # Either 'NEW', 'REFINE_SADDLE' when further converging a saddle point
-                           # Or "REFINE_AND_RELAX", to refine at the saddle
-			   # and check the final minimum
+setenv Temperature 0.4      # Temperature in kcal/mol, if negative always reject the event bharat 0.4 >> 0.1
+setenv EVENT_TYPE  NEW      # Either 'NEW', 'REFINE_SADDLE' when further converging a saddle point
+                            # Or "REFINE_AND_RELAX", to refine at the saddle
+			                # and check the final minimum
 
 #setenv LABEL_SIESTA SIGA_INT
-setenv NATOMS     8    # Number of atoms in the problem bharat 217 > 2
+setenv NATOMS     8         # Number of atoms in the problem bharat 217 > 2
 
 setenv Prefactor_Push_Over_Saddle 0.3 # The prefactor for pushing over the saddle point, fraction of distance from initial minimum to saddle point 0.15 (default) 0.3 (siesta)
 
-setenv type1      C       # Name of the atomic types - used for writing out xmol-type file
+# Name of the atomic types - used for writing out xmol-type file
+setenv type1      C
 setenv type2      O    
 setenv type3      N
 setenv type4      H     
@@ -43,12 +46,12 @@ setenv Max_Perp_Moves_Basin                3   # Maximum number of perpendicular
 setenv Min_Number_KSteps                   3   # Min. number of ksteps before calling lanczos  bharat 2>>3
 setenv Basin_Factor                      2.1   # Factor multiplying Increment_Size for leaving the basin bharat 3.0 >>2.1
 
-# bharat starts
+# Code added by Bharat starts
 #setenv Lanczos_of_minimum             .true.   # Calculation of the Hessian for each minimum
 setenv Lanczos_SCLoop                     5    # Number of iterations in the lanczos Self consistent loop default 20 >> 1 (default) 
 setenv Activation_MaxIter                 400 # 400
 setenv delta_threshold                    4.0  # Energy threshold during Lanczos 
-# bharat ends
+# Code added by Bharat ends
 
 setenv Max_Perp_Moves_Activ                8   # Maximum number of perpendicular steps during activation 12 (default) 8 (siesta)
 setenv Force_Threshold_Perp_Rel          0.5   # Threshold for perpendicular relaxation 0.5 (Siesta)
@@ -90,9 +93,13 @@ setenv RESTART          restart.dat            # current data for restarting eve
 #v7 opt
 #/global/scratch/sharmabh/art/ART/art_dft_v3.1-distr-2/art_dft_v3.1-distr/source/gaussian_art_v7/artdft
 
-#PSI v7
+#PSI v8
+#ensure that Gaussian is loaded (will be the most current version)
+module load gaussian
+
+#Runs the
 /global/scratch/jwhatley/ART_project/gaussian_art_v8/artdft
-#
+
 # for negative forces opt=5steps
 #/global/scratch/sharmabh/art/ART/art_dft_v3.1-distr-2/art_dft_v3.1-distr/source/gaussian_art_v3_Force_Negative/artdft
 
