@@ -95,9 +95,7 @@ setenv RESTART          restart.dat            # current data for restarting eve
 
 #PSI v8
 #ensure that Gaussian is loaded (will be the most current version)
-module load gaussian
 
-#Runs the
 /global/scratch/jwhatley/ART_project/gaussian_art_v8/artdft
 
 # for negative forces opt=5steps

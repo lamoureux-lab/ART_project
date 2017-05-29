@@ -31,8 +31,18 @@ Ensure that the ART_project directory is in `/global/scratch/<username>/` and no
 Once there, compile the ART code by running 
     `make /global/scratch/<username>/ART_project/gaussian_art_v8 artdft`
  
-In the sample file directory, execute the following:
+For quick tests to ensure functionality, execute the following in the sample file directory:
 	`csh siestart.sh > output.log`
+	
+For actual simulations, submit the job to the GREX queue using:
+    `qsub -N art-test gauss.sub`
+
+Review your queued jobs and their progress:
+    `qstat -u <username>`
+
+For other instruction on how to use qsub:
+https://wikis.nyu.edu/display/NYUHPC/Tutorial+-+Submitting+a+job+using+qsub#Tutorial-Submittingajobusingqsub-what_is_qsub
+http://beige.ucs.indiana.edu/I590/node35.html
 
 #TODO 
 What is this for/ does it belong in the readme?  
@@ -53,3 +63,6 @@ For additional questions, contact support@westgrid.ca
 ##File structure 
 clear.sh is a simple script that remove all generated files an resets 
 
+output.log debug full output from the CLI
+log.file.1
+log
