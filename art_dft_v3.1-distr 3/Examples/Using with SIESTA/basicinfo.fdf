@@ -1,0 +1,60 @@
+#General system specifications
+SystemName          GaAs
+SystemLabel         Ga+I
+NumberOfAtoms       217
+NumberOfSpecies     2
+WriteForces T
+WriteCoorStep T
+WriteDM F
+WriteCoorXmol F
+
+TryMemoryIncrease T
+#DiagMemory 35
+#DiagScale 2
+
+%block ChemicalSpeciesLabel
+ 1  33 As
+ 2  31 Ga
+%endblock ChemicalSpeciesLabel
+
+####  BASIS: SZP ##########
+
+PAO.BasisSize SZP
+PAO.EnergyShift 50 meV
+
+#Lattice Constant
+LatticeConstant 16.90 Ang
+
+
+NetCharge = 1
+
+%block LatticeVectors
+1.00000  0.00000 0.00000
+0.00000  1.00000 0.00000
+0.00000  0.00000 1.00000
+%endblock LatticeVectors
+
+#Atomic coordinates
+AtomicCoordinatesFormat  Ang
+
+AtomCoorFormatOut Ang
+
+#Real space grid 
+MeshCutoff 50 Ry
+
+# K-sampling (alternative specification using kgrid_cutoff)
+%block kgrid_Monkhorst_Pack
+     1  0  0  0.5
+     0  1  0  0.5
+     0  0  1  0.5
+%endblock kgrid_Monkhorst_Pack
+
+# Convergence of SCF 
+MaxSCFIterations 500
+DM.MixingWeight 0.3
+DM.Tolerance    1.0d-4
+DM.NumberPulay  3
+ElectronicTemperature 25 meV
+
+# Type of solver
+SolutionMethod diagon

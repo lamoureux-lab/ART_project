@@ -1,0 +1,7 @@
+#On IBM
+FFLAGS =  -O3 #-bnoquiet
+LLIBS =  -lessl
+EXEC  = art01_IBM
+FORTRAN = xlf90 -qarch=auto
+FLAGS =  -qsuffix=cpp=f90 -WF,-DIBM $(FFLAGS)
+

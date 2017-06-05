@@ -1,0 +1,143 @@
+
+
+# ART for DFT calculations (version 3.0) - Manual
+
+This short manual provides the basis for using `ART with DFT`, a simulation package developed originally by Normand Mousseau and modified by Laurent Karim Béland and Eduardo Machado-Charry 
+
+To cite `ART with DFT`, please refer to:
+
+R. Malek and N. Mousseau, _Dynamics of Lennard-Jones clusters: A characterization of the activation-relaxation technique_, Phys. Rev. E **62**, 7723-7728 (2000).
+
+A paper that presents ART nouveau
+
+and
+
+Eduardo Machado-Charry, Laurent Karim Béland, Damien Caliste, Luigi Genovese, Normand Mousseau and Pascal Pochet, _Optimized energy landscape exploration using the ab initio based ART-nouveau_, J. Chem Phys. **135**, 034102, 11 pp., (2011).
+
+That presents some of the most recent implementations coupled with BigDFT.
+
+10 juillet 2014
+
+## Contact
+
+Normand Mousseau
+Departement of physics
+Université de Montréal
+normand.mousseau@umontreal.ca
+
+
+## Content
+
+1. [Introduction][]
+2. [Installing and compiling][]
+	1. [Using MPI][]
+3. [Running the examples][]
+	1. [Example 1][] : Stillinger Weber potential, new event lists
+	2. [Example 2][] : Refining a saddle point or converging to one nearby
+4. [Coupling with DFT code][]
+5. [Parameters][]
+6. [Bibliography][]
+
+
+## Introduction
+`art_dft` is a package for efficiently finding local transition states without bias using the ART nouveau method ARTN[^ARTN]. It is written to be easily coupled to DFT methods. An example is provided for SIESTA but it can be applied to any code. 
+
+While this manual is relatively light. It is recommended to run the examples to better understand the code. Do not hesitate to contact the authors for help. 
+
+
+## Installing and compiling
+
+The latest version of the program is always available on Normand Mousseau's web site at : [`http://physique.umontreal.ca/~mousseau`](http://physique.umontreal.ca/~mousseau), under the tab : software
+
+Once you obtain the file, unpack the tar-gzipped with
+
+`%  tar xzvf art_dft.tgz`
+
+A listing will give : 
+    % ls
+    Examples	Manual		README		scripts		source
+
+
+To compile `art_dft`, you need a fortran compiler as well as access to `blas` and `lapack` libraries. These are generally available on most computers. 
+
+The code can be compiled with gfortran, g95, Intel fortran, etc. Various architectures are defined in the `*.arch` files found in the `source` directory. Modify the files to fit your need and indicate the right architecture file in the `Makefile`
+
+If you are using Mac Os X with gfortran installed, modify the `Makefile` to 
+    SYS = MacIntel
+
+Compile with 
+    % make
+
+The executable is named : `artdft`
+
+
+### Using MPI
+
+It is possible to compile artdft with MPI by simply adding the compilation option `-DMPI`. In this case, the ART nouveau part will only run on the master node, the other nodes being used by the DFT code with the appropriate submission shell commands.
+
+## Running the examples
+
+Working examples are found in the `Examples` directory. They focus on running the code with an empirical potential (Stillinger-Weber) that is distributed with the code. To run DFT forcefields, see [Coupling with DFT code][].
+
+### Example 1
+The first example shows how an ART nouveau simulation proceeds when searching for pathways. The Direction `Si_SW` containts only the submission script (`artdft.sh`) and an initial configuration (`refconfig`). 
+
+It is a 1000-atom box of amorphous silicon described with the Stillinger-Weber potential. 
+
+By running 
+    % ./artdft.sh
+
+A new search is launched with a Metropolis temperature of 0.4 eV. (Note that to simply sample around a given minimum, to explore the local environment, one can set the temperature to **_negative_** values so that events are never accepted.)
+
+Note also that the line output is rather verbose. You can ignore it as the information is also presented in a clearly way in the `logfile`.
+
+An example of an output is given in `Si_SW_output` where a 10-event run was done .
+
+    % ls
+    artdft.sh	min1003		min1008		sad1002		sad1007
+    events.list	min1003.xyz	min1008.xyz	sad1002.xyz	sad1007.xyz
+    filecounter	min1004		min1009		sad1003		sad1008
+    log.file.1	min1004.xyz	min1009.xyz	sad1003.xyz	sad1008.xyz
+    min1000		min1005		min1010		sad1004		sad1009
+    min1000.xyz	min1005.xyz	min1010.xyz	sad1004.xyz	sad1009.xyz
+    min1001		min1006		refconfig	sad1005		sad1010
+    min1001.xyz	min1006.xyz	restart.dat	sad1005.xyz	sad1010.xyz
+    min1002		min1007		sad1001		sad1006
+    min1002.xyz	min1007.xyz	sad1001.xyz	sad1006.xyz
+
+The `log.file.1` contains the details of the events. This information is essential to understand how the convergence and search is taking place. 
+
+`events.list`  provides the list of all events, as a series of initial minimum, saddle point and final minimum, indicating whether these events where accepted through Metropolis algorithm. In the example provide, two events out of 10 are accepted.
+ 
+`filecounter` keeps track of the file number so that when a simulation is relaunched (as `NEW`), it continues where it stopped. 
+
+`restart.dat` contains all informations necessary to restart a simulation and the min and sad files are configuration files at energy minima and transition states.
+
+### Example 2
+The directory `Example2`, for its part, contains an example of a test running a `REFINE_AND_RELAX` on an intermediate event.
+
+You will find the appropriately modified `artdft.sh`, the starting configuration `ExcitedState` which corresponds to `REFCONFIG` and the output -  a single saddle and minimum files. 
+
+## Coupling with DFT code
+
+To couple with DFT code, one needs to modify two files that have been setup for Siesta at the moment: `siesta_force.f90` and `siesta_min.f90`.  This way, it is possible to simpy write down the configuration in the appropriate format, launch the ab initio code and read the configuration output to continue the ART simulation. 
+
+`siesta_force.f90` provides an interface to obtain ab initio force. Essentially, it receives the positions from the ART nouveau code, it write them in the appropriate format and launches siesta. Once the force has been calculated, it reads it and returns the information to ART nouveau. 
+
+The second file, `siesta_min.f90`, is used when one wishes to use the energy minimisation routine provided with the DFT package. 
+
+If you prefer to use ART nouveau's fire minimazation, simply modify the `min_converge`routine to call `min_converge_fire`. 
+
+
+## Parameters
+
+Parameters are defined by a `setenv` command, allowing greater flexibility in the shape of the parameter file.
+
+The various examples provided with the code should help understand the minimum set of parameters to be used for each type of simulation. 
+
+They are described in details in the `artdft.sh` file.
+
+
+# Bibliography
+
+[^ARTN]: R. Malek and N. Mousseau, _Dynamics of Lennard-Jones clusters: A characterization of the activation-relaxation technique_, Phys. Rev. E **62**, 7723-7728 (2000).
