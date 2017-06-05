@@ -1,12 +1,26 @@
 OBJ = art.o defs.o  random.o initialize.o min_converge.o \
 	utils.o lanczos.o find_saddle.o diis.o initialize_potential.o \
 	saddle_converge.o read_parameters.o restart.o \
-	calcforce.o neighbour.o siesta_force.o siesta_min.o calcfo_sw.o
+	calcforce.o neighbour.o siesta_force.o siesta_min.o calcfo_sw.o \
+	gaussian_force.o gaussian_min.o
+# bharat ends
 
-SYS = MacIntel
-include ${SYS}.arch 
+#SYS = MacIntel
+#include ${SYS}.arch
 
-all : artdft
+# bharat started
+FORTRAN = ifort -g -O2
+FLAGS =  -O3 -cpp
+#LLIBS =   -O3 -framework vecLib
+LLIBS = -mkl=sequential
+
+#LLIBS =   -O3 -framework vecLib
+#FORTRAN = gfortran -ffree-form
+#FFlAGS = -O3
+#EXEC_ART = $(EXEC)_Mac
+
+# bharat ends
+all : artdftsiesta
 
 artdft : ${OBJ} ${SIESTA_pot}
 	$(FORTRAN)  $(OBJ) $(SIESTA_pot) $(FFLAGS)  -o  artdft $(LLIBS)
@@ -38,6 +52,10 @@ calcfo_sw.o: defs.o calcfo_sw.f90
 siesta_force.o: defs.o siesta_force.f90
 	$(FORTRAN) -c $(FLAGS) siesta_force.f90
 
+# bharat starts
+gaussian_force.o: defs.o gaussian_force.f90
+	$(FORTRAN) -c $(FLAGS) gaussian_force.f90
+# bharat ends
 find_saddle.o: defs.o find_saddle.f90
 	$(FORTRAN) -c $(FLAGS) find_saddle.f90
 
@@ -52,6 +70,11 @@ restart.o: defs.o restart.f90
 
 siesta_min.o: defs.o siesta_min.f90
 	$(FORTRAN) -c $(FLAGS) siesta_min.f90
+
+# bharat starts
+gaussian_min.o: defs.o gaussian_min.f90
+	$(FORTRAN) -c $(FLAGS) gaussian_min.f90
+# bharat ends
 
 min_converge.o: defs.o min_converge.f90
 	$(FORTRAN) -c $(FLAGS) min_converge.f90
@@ -72,4 +95,4 @@ diis.o:defs.o diis.f90
 	$(FORTRAN) -c $(FLAGS) diis.f90
 
 clean:
-	rm -f *.o *.mod siestart silicon 
+	rm -f *.o *.mod siestart silicon artdft

@@ -441,39 +441,49 @@ subroutine  apply_lanczos ( liter, saddle_energy, ret )
   end if
 
   a1 = 0.0d0
-
+           write(*,*) 'bharat diis 1 after K converged : ', delta_e
   While_lanczos: do
- 
-      ! Test of While_lanczos loop 
-      if ( (ftot < EXITTHRESH) .or. (pas > MAXPAS)  .or. & 
-         & (eigenvalue > 0.0)  .or. &  
+           write(*,*) 'bharat diis 1 lanczos start 0 : ', delta_e
+
+!bharat starts
+!        if (delta_e > delta_threshold) then
+!         saddle_energy = total_energy
+!         end_activation = .true.
+!         pas = pas - 1                ! the real number of steps in the event
+!        end if
+! bharat ends
+      ! Test of While_lanczos loop
+      if ( (ftot < EXITTHRESH) .or. (pas > MAXPAS)  .or. &
+         & (eigenvalue > 0.0)  .or. &
          & ( delta_e < delta_thr .and. delr < delr_thr .and. pas > (MAXKTER+5) ) ) then
-
-         saddle_energy = total_energy 
-         end_activation = .true.  
-         pas = pas - 1                ! the real number of steps in the event 
-
+           write(*,*) 'bharat diis 1 lanczos starts 1 : ', delta_e
+         saddle_energy = total_energy
+         end_activation = .true.
+         pas = pas - 1                ! the real number of steps in the event
+           write(*,*) 'bharat diis 1 lanczos starts 2 : ', delta_e
          if ( ftot < EXITTHRESH ) then
+           write(*,*) 'bharat diis 1 lanczos starts 3 : ', delta_e
             ret = 20000 + pas
          else if  (delta_e < delta_thr .and. delr < delr_thr .and. pas > (MAXKTER+5) ) then
-            ret = 80000 + pas 
+            ret = 80000 + pas
          else if (eigenvalue > 0.0) then
             ret = 60000 + pas
-         else if ( pas > maxpas ) then 
-            ret = 50000 + pas 
-         end if 
+         else if ( pas > maxpas ) then
+           write(*,*) 'bharat diis 1 lanczos starts 50000 : ', delta_e
+            ret = 50000 + pas
+         end if
 
          exit
-      end if 
+      end if
 
-      if ( USE_DIIS ) then 
+      if ( USE_DIIS ) then
                                       ! Criteria for calling DIIS:
          if ( (ftot < DIIS_FORCE_THRESHOLD .and. (.not. ITERATIVE) ) .or. &
               (ftot < DIIS_FORCE_THRESHOLD .and. liter > 2 .and. ITERATIVE) .or. &
               (nsteps_after_eigen_min >= INFLECTION .and. ITERATIVE) ) then
 
             ! If  previous_forces(1,:) is .ne. 0.0d0 is a restart
-            ! from a lanczos_step in the next IF statement. 
+            ! from a lanczos_step in the next IF statement.
 
             if ( all( previous_forces(1,:) .eq. 0.0d0 ) ) then
                ! We set the first trial vector
@@ -488,70 +498,104 @@ subroutine  apply_lanczos ( liter, saddle_energy, ret )
                pas = pas + 1
                liter = liter + 1
             end if
-            
-            ! if after this last lanczos step the criteria to end the activation are fulfilled
-            ! we end here.          
-            if ( (ftot < EXITTHRESH) .or. (pas > MAXPAS) .or. & 
-                & (eigenvalue > 0.0) .or. &
-                & ( delta_e < delta_thr .and. delr < delr_thr .and. pas > (MAXKTER+5) )) then 
 
-               saddle_energy = total_energy 
-               end_activation = .true.  
-               pas = pas - 1                ! the real number of steps in the event 
+            ! if after this last lanczos step the criteria to end the activation are fulfilled
+            ! we end here.
+            if ( (ftot < EXITTHRESH) .or. (pas > MAXPAS) .or. &
+                & (eigenvalue > 0.0) .or. &
+                & ( delta_e < delta_thr .and. delr < delr_thr .and. pas > (MAXKTER+5) )) then
+
+               saddle_energy = total_energy
+               end_activation = .true.
+               pas = pas - 1                ! the real number of steps in the event
 
                if ( ftot < EXITTHRESH ) then
                   ret = 20000 + pas
                else if  (delta_e < delta_thr .and. delr < delr_thr .and. pas > (MAXKTER+5) ) then
-                  ret = 80000 + pas 
+                  ret = 80000 + pas
                else if (eigenvalue > 0.0) then
                   ret = 60000 + pas
-               else if ( pas > maxpas ) then 
-                  ret = 50000 + pas 
-               end if 
+               else if ( pas > maxpas ) then
+                  ret = 50000 + pas
+               end if
 
                exit
-            else 
-               ! We set the second trial vector 
+            else
+               ! We set the second trial vector
                previous_forces(2,:) = force(:)
                previous_pos(2,:)    = pos(:)
                previous_norm(2)     = ftot*DIIS_STEP
                switchDIIS = .True.   ! let's make DIIS.
                exit                  ! We go back
             end if
-         end if    
+         end if
       end if
 
 
       ! Hide option: if the test is true; we calculate the projection only
       ! at every two steps but after 4 steps above of an inflection in the eigenvalue
-      if ( nsteps_after_eigen_min>=4 .and. mod(pas,2)==0 .and. a1>0.9d0 .and. calc_proj ) then 
+      if ( nsteps_after_eigen_min>=4 .and. mod(pas,2)==0 .and. a1>0.9d0 .and. calc_proj ) then
          get_proj = .False.
       else
          get_proj = .True.
       end if
 
-      call lanczos_step ( saddle_energy, a1, liter, get_proj ) 
+      call lanczos_step ( saddle_energy, a1, liter, get_proj )
+
+!bharat starts
+!        if (delta_e > delta_thr .or. delta_e < (delta_thr/20.0d0) &
+!          & .or. eigenvalue > (EIGEN_THRESH/2.0d0) ) then
+        if (delta_e > delta_thr .or. eigenvalue > (EIGEN_THRESH/4.0d0) ) then
+         saddle_energy = total_energy
+         end_activation = .true.
+         pas = pas - 1                ! the real number of steps in the event
+!         if ( ftot < EXITTHRESH ) then
+!            ret = 20000 + pas
+!         else if  (delta_e < delta_thr .and. delr < delr_thr .and. pas >(MAXKTER+5) ) then
+!            ret = 80000 + pas
+!         else if (eigenvalue > 0.0) then
+!            ret = 60000 + pas
+!         else if ( pas > maxpas ) then
+            ret = 50000 + pas
+!         end if
+
+         exit
+
+        end if
+! bharat ends
+
+
+           write(*,*) 'bharat diis 1 lanczos starts 4 : ', delta_e
                                       ! clean_wf
-      if_clean_wf: if ( clean_wf ) then                                     
+      if_clean_wf: if ( clean_wf ) then
+! NOT RUN           write(*,*) 'bharat diis 1 lanczos starts 5 : ', delta_e
           if ( eigenvalue == eigen_min .and. ftot > EXITTHRESH) then
              call clean_wavefunction ( a1, .True. )
+! NOT RUN           write(*,*) 'bharat diis 1 lanczos starts 6 : ', delta_e
           else if ( ftot < EXITTHRESH ) then
 
              call clean_wavefunction ( a1, .True. )
-             if ( ftot >= EXITTHRESH .and. cw_try_again ) then
+! NOT RUN           write(*,*) 'bharat diis 1 lanczos starts 7 : ', delta_e
+!             if ( ftot >= EXITTHRESH .and. cw_try_again ) then
+! bharat starts delta_e < delta_thr
+             if ( ftot >= EXITTHRESH .and. cw_try_again .and. delta_e < delta_thr ) then
+! NOT RUN           write(*,*) 'bharat diis : ', delta_e
+! bharat ends
                                            ! we continue in lanczos,
-                cw_try_again = .False.     ! but, this is done only once per event.  
+                cw_try_again = .False.     ! but, this is done only once per event.
              else
+! NOT RUN           write(*,*) 'bharat diis : ', delta_e
                 ret = 40000 + pas
                 saddle_energy = total_energy
                 end_activation = .true.
                 exit
              end if
-          end if 
+          end if
       end if if_clean_wf
 
       pas = pas + 1
       liter = liter + 1
+           write(*,*) 'bharat diis 1 lanczos starts 8 : ', delta_e
         
   end do While_lanczos 
 

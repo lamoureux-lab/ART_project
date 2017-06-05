@@ -45,14 +45,18 @@ subroutine min_converge ( success )
       call min_converge_dft(success)
    elseif (energy_type == "SWP") then
       call min_converge_fire(success)
+! bharat starts
+   elseif (energy_type == "GAU") then
+      call min_converge_gau(success)
+! bharat ends
    endif
 
-   if ( .not. success ) then 
-      open( unit = FLOG, file = LOGFILE, status = 'unknown',& 
+   if ( .not. success ) then
+      open( unit = FLOG, file = LOGFILE, status = 'unknown',&
            & action = 'write', position = 'append', iostat = ierror )
       write(FLOG,'(1X,A)') "Minimization exited before the geometry optimization converged,"
       write(FLOG,'(1X,A)') "this minimum will be rejected."
-      close(FLOG) 
+      close(FLOG)
    end if
 
    write(*,"('',' BART: Relaxed energy : ',(1p,e17.10,0p))") total_energy
@@ -78,53 +82,53 @@ subroutine check_min( stage )
 
    ! We check how it changes the energy of the system by applying the projection.
    IN_MINIMUN = .True.
-   ! Report 
+   ! Report
 
 
-   open( unit = FLOG, file = LOGFILE, status = 'unknown',& 
+   open( unit = FLOG, file = LOGFILE, status = 'unknown',&
         & action = 'write', position = 'append', iostat = ierror )
    write(FLOG,*) ' Starting Lanczos'
-   close(FLOG) 
+   close(FLOG)
 
-   new_projection = .true.            ! We do not use any previously computed direction. 
+   new_projection = .true.            ! We do not use any previously computed direction.
 
    if ( .not. setup_initial ) then
       ! We call lanczos twice.
       repetition = 2
-   else 
+   else
       ! if not, four times.
-      repetition = 3 
+      repetition = 3
    end if
 
    write(*,*) "BART: INIT LANCZOS"  !debug
    do i = 1, repetition
       call lanczos( NVECTOR_LANCZOS_H, new_projection , a1 )
       ! Report
-      open( unit = FLOG, file = LOGFILE, status = 'unknown',& 
+      open( unit = FLOG, file = LOGFILE, status = 'unknown',&
            & action = 'write', position = 'append', iostat = ierror )
       if ( i == 1 ) then           ! Our reference energy for the report.
          min_energy = lanc_energy
-         write(FLOG,'(2x,A,f12.8)') ' Em= ', min_energy 
-         write(FLOG,'(A39)') '   Iter     Ep-Em (eV)   Eigenvalue  a1' 
+         write(FLOG,'(2x,A,f12.8)') ' Em= ', min_energy
+         write(FLOG,'(A39)') '   Iter     Ep-Em (eV)   Eigenvalue  a1'
       end if
       write(FLOG,'(I6,3X,(1p,e10.2,0p),4X,F12.6,1X,F7.4)') i, proj_energy-min_energy, eigenvalue, a1
-      close(FLOG) 
-      write(*,*) 'BART: Iter ', i, ' : ', lanc_energy, proj_energy,  eigenvalue, a1  
+      close(FLOG)
+      write(*,*) 'BART: Iter ', i, ' : ', lanc_energy, proj_energy,  eigenvalue, a1
 
-      ! Now we start from the previous direction. 
-      new_projection= .false.   
+      ! Now we start from the previous direction.
+      new_projection= .false.
       ! let's see the projection
       if ( setup_initial ) call print_proj ( i, stage, projection, eigenvalue, DEL_LANCZOS )
    end do
 
    if (energy_type == "SWP") call reset_SW_potential()
 
-   ! Report 
+   ! Report
    write(*,*) "BART: END  LANCZOS"  !debug
-   open( unit = FLOG, file = LOGFILE, status = 'unknown',& 
+   open( unit = FLOG, file = LOGFILE, status = 'unknown',&
         & action = 'write', position = 'append', iostat = ierror )
    write(FLOG,*) ' Done Lanczos'
-   close(FLOG) 
+   close(FLOG)
 
    ! Default value in the activation part is false.
    IN_MINIMUN = .False.
@@ -149,7 +153,7 @@ subroutine min_converge_sd(minimized)
    use defs
    implicit none
 
-   logical, intent(inout)  :: minimized 
+   logical, intent(inout)  :: minimized
 
    real(kind=8),  dimension(VECSIZE):: forceb, posb, tmp_pos
    integer :: iter, i, npart
@@ -171,7 +175,7 @@ subroutine min_converge_sd(minimized)
    step = STEPSIZE
    do iter = 1, MAX_ITER
 
-      ! Apply PBC 	
+      ! Apply PBC
       posb = pos + step * force
       tmp_pos = pos
       pos = posb
@@ -183,20 +187,20 @@ subroutine min_converge_sd(minimized)
       end do
 
       ! if(ftot2 < current_ftot2 .or. total_energy < current_energy ) then
-      if(ftot2 < current_ftot2  ) then    
+      if(ftot2 < current_ftot2  ) then
 
-         pos = posb  
+         pos = posb
          force = forceb
          step = 1.2 * step
          current_ftot2 = ftot2
          current_energy = total_energy
 
-      else 
+      else
          step = 0.6 * step
       endif
       if(ftot2 < FTHRESH2) exit
       call displacement( posref, pos, delr, npart )
-      ! Write 
+      ! Write
 
       if (modulo(iter,5) == 0 ) then
          call write_step ( 'M', iter, 0.0d0, current_energy )
@@ -206,21 +210,21 @@ subroutine min_converge_sd(minimized)
 
    end do
 
-   ftot = sqrt(ftot2)  
+   ftot = sqrt(ftot2)
    if (ftot < FTHRESHOLD ) then
       write(*,*) 'Minimization successful   ftot : ', ftot
       write(*,*)  'final energy :', total_energy
-      minimized = .true. 
+      minimized = .true.
    else
       write(*,*) 'Minimization failed   ftot : ', ftot
-      minimized = .false. 
+      minimized = .false.
    endif
 END SUBROUTINE min_converge_sd
 
 
 !> Implementation of the damped MD based geometry optimizer FIRE, PRL 97, 170201 (2006)
 !! The MD-Integrator is the common velocity verlet, all masses are equal to 1.d0
-!! Implemented in August 2010, Maximilian Amsler, Basel University 
+!! Implemented in August 2010, Maximilian Amsler, Basel University
 !! Suggestion for maximal timestep as tmax=2*pi*sqrt(alphaVSSD)*1.2d-1
 !! Choose the initial timestep as tinit=tmax*0.5d0
 subroutine min_converge_fire(success)
@@ -275,8 +279,10 @@ subroutine min_converge_fire(success)
    alpha=alphastart
    falpha=0.99d0
    nstep=1
-
-   dtmax=0.15d0
+! bharat starts
+!   dtmax=0.15d0 (changed as suggested by Normand
+   dtmax=0.3d0
+! bharat ends
    dt = dtmax*0.2d0
 
    success=.false.
@@ -341,7 +347,7 @@ subroutine min_converge_fire(success)
       !eigenvalue = 0.0d0
       ! Magnitude of the displacement (utils.f90).
       !call displacement( posref, poscur, delr, npart )
-      ! Write 
+      ! Write
 
       if( fnrm < norm_criterium .or. fmax < fmax_criterium) then
          if (total_energy < initial_energy) then
@@ -424,7 +430,7 @@ END SUBROUTINE fnrmmax_fire
 !> Implementation of the damped MD based geometry optimizer FIRE, PRL 97, 170201
 !(2006)
 !! The MD-Integrator is the common velocity verlet, all masses are equal to 1.d0
-!! Implemented in August 2010, Maximilian Amsler, Basel University 
+!! Implemented in August 2010, Maximilian Amsler, Basel University
 !! Suggestion for maximal timestep as tmax=2*pi*sqrt(alphaVSSD)*1.2d-1
 !! Choose the initial timestep as tinit=tmax*0.5d0
 subroutine perp_fire(success,max_iter)
@@ -476,7 +482,10 @@ subroutine perp_fire(success,max_iter)
    alpha=alphastart
    falpha=0.99d0
    nstep=1
-   dtmax=0.15d0
+! bharat starts
+!   dtmax=0.15d0 (changed as suggested by Normand
+   dtmax=0.3d0
+! bharat ends
    dt = dtmax*0.2d0
    success=.false.
    fnrm=1.d10

@@ -173,6 +173,10 @@ program art90
         If_bol: if ( ( (total_energy - ref_energy) < -temperature * log( random_number ) )& 
              & .and. ( temperature >= 0.0d0 ) .and. success ) then
            accept = "ACCEPTED"
+! bharat starts
+        write (*,*) 'energy difference: ',(total_energy - ref_energy)
+        write (*,*) 'temperature, random_number, temperature * log(random_number)', temperature, random_number, -temperature * log( random_number )
+! bharat ends
            write(FLIST,*) conf_initial, conf_saddle, conf_final,'    accepted'
            
            ! We now redefine the reference configuration

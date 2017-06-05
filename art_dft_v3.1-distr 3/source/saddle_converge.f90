@@ -424,22 +424,23 @@ subroutine end_report ( success, ret, saddle_energy )
             if ( eigenvalue >= 0.0d0 ) then
                ret = 60000 + pas 
             else                            ! Else of eigenvalue.
-               ! New fpar and fperp. 
+           write(*,*) 'bharat diis 1 lanczos starts 9 : ', delta_e
+               ! New fpar and fperp.
                call force_projection( fpar, perp_force, fperp,&
                   &   ftot, force, projection )
                ret = 10000 + pas
             end if
 
-         else                               ! Else of If_check 
+         else                               ! Else of If_check
             eigenvalue = 0.0d0
-            ret = 10000 + pas 
+            ret = 10000 + pas
          end if If_check
 
-      else                                  ! Pure Lanczos 
+      else                                  ! Pure Lanczos
          ! Else of If_diis
          if ( eigenvalue > 0.0d0 ) then
             ret = 60000 + pas
-         else 
+         else
             ret = 20000 + pas
          end if
       end if If_diis
@@ -453,13 +454,14 @@ subroutine end_report ( success, ret, saddle_energy )
          Do_lanc_c: do i = 1, 4
             call lanczos( NVECTOR_LANCZOS_C, new_projection, a1 )
             new_projection = .false.
-            ! Exit of loop.  
+            ! Exit of loop.
             if ( eigenvalue < 0.0d0 ) exit Do_lanc_c
          end do Do_lanc_c
 
          if ( eigenvalue >= 0.0d0 ) then
-            ret = 60000 + pas 
+            ret = 60000 + pas
          else                          ! Else of eigenvalue.
+           write(*,*) 'bharat diis 1 lanczos starts 10 : ', delta_e
             ! New fpar and fperp. 
             call force_projection( fpar, perp_force, fperp,&
                &   ftot, force, projection )
