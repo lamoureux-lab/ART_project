@@ -52,10 +52,9 @@ calcfo_sw.o: defs.o calcfo_sw.f90
 siesta_force.o: defs.o siesta_force.f90
 	$(FORTRAN) -c $(FLAGS) siesta_force.f90
 
-# bharat starts
 gaussian_force.o: defs.o gaussian_force.f90
 	$(FORTRAN) -c $(FLAGS) gaussian_force.f90
-# bharat ends
+
 find_saddle.o: defs.o find_saddle.f90
 	$(FORTRAN) -c $(FLAGS) find_saddle.f90
 
