@@ -12,7 +12,7 @@ echo "Running on `hostname`"
 echo "Starting run at: `date`"
 
 # Set up the Gaussian environment using the module command:
-#module load gaussian
+module load gaussian
 #module load gaussian/g09.b01
 #module load intel/14.0.2.144
 #module load intel/ompi/1.6.5
