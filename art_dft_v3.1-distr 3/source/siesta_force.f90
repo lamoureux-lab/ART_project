@@ -60,7 +60,7 @@ subroutine calcforce_dft(nat,typa,posa,boxl,forca,energy)
      close(FSIESTA)
 
      ! We now call siesta do to the minimization
-     call  system('csh execute.sh')
+     call  system('./execute.sh')
      do i=1, 10000
         toto = dexp ( i * 0.001d0)
      end do
@@ -69,24 +69,14 @@ subroutine calcforce_dft(nat,typa,posa,boxl,forca,energy)
      open(unit=FSIESTA,file=SIESTAFORCE,status='old',action='read',iostat=ierror)
 
      read_done = .false.
-     do
+     do 
         read(FSIESTA,"(A40)") line
         if ( line  == "siesta: Final energy (eV):" ) then
-!           do i = 1, 7
-           do i = 1, 8
-              read(FSIESTA,"(A38)") line
-! bharat debug starts
-!       write(*,*) 'Line 1: ', line
-! bharat debug ends
+           do i = 1, 7
+              read(FSIESTA,"(A40)") line
            end do
-!OK       write(*,*) 'Line 1: ', line
            read(FSIESTA,"(A24,f14.6)") line, energy
-! bharat debug starts
-!       write (*,*) 'bharat line2',line
-!       write(*,*) 'bharat9 siesta energy:', energy
-!     stop
-! bharat debug ends
-
+           
            read_done = .true.
         endif
         if(read_done) exit
