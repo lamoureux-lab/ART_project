@@ -148,12 +148,11 @@ subroutine calcforce_gau(nat,typa,posa,boxl,forca,energy)
         if ( line(1:8)  == "outcoor:" ) then
            do i = 1, NATOMS
 !              read(FGAUSS,*) xS(i),yS(i),zS(i)
-! bharat debug starts
+! debug starts
 ! write (*,*) "position formatting enters"
         read(FGAUSS,"(i7,i12,i12,f15.6,f13.6,f11.6)") idum,idum1,idum2,xS(i),yS(i),zS(i)
 ! write (*,*) idum,idum1,idum2,xS(i),yS(i),zS(i)
-!stop
-! bharat debug ends
+! debug ends
 
 
            end do
@@ -168,10 +167,10 @@ subroutine calcforce_gau(nat,typa,posa,boxl,forca,energy)
      if (success) exit
   end do
 
-! bharat starts
- write (*,*) 'bharat running good gaussian_force'
-!stop
-! bharat ends
+! debug
+ write (*,*)
+ write (*,*)
+ write (*,*) 'Running with good gaussian_force: '
   
   call center(forca,VECSIZE)
 end subroutine
