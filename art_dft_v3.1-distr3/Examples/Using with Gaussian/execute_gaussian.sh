@@ -40,16 +40,16 @@ for ((i=1; i<=$natoms; i++)); do
 	awk 'FNR=='$positionLineNumber+4+$i' {print $0}' ./test.log >>log
 done 
 
-printf  "siesta: Atomic forces (eV/Ang):\n" >>log
+printf  "gaussi: Atomic forces (eV/Ang):\n" >>log
 forceLineNumber=$(sed -n '/Forces (Hartrees/=' test.log | tail -1)
 
 for ((j=1; j<=$natoms; j++)); do
 	awk 'FNR=='$forceLineNumber+2+$j' {print $0}' test.log >>log # formats and units are already taken care
 done
 
-printf  "siesta: Final energy (eV):\n" >>log
+printf  "gaussi: Final energy (eV):\n" >>log
 
 for k in {1..10}; do
-	grep 'E(' test.log | tail -1 | awk '{printf "siesta:         Total =  %.10f\n", $5*27.2113838668}' >>log
+	grep 'E(' test.log | tail -1 | awk '{printf "gaussi:         Total =  %.10f\n", $5*27.2113838668}' >>log
 done
 

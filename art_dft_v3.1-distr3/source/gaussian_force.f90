@@ -90,7 +90,7 @@ subroutine calcforce_gau(nat,typa,posa,boxl,forca,energy)
      do 
         read(FGAUSS,"(A40)") line
 ! OK write (*,*) 'bharat test3', line
-        if ( line  == "siesta: Final energy (eV):" ) then
+        if ( line  == "gaussi: Final energy (eV):" ) then
            do i = 1, 7
               read(FGAUSS,"(A40)") line
 ! bharat debug starts
@@ -124,7 +124,7 @@ subroutine calcforce_gau(nat,typa,posa,boxl,forca,energy)
            success = .false.
            exit
         endif
-        if ( line  == "siesta: Atomic forces (eV/Ang):" ) then
+        if ( line  == "gaussi: Atomic forces (eV/Ang):" ) then
            do i = 1, NATOMS
 ! bharat              read(FGAUSS,"(i7,3f12.6)") idum,fax(i),fay(i),faz(i)
         read(FGAUSS,"(i7,i10,f21.9,f15.9,f15.9)") idum,idum1, fax(i),fay(i),faz(i)
@@ -160,7 +160,7 @@ subroutine calcforce_gau(nat,typa,posa,boxl,forca,energy)
            read_doneC = .true.
         endif
         
-        if ( line == "siesta: Final energy (eV):" ) read_final = .true.
+        if ( line == "gaussi: Final energy (eV):" ) read_final = .true.
         if(read_doneF .and. read_doneC .and. read_final ) exit
      end do
      close(FGAUSS)

@@ -66,7 +66,7 @@ subroutine min_converge_gau(success)
   read_done = .false.
   do 
     read(FGAUSS,"(A40)") line
-    if ( line  == "siesta: Final energy (eV):" ) then
+    if ( line  == "gaussi: Final energy (eV):" ) then
 write (*,*) 'test1 after energy'
       do i = 1, 7
         read(FGAUSS,"(A40)") line
@@ -98,7 +98,7 @@ write (*,*) 'test1 after energy'
       end do
       read_done = .true.
     endif
-    if ( line  == "siesta: Final energy (eV):" ) read_final = .true.
+    if ( line  == "gaussi: Final energy (eV):" ) read_final = .true.
     if(read_done .and. read_final ) exit
   end do
 

@@ -46,7 +46,7 @@ http://beige.ucs.indiana.edu/I590/node35.html
 
 #TODO 
 What is this for/ does it belong in the readme?  
-grep 'E(' test.log | tail -1 | awk '{printf "siesta:         Total =  %.10f\n", $5*27.2113838668}' >>log
+grep 'E(' test.log | tail -1 | awk '{printf "gaussi:         Total =  %.10f\n", $5*27.2113838668}' >>log
 
 Change the following configuration values in accordance to the sample:
 1: execute_gaussian.sh => number of atoms natoms
