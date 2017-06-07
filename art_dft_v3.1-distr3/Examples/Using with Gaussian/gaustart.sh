@@ -81,7 +81,7 @@ setenv RESTART          restart.dat               # current data for restarting 
 
 #PSI v8
 #ensure that Gaussian is loaded (will be the most current version)
-/global/scratch/jwhatley/ART_project/gaussian_art_v8/artdft
+/global/scratch/jwhatley/ART_project/art_dft_v3.1-distr3/source/artdft
 
 # for negative forces opt=5steps
 #/global/scratch/<username>/art_dft_v3.1-distr-2/art_dft_v3.1-distr/source/gaussian_art_v3_Force_Negative/artdft

@@ -6,7 +6,6 @@ sed -i '1d' art2gaussian.inp # removes chk point line
 #sed -i "s/0 1/1 1/g" art2gaussian.inp # change charge and multiplicity
 
 # for b3lyp
-
 #sed -i "s/rhf/b3lyp/g" art2gaussian.inp # change method
 #sed -i "s/3-21g/6-311++G(d,p)/g" art2gaussian.inp # change basis set
 

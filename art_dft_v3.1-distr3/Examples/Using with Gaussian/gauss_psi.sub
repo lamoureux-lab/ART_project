@@ -10,6 +10,7 @@
 #
 #************************************************************
 
+# Cluster submission details
 #PBS -S /bin/bash
 #PBS -V
 
@@ -30,4 +31,4 @@ cd $PBS_O_WORKDIR
 # Run g09, change name of input file
 #g09 H2N
 #rm -rf /state/partition1/$LOGNAME"_"$PBS_JOBID
-csh gaussian_start.sh >output.log
+csh gaustart.sh >output.log

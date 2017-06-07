@@ -62,7 +62,3 @@ For additional questions, contact support@westgrid.ca
 
 ##File structure 
 clear.sh is a simple script that remove all generated files an resets 
-
-output.log debug full output from the CLI
-log.file.1
-log
