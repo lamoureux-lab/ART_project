@@ -126,13 +126,18 @@ subroutine read_parameters( )
   !!__________________
   ! type of energy and force calculation 
   call getenv('ENERGY_CALC', temporary)
-  if (temporary .eq. '') then
-     write(*,*) "Error: energy calculation type is not defined: ENERGY_CALC " 
-     write(*,*) " choose: DFT or SWP (Stillinger-Weber)  "
-     stop
-  else
-     read(temporary,*) energy_type   
-  endif
+  selectcase( temporary )
+     case ( 'DFT' )
+          energy_type = 'DFT'
+     case ( 'SWP' )
+          energy_type = 'SWP'
+     case ( 'GAU' )
+          energy_type = 'GAU'
+     case default
+          write(*,*) "Error: energy calculation type is not defined: ENERGY_CALC "
+          write(*,*) " choose: DFT, SWP (Stillinger-Weber), or GAU (Gaussian) "
+          stop
+  end select
 
   !!__________________
   ! Fictive temperature, if negative always reject the event

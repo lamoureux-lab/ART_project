@@ -1,6 +1,9 @@
 #!/bin/csh
-#Sets the environment variables for the molecules in question
 
+#Sets the
+setenv METHOD     GAUSSIAN
+
+#Sets the environment variables for the molecules in question
 
 setenv ENERGY_CALC GAU      # Choose: DFT or SWP (Stillinger-Weber) or GAU
 setenv Temperature 0.4      # Temperature in kcal/mol, if negative always reject the event bharat 0.4 >> 0.1
