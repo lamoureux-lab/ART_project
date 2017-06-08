@@ -44,10 +44,6 @@ For other instruction on how to use qsub:
 https://wikis.nyu.edu/display/NYUHPC/Tutorial+-+Submitting+a+job+using+qsub#Tutorial-Submittingajobusingqsub-what_is_qsub
 http://beige.ucs.indiana.edu/I590/node35.html
 
-#TODO 
-What is this for/ does it belong in the readme?  
-grep 'E(' test.log | tail -1 | awk '{printf "gaussi:         Total =  %.10f\n", $5*27.2113838668}' >>log
-
 Change the following configuration values in accordance to the sample:
 1: execute_gaussian.sh => number of atoms natoms
 2: change gaustart.sh => NATOMS, TYPE OF ATOMS and other as require 
@@ -60,5 +56,3 @@ https://www.westgrid.ca/support/systems/Grex/system_status
  
 For additional questions, contact support@westgrid.ca
 
-##File structure 
-clear.sh is a simple script that remove all generated files an resets 

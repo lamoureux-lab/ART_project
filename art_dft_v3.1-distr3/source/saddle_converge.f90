@@ -424,7 +424,8 @@ subroutine end_report ( success, ret, saddle_energy )
             if ( eigenvalue >= 0.0d0 ) then
                ret = 60000 + pas 
             else                            ! Else of eigenvalue.
-           write(*,*) 'bharat diis 1 lanczos starts 9 : ', delta_e
+           !Debug
+           write(*,*) 'diis 1 lanczos starts 9 : ', delta_e
                ! New fpar and fperp.
                call force_projection( fpar, perp_force, fperp,&
                   &   ftot, force, projection )
@@ -461,7 +462,8 @@ subroutine end_report ( success, ret, saddle_energy )
          if ( eigenvalue >= 0.0d0 ) then
             ret = 60000 + pas
          else                          ! Else of eigenvalue.
-           write(*,*) 'bharat diis 1 lanczos starts 10 : ', delta_e
+           !Debug
+           write(*,*) 'diis 1 lanczos starts 10 : ', delta_e
             ! New fpar and fperp. 
             call force_projection( fpar, perp_force, fperp,&
                &   ftot, force, projection )

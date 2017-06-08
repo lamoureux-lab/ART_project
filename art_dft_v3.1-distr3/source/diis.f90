@@ -441,35 +441,33 @@ subroutine  apply_lanczos ( liter, saddle_energy, ret )
   end if
 
   a1 = 0.0d0
-           write(*,*) 'bharat diis 1 after K converged : ', delta_e
+           !debug
+           write(*,*) 'diis 1 after K converged : ', delta_e
   While_lanczos: do
-           write(*,*) 'bharat diis 1 lanczos start 0 : ', delta_e
-
-!bharat starts
-!        if (delta_e > delta_threshold) then
-!         saddle_energy = total_energy
-!         end_activation = .true.
-!         pas = pas - 1                ! the real number of steps in the event
-!        end if
-! bharat ends
+           !debug
+           write(*,*) 'diis 1 lanczos start 0 : ', delta_e
       ! Test of While_lanczos loop
       if ( (ftot < EXITTHRESH) .or. (pas > MAXPAS)  .or. &
          & (eigenvalue > 0.0)  .or. &
          & ( delta_e < delta_thr .and. delr < delr_thr .and. pas > (MAXKTER+5) ) ) then
-           write(*,*) 'bharat diis 1 lanczos starts 1 : ', delta_e
+           !debug
+           write(*,*) 'diis 1 lanczos starts 1 : ', delta_e
          saddle_energy = total_energy
          end_activation = .true.
          pas = pas - 1                ! the real number of steps in the event
-           write(*,*) 'bharat diis 1 lanczos starts 2 : ', delta_e
+           !debug
+           write(*,*) 'diis 1 lanczos starts 2 : ', delta_e
          if ( ftot < EXITTHRESH ) then
-           write(*,*) 'bharat diis 1 lanczos starts 3 : ', delta_e
+           !debug
+           write(*,*) 'diis 1 lanczos starts 3 : ', delta_e
             ret = 20000 + pas
          else if  (delta_e < delta_thr .and. delr < delr_thr .and. pas > (MAXKTER+5) ) then
             ret = 80000 + pas
          else if (eigenvalue > 0.0) then
             ret = 60000 + pas
          else if ( pas > maxpas ) then
-           write(*,*) 'bharat diis 1 lanczos starts 50000 : ', delta_e
+           !debug
+           write(*,*) 'diis 1 lanczos starts 50000 : ', delta_e
             ret = 50000 + pas
          end if
 
@@ -542,49 +540,35 @@ subroutine  apply_lanczos ( liter, saddle_energy, ret )
 
       call lanczos_step ( saddle_energy, a1, liter, get_proj )
 
-!bharat starts
-!        if (delta_e > delta_thr .or. delta_e < (delta_thr/20.0d0) &
-!          & .or. eigenvalue > (EIGEN_THRESH/2.0d0) ) then
+      ! Optimization for Gaussian
+      if (energy_type == "GAU") then
         if (delta_e > delta_thr .or. eigenvalue > (EIGEN_THRESH/4.0d0) ) then
          saddle_energy = total_energy
          end_activation = .true.
          pas = pas - 1                ! the real number of steps in the event
-!         if ( ftot < EXITTHRESH ) then
-!            ret = 20000 + pas
-!         else if  (delta_e < delta_thr .and. delr < delr_thr .and. pas >(MAXKTER+5) ) then
-!            ret = 80000 + pas
-!         else if (eigenvalue > 0.0) then
-!            ret = 60000 + pas
-!         else if ( pas > maxpas ) then
-            ret = 50000 + pas
-!         end if
-
+         ret = 50000 + pas
          exit
-
         end if
-! bharat ends
+      end if
 
-
-           write(*,*) 'bharat diis 1 lanczos starts 4 : ', delta_e
+      !Debug
+      write(*,*) 'diis 1 lanczos starts 4 : ', delta_e
                                       ! clean_wf
       if_clean_wf: if ( clean_wf ) then
-! NOT RUN           write(*,*) 'bharat diis 1 lanczos starts 5 : ', delta_e
           if ( eigenvalue == eigen_min .and. ftot > EXITTHRESH) then
              call clean_wavefunction ( a1, .True. )
-! NOT RUN           write(*,*) 'bharat diis 1 lanczos starts 6 : ', delta_e
           else if ( ftot < EXITTHRESH ) then
 
              call clean_wavefunction ( a1, .True. )
-! NOT RUN           write(*,*) 'bharat diis 1 lanczos starts 7 : ', delta_e
-!             if ( ftot >= EXITTHRESH .and. cw_try_again ) then
-! bharat starts delta_e < delta_thr
-             if ( ftot >= EXITTHRESH .and. cw_try_again .and. delta_e < delta_thr ) then
-! NOT RUN           write(*,*) 'bharat diis : ', delta_e
-! bharat ends
+
+             if ( ftot >= EXITTHRESH .and. cw_try_again .and. energy_type .ne. "GAU" ) then
+                cw_try_again = .False.
+             ! Optimization made for Gaussian when delta_e < delta_thr
+             else if ( ftot >= EXITTHRESH .and. cw_try_again .and. delta_e < delta_thr ) then
+
                                            ! we continue in lanczos,
                 cw_try_again = .False.     ! but, this is done only once per event.
              else
-! NOT RUN           write(*,*) 'bharat diis : ', delta_e
                 ret = 40000 + pas
                 saddle_energy = total_energy
                 end_activation = .true.
@@ -595,7 +579,7 @@ subroutine  apply_lanczos ( liter, saddle_energy, ret )
 
       pas = pas + 1
       liter = liter + 1
-           write(*,*) 'bharat diis 1 lanczos starts 8 : ', delta_e
+           write(*,*) 'diis 1 lanczos starts 8 : ', delta_e
         
   end do While_lanczos 
 

@@ -156,7 +156,7 @@ subroutine calcforce_gau(nat,typa,posa,boxl,forca,energy)
  write (*,*)
  write (*,*)
  write (*,*) 'Running with good gaussian_force: '
-  
+
   call center(forca,VECSIZE)
 end subroutine
 
