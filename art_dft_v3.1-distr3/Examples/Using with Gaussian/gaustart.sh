@@ -1,11 +1,8 @@
 #!/bin/csh
 
-#Sets the
-setenv METHOD     GAUSSIAN
-
 #Sets the environment variables for the molecules in question
 
-setenv ENERGY_CALC GAU      # Choose: DFT or SWP (Stillinger-Weber) or GAU
+setenv ENERGY_CALC GAU      # Choose: DFT, SWP (Stillinger-Weber) or GAU
 setenv Temperature 0.4      # Temperature in kcal/mol, if negative always reject the event bharat 0.4 >> 0.1
 setenv EVENT_TYPE  NEW      # Either 'NEW', 'REFINE_SADDLE' when further converging a saddle point
                             # Or "REFINE_AND_RELAX", to refine at the saddle
