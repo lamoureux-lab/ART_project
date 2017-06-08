@@ -20,7 +20,7 @@ setenv type1                            Si      # Atomic types - add a line for 
 # stopped. This is particularly useful with ab initio calculations. 
 setenv EVENT_TYPE                     REFINE_AND_RELAX  
                                            
-# ENERGY_CALC defines the potential used, use either SWP (Stillinger-Weber) or DFT 
+# ENERGY_CALC defines the potential used, use either SWP (Stillinger-Weber), DFT, or GAU
 setenv ENERGY_CALC                    SWP  
 
 # The temperature used for Metropolis accept/reject in eV. If the

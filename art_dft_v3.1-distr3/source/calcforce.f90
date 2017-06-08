@@ -45,6 +45,4 @@ write(*,*) 'energy: ', energy
       evalf_number = evalf_number +1
    endif
 
-
-
 END SUBROUTINE calcforce

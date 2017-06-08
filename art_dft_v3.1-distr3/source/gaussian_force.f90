@@ -60,7 +60,7 @@ subroutine calcforce_gau(nat,typa,posa,boxl,forca,energy)
 !     write(FGAUSS,"('%include basicinfo.fdf')")
 !     close(FGAUSS)
 
-! bharat starts for gaussian input file preparation
+! Prepares gaussian input file
      write(FGAUSS,"('%chk=temp.chk')")
      write(FGAUSS,"('#rhf/3-21g nosymm force')")
      write(FGAUSS,*)
@@ -71,38 +71,23 @@ subroutine calcforce_gau(nat,typa,posa,boxl,forca,energy)
      write(FGAUSS,*)
      close(FGAUSS)
 
-! bharat ends
-
-
-
-
-
      ! We now call Gaussian do to the minimization
-     call  system('sh execute_gaussian.sh')
+     call system('sh execute_gaussian.sh')
      do i=1, 10000
         toto = dexp ( i * 0.001d0)
      end do
-!OK  write (*,*) 'bharat test1'
+
      ! We must now read the forces from Gaussian's output file
      open(unit=FGAUSS,file=GAUSSFORCE,status='old',action='read',iostat=ierror)
-!OK  write (*,*) 'bharat test2'
+
      read_done = .false.
      do 
         read(FGAUSS,"(A40)") line
-! OK write (*,*) 'bharat test3', line
         if ( line  == "gaussi: Final energy (eV):" ) then
            do i = 1, 7
               read(FGAUSS,"(A40)") line
-! bharat debug starts
-!OK       write(*,*) 'Line 1: ', line
-! bharat debug ends
            end do
            read(FGAUSS,"(A24,f14.6)") line, energy
-! bharat debug starts
-!       write(*,*) 'Line 2: energy ', energy
-!     stop
-           
-! bharat debug ends
            read_done = .true.
         endif
         if(read_done) exit
@@ -177,6 +162,6 @@ end subroutine
 
 ! This subroutine is not used for siesta
 subroutine init_potential_gau()
-
+! placeholder to define default parameters if desired
 end subroutine
 
