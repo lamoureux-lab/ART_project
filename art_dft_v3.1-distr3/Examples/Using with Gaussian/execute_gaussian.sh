@@ -2,6 +2,7 @@
 
 natoms=8
 
+#testing!
 sed -i '1d' art2gaussian.inp # removes chk point line
 #sed -i "s/0 1/1 1/g" art2gaussian.inp # change charge and multiplicity
 
