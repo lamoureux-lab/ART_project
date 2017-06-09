@@ -1,6 +1,11 @@
 #!/bin/bash
 
-natoms=8
+#natoms=8
+
+natoms=$1
+#nproc=$2
+#mem=$3
+
 
 sed -i '1d' art2gaussian.inp # removes chk point line
 #sed -i "s/0 1/1 1/g" art2gaussian.inp # change charge and multiplicity
@@ -26,8 +31,11 @@ done
 
 # for temp.xyz ENDS
 
-sed -i '1 i %nproc=12' art2gaussian.inp 
-sed -i '1 i %mem=8000MB' art2gaussian.inp
+#sed -i '1 i %nproc=12' art2gaussian.inp
+sed -i '1 i $nproc' art2gaussian.inp
+
+#sed -i '1 i %mem=8000MB' art2gaussian.inp
+sed -i '1 i $mem' art2gaussian.inp
 
 # Loads the latest version of Gaussian and calls it through g09
 g09 < art2gaussian.inp > test.log

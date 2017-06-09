@@ -12,6 +12,7 @@ subroutine min_converge_gau(success)
   character(len=20) :: GAUSS   = 'art2gaussian.inp'
   character(len=20) :: GAUSSFORCE = 'log'
   character(len=70) :: line
+  character(len=10) :: string_natoms
   logical :: read_done,read_final
   real(kind=8),dimension(3) :: boxl
   real(8) :: toto
@@ -36,11 +37,11 @@ subroutine min_converge_gau(success)
 !  write(FGAUSS,"('%include basicinfo.fdf')")
 !  close(FGAUSS)
 
-! bharat starts
+! TODO get this hardcoded data from parameters
      write(FGAUSS,"('%chk=temp.chk')")
      write(FGAUSS,"('#rhf/3-21g nosymm opt')")
      write(FGAUSS,*)
-     write(FGAUSS,"('name')")
+     write(FGAUSS,"('message')")
      write(FGAUSS,*)
      write(FGAUSS,"('0 1')")
      write(FGAUSS,"(i4, f14.8, f14.8, f14.8)")  (typat(i),  x(i), y(i), z(i), i=1, NATOMS )
@@ -48,13 +49,11 @@ subroutine min_converge_gau(success)
      close(FGAUSS)
 ! bharat ends
 
-
-
-
-
+  !converting the number of atoms to a string value
+  write(string_natoms, '(i10)' )  NATOMS
 
   ! We now call Gaussian do to the minimization
-  call system('sh execute_gaussian.sh')
+  call system('sh execute_gaussian.sh ' // string_natoms // ' ' // '%nproc=12 ' // '%mem=8000MB')
   
   do i=1, 10000
     toto = dexp ( i * 0.001d0)

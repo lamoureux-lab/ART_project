@@ -19,6 +19,7 @@ subroutine calcforce_gau(nat,typa,posa,boxl,forca,energy)
   character(len=20) :: GAUSS   = 'art2gaussian.inp'
   character(len=20) :: GAUSSFORCE = 'log'
   character(len=40) :: line
+  character(len=10) :: string_natoms
   logical :: read_done,read_final,read_doneF,read_doneC, success
   real(8), dimension(:), pointer :: xS, yS, zS
   real(8), dimension(:), pointer :: xa, ya, za
@@ -71,11 +72,22 @@ subroutine calcforce_gau(nat,typa,posa,boxl,forca,energy)
      write(FGAUSS,*)
      close(FGAUSS)
 
-     ! We now call Gaussian do to the minimization
-     call system('sh execute_gaussian.sh')
+!natoms=$1
+!nproc=$2
+!mem=$3
+
+
+     !converting the number of atoms to a string value
+     write(string_natoms, '(i10)' )  NATOMS
+
+     !We now call Gaussian do to the minimization
+     call system('sh execute_gaussian.sh ' // string_natoms // ' ' // '%nproc=12 ' // '%mem=8000MB')
+
+
      do i=1, 10000
         toto = dexp ( i * 0.001d0)
      end do
+
 
      ! We must now read the forces from Gaussian's output file
      open(unit=FGAUSS,file=GAUSSFORCE,status='old',action='read',iostat=ierror)
