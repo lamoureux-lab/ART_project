@@ -3,8 +3,8 @@
 #natoms=8
 
 natoms=$1
-#nproc=$2
-#mem=$3
+nproc=$2
+mem=$3
 
 
 sed -i '1d' art2gaussian.inp # removes chk point line
@@ -29,13 +29,9 @@ for ((i=1; i<=$natoms; i++)); do
 	awk 'FNR=='$coorLineNumber+$i' {print $0}' ./art2gaussian.inp >>temp.xyz
 done
 
-# for temp.xyz ENDS
-
-#sed -i '1 i %nproc=12' art2gaussian.inp
-sed -i '1 i $nproc' art2gaussian.inp
-
-#sed -i '1 i %mem=8000MB' art2gaussian.inp
-sed -i '1 i $mem' art2gaussian.inp
+# Write number of processors and memory used for gaussian 
+sed -i '1 i '$nproc art2gaussian.inp
+sed -i '1 i '$mem art2gaussian.inp
 
 # Loads the latest version of Gaussian and calls it through g09
 g09 < art2gaussian.inp > test.log
