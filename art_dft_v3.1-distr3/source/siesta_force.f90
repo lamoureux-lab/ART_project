@@ -69,7 +69,7 @@ subroutine calcforce_dft(nat,typa,posa,boxl,forca,energy)
      open(unit=FSIESTA,file=SIESTAFORCE,status='old',action='read',iostat=ierror)
 
      read_done = .false.
-     do 
+     do
         read(FSIESTA,"(A40)") line
         if ( line  == "siesta: Final energy (eV):" ) then
            do i = 1, 7

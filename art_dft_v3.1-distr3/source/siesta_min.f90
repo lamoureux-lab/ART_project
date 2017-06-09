@@ -48,11 +48,8 @@ subroutine min_converge_dft(success)
   do 
     read(FSIESTA,"(A40)") line
     if ( line  == "siesta: Final energy (eV):" ) then
-!      do i = 1, 7
-      do i = 1, 8
-
-!        read(FSIESTA,"(A40)") line
-        read(FSIESTA,"(A38)") line
+      do i = 1, 7
+        read(FSIESTA,"(A40)") line
       end do
       read(FSIESTA,"(A24,f14.6)") line, total_energy
       

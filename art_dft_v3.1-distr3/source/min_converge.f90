@@ -45,10 +45,8 @@ subroutine min_converge ( success )
       call min_converge_dft(success)
    elseif (energy_type == "SWP") then
       call min_converge_fire(success)
-! bharat starts
    elseif (energy_type == "GAU") then
       call min_converge_gau(success)
-! bharat ends
    endif
 
    if ( .not. success ) then
@@ -279,10 +277,13 @@ subroutine min_converge_fire(success)
    alpha=alphastart
    falpha=0.99d0
    nstep=1
-! bharat starts
-!   dtmax=0.15d0 (changed as suggested by Normand
-   dtmax=0.3d0
-! bharat ends
+
+   ! Optimization for Gaussian
+   if (energy_type == "GAU") then
+      dtmax=0.3d0
+   else
+      dtmax=0.15d0
+   end if
    dt = dtmax*0.2d0
 
    success=.false.
@@ -482,10 +483,14 @@ subroutine perp_fire(success,max_iter)
    alpha=alphastart
    falpha=0.99d0
    nstep=1
-! bharat starts
-!   dtmax=0.15d0 (changed as suggested by Normand
-   dtmax=0.3d0
-! bharat ends
+
+   ! Optimization for Gaussian
+   if (energy_type == "GAU") then
+      dtmax=0.3d0
+   else
+      dtmax=0.15d0
+   end if
+
    dt = dtmax*0.2d0
    success=.false.
    fnrm=1.d10
