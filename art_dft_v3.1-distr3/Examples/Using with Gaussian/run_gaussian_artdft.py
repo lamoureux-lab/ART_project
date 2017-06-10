@@ -2,6 +2,16 @@
 
 input_file = 'art2gaussian.inp'
 
+def create_ref_config():
+    #TODO find out how to get:
+    # total_energy:   -2144.09236620000
+    #S   100.000000000000        100.000000000000        100.000000000000
+    #Is this obtained from initial gaussian run?
+    pass
+
+def set_env_config():
+    #TODO
+    pass
 
 def load_input(gaussian_input_params):
 
