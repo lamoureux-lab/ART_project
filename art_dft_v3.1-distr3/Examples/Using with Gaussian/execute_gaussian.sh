@@ -29,7 +29,7 @@ for ((i=1; i<=$natoms; i++)); do
 	awk 'FNR=='$coorLineNumber+$i' {print $0}' ./art2gaussian.inp >>temp.xyz
 done
 
-# Write number of processors and memory used for gaussian 
+# Write number of processors and memory used for gaussian
 sed -i '1 i '$nproc art2gaussian.inp
 sed -i '1 i '$mem art2gaussian.inp
 

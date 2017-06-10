@@ -9,7 +9,7 @@ setenv EVENT_TYPE  NEW      # Either 'NEW', 'REFINE_SADDLE' when further converg
 			                # and check the final minimum
 
 #setenv LABEL_SIESTA SIGA_INT
-setenv NATOMS     8         # Number of atoms in the problem bharat 217 > 2
+setenv NATOMS     8         # Number of atoms in the problem
 
 setenv Prefactor_Push_Over_Saddle 0.3 # The prefactor for pushing over the saddle point, fraction of distance from initial minimum to saddle point 0.15 (default) 0.3 (siesta)
 
