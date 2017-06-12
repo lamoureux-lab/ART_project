@@ -1,13 +1,15 @@
 
+# import ConfigParser, os
 
-input_file = 'art2gaussian.inp'
+input_file = 'testgaussian.inp'
+refconfig_file = 'testconfig.dat'
 
-def create_ref_config():
-    #TODO find out how to get:
-    # total_energy:   -2144.09236620000
-    #S   100.000000000000        100.000000000000        100.000000000000
-    #Is this obtained from initial gaussian run?
-    pass
+def create_ref_config(refconfig, gaussian_input_params):
+    config = open(refconfig, 'w+')          #Overwrites of creates a new file if it doesn't exist
+    config.write('run_id:         1000\n')
+    config.write('total_energy:   0\n')     #Placeholder, as this will be optimized by ART to the correct value
+    config.write('S   100.000000000000        100.000000000000        100.000000000000\n')
+    config.write(gaussian_input_params['atom_coordinates'])
 
 def set_env_config():
     #TODO
@@ -16,7 +18,6 @@ def set_env_config():
 def load_input(gaussian_input_params):
 
     params = gaussian_input_params
-    counter = 0
     section_number = 1
 
     with open(input_file) as input:
@@ -30,7 +31,6 @@ def load_input(gaussian_input_params):
                 # 5. Atom coordinates
 
                 #Check for an empty line to increment section
-                print line
                 if line.strip() == '':
                     section_number += 1
                     continue
@@ -57,6 +57,7 @@ def load_input(gaussian_input_params):
                     params['charge'] = int(string_integers[0])
                     params['multiplicity'] = int(string_integers[1])
                     section_number += 1
+                    continue
 
                 #Atom coordinates
                 if section_number == 4:
@@ -72,9 +73,10 @@ def load_input(gaussian_input_params):
 
 if __name__ == "__main__":
 
+    global refconfig_location
 
     gaussian_input_params = {'mem': '', 'nproc': '', 'other_details': '', 'description': '',
                     'title': '', 'natoms': 0, 'charge': None, 'multiplicity': None, 'atom_coordinates' : ''}
     print load_input(gaussian_input_params)
-    # print 'nproc: ' + nproc
-    # print
+
+    create_ref_config(refconfig_file, gaussian_input_params)
