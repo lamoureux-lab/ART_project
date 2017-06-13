@@ -5,10 +5,10 @@
 setenv ENERGY_CALC GAU      # Choose: DFT, SWP (Stillinger-Weber) or GAU
 setenv Temperature 0.4      # Temperature in kcal/mol, if negative always reject the event bharat 0.4 >> 0.1
 setenv EVENT_TYPE  NEW      # Either 'NEW', 'REFINE_SADDLE' when further converging a saddle point
-                            # Or "REFINE_AND_RELAX", to refine at the saddle
-			                # and check the final minimum
+                            # Or "REFINE_AND_RELAX", to refine at the saddle and check the final minimum
 
 #setenv LABEL_SIESTA SIGA_INT
+
 setenv NATOMS     8         # Number of atoms in the problem
 
 setenv Prefactor_Push_Over_Saddle 0.3 # The prefactor for pushing over the saddle point, fraction of distance from initial minimum to saddle point 0.15 (default) 0.3 (siesta)
@@ -56,6 +56,11 @@ setenv Max_Iter_Basin                        20   # Maximum number of iteraction
 #setenv DIIS_MaxIter                         50   # Maximum number of iteractions for the DIIS scheme bharat 200 >>50
 #setenv DIIS_Check_Eigenvector          .false.   # Check that the final state is indeed a saddle
 #setenv DIIS_Step_Size                    0.005   # Step size for the position
+
+############### Gaussian #################################################################################
+setenv GAU_mem        %mem=8000MB                 # The memory allocation for Gaussian
+setenv GAU_nproc      %nproc=12                   # Number of processors allocated to Gaussian
+setenv GAU_desc       #rhf/3-21g nosymm opt       #rhf/3-21g nosymm opt       setenv GAU_multip     1                           # Multiplicity
 
 ############### Input              #######################################################################
 setenv FILECOUNTER      filecounter               # File tracking  the file (event) number - facultative

@@ -50,18 +50,8 @@ subroutine calcforce_gau(nat,typa,posa,boxl,forca,energy)
      ! We first write to a file the format requested by Gaussian
      open(unit=FGAUSS,file=GAUSS,status='replace',action='write',iostat=ierror)
 
-!     write(FGAUSS,"('MD.TypeOfRun         cg')")
-!     write(FGAUSS,"('MD.NumCGsteps         0')")
-!     write(FGAUSS,"('MD.MaxCGDispl         0.1  Ang')")
-!     write(FGAUSS,"('MD.MaxForceTol        0.002  eV/Ang')")
-!     write(FGAUSS,*)
-!     write(FGAUSS,"('%block Atomic_Coordinates_and_Atomic_Species')")
-!     write(FGAUSS,"(f14.8, f14.8, f14.8, i4)")  ( xa(i), ya(i), za(i), typa(i), i=1, NATOMS )
-!     write(FGAUSS,"('%endblock Atomic_Coordinates_and_Atomic_Species')")
-!     write(FGAUSS,"('%include basicinfo.fdf')")
-!     close(FGAUSS)
-
 ! Prepares gaussian input file
+! TODO cleanup to take config parameters
      write(FGAUSS,"('%chk=temp.chk')")
      write(FGAUSS,"('#rhf/3-21g nosymm force')")
      write(FGAUSS,*)
@@ -72,17 +62,13 @@ subroutine calcforce_gau(nat,typa,posa,boxl,forca,energy)
      write(FGAUSS,*)
      close(FGAUSS)
 
-!natoms=$1
-!nproc=$2
-!mem=$3
-
 
      !converting the number of atoms to a string value
      write(string_natoms, '(i10)' )  NATOMS
 
      !We now call Gaussian do to the minimization
+     ! Bash parameters: natoms=$1, nproc=$2, mem=$3
      call system('sh execute_gaussian.sh ' // string_natoms // ' ' // '%nproc=12 ' // '%mem=8000MB')
-
 
      do i=1, 10000
         toto = dexp ( i * 0.001d0)

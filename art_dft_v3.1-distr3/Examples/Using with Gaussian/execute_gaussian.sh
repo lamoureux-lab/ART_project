@@ -1,7 +1,6 @@
 #!/bin/bash
 
-#natoms=8
-
+#Variables
 natoms=$1
 nproc=$2
 mem=$3
