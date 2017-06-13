@@ -60,7 +60,10 @@ setenv Max_Iter_Basin                        20   # Maximum number of iteraction
 ############### Gaussian #################################################################################
 setenv GAU_mem        %mem=8000MB                 # The memory allocation for Gaussian
 setenv GAU_nproc      %nproc=12                   # Number of processors allocated to Gaussian
-setenv GAU_desc       #rhf/3-21g nosymm opt       #rhf/3-21g nosymm opt       setenv GAU_multip     1                           # Multiplicity
+setenv GAU_desc       rhf/3-21g nosymm opt       # Gaussian file description
+setenv GAU_title       name       
+setenv GAU_charge     0                           # Charge
+setenv GAU_multip     1                           # Multiplicity
 
 ############### Input              #######################################################################
 setenv FILECOUNTER      filecounter               # File tracking  the file (event) number - facultative

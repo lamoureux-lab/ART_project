@@ -3,7 +3,6 @@
 #TODO change output files to a distinct folder
 
 #rm art2siesta log.file.1 siesta2art
-cp ethane refconfig.dat
 sed -i "/Counter:/c\Counter:      1000" filecounter
 rm art2siesta CLOCK fdf-*.log INPUT_TMP.* log.file.* output.log siesta2art Si+I.* test_*
 rm INPUT_TMP*

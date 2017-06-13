@@ -25,6 +25,8 @@ def create_ref_config(gaussian_input_params):
 
 def set_env_config(gaussian_input_params):
     """
+    Sets gaustart.sh which contains the general configuration for the ART environment. These will eventually be written
+    to the file submitted to Gaussian in the execute_gaussian.sh script
 
     :param gaustart_file:
     :return:
@@ -38,31 +40,46 @@ def set_env_config(gaussian_input_params):
         for line in input:
             original_line = line
             updated_line = ''
+            comment_set = False
 
             #Remove comments from the strings
             line = line.split("#")
+            try:
+                if line[1].strip() != '':
+                    comment_set = True
+            except:
+                comment_set = False
+
             #Checks that GAU is set for energy calculation and sets it if it is not
             if line[0].find('setenv ENERGY_CALC') != -1:
-                updated_line = 'setenv ENERGY_CALC GAU      #' + line[1]
+                updated_line = 'setenv ENERGY_CALC GAU      '
 
             #Sets the number of atoms
             elif line[0].find('setenv NATOMS') != -1:
-                updated_line = 'setenv NATOMS     '+ str(gaussian_input_params['natoms']) + '         #' + line[1]
+                updated_line = 'setenv NATOMS     '+ str(gaussian_input_params['natoms']) + '         '
 
             #Sets reference configuration file that is updated throughout
             elif line[0].find('setenv REFCONFIG') != -1:
-                updated_line = 'setenv REFCONFIG        ' + refconfig_file+ '             #' + line[1]
+                updated_line = 'setenv REFCONFIG        ' + refconfig_file+ '             '
+
             elif line[0].find('setenv GAU_mem') != -1:
-                updated_line = 'setenv GAU_mem        ' + gaussian_input_params['mem'] + '                 #' + line[1]
+                updated_line = 'setenv GAU_mem        ' + gaussian_input_params['mem'] + '                 '
             elif line[0].find('setenv GAU_nproc') != -1:
-                updated_line = 'setenv GAU_nproc      ' + gaussian_input_params['nproc'] + '                   #' + line[1]
+                updated_line = 'setenv GAU_nproc      ' + gaussian_input_params['nproc'] + '                   '
             elif line[0].find('setenv GAU_desc') != -1:
-                updated_line = 'setenv GAU_desc       ' + gaussian_input_params['description'] + '       #' + line[1]
+                updated_line = 'setenv GAU_desc       ' + gaussian_input_params['description'] + '       '
+            elif line[0].find('setenv GAU_title') != -1:
+                updated_line = 'setenv GAU_title       ' + gaussian_input_params['title'] + '       '
             elif line[0].find('setenv GAU_charge') != -1:
-                updated_line = 'setenv GAU_charge     ' + str(gaussian_input_params['charge']) + '                           #' + line[1]
+                updated_line = 'setenv GAU_charge     ' + str(gaussian_input_params['charge']) + '                           '
             elif line[0].find('setenv GAU_multip') != -1:
-                updated_line = 'setenv GAU_multip     ' + str(gaussian_input_params['multiplicity']) + '                           #' + line[
-                    1]
+                updated_line = 'setenv GAU_multip     ' + str(gaussian_input_params['multiplicity']) + '                           '
+
+            # Puts back configuration comments
+            if comment_set and updated_line:
+                updated_line = updated_line + '#' + line[1]
+            elif updated_line:
+                updated_line = updated_line + '\n'
 
             # updates the configuration file string
             if updated_line:
@@ -109,7 +126,8 @@ def load_input(gaussian_input_params):
                     elif line.find('%') != -1:
                         params['other_details'] = params['other_details'] + line + " "
                     elif line.find('#') != -1:
-                        params['description'] = line.strip()
+                        line = line.split('#')
+                        params['description'] = line[1].strip()
 
                 #Title section
                 elif section_number == 2:

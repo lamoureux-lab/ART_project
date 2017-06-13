@@ -34,7 +34,6 @@ sed -i '1 i '$mem art2gaussian.inp
 
 # Loads the latest version of Gaussian and calls it through g09
 g09 < art2gaussian.inp > test.log
-#more test.log >>log1
 
 printf  "outcoor:\n" >log
 positionLineNumber=$(sed -n '/Input orientation/=' test.log | tail -1)
