@@ -1,5 +1,7 @@
 
 # This is an adapter to allow the user to supply only a Gaussian formatted input file and have this run through ART
+# For reference: http://gaussian.com/input/
+
 import re
 
 input_file = 'testgaussian.inp'
@@ -65,19 +67,6 @@ def set_env_config(gaussian_input_params):
             elif line[0].find('setenv REFCONFIG') != -1:
                 updated_line = 'setenv REFCONFIG        ' + refconfig_file+ '             '
 
-            # elif line[0].find('setenv GAU_mem') != -1:
-            #     updated_line = 'setenv GAU_mem        ' + gaussian_input_params['mem'] + '                 '
-            # elif line[0].find('setenv GAU_nproc') != -1:
-            #     updated_line = 'setenv GAU_nproc      ' + gaussian_input_params['nproc'] + '                   '
-            # elif line[0].find('setenv GAU_desc') != -1:
-            #     updated_line = 'setenv GAU_desc       ' + gaussian_input_params['description'] + '       '
-            # elif line[0].find('setenv GAU_title') != -1:
-            #     updated_line = 'setenv GAU_title       ' + gaussian_input_params['title'] + '       '
-            # elif line[0].find('setenv GAU_charge') != -1:
-            #     updated_line = 'setenv GAU_charge     ' + str(gaussian_input_params['charge']) + '                           '
-            # elif line[0].find('setenv GAU_multip') != -1:
-            #     updated_line = 'setenv GAU_multip     ' + str(gaussian_input_params['multiplicity']) + '                           '
-
             # Puts back configuration comments
             if comment_set and updated_line:
                 updated_line = updated_line + '#' + line[1]
@@ -119,13 +108,9 @@ def create_gaussian_file_header(gaussian_input_params):
     # Builds a header for the gaussian.inp file, <OPTION> Flag will be replaced by opt or force
     header = '#gaussian-header-begin (DO NOT REMOVE) \n' \
              + 'header=\'' \
-             + (params['mem'] + '\n') \
-             + (params['nproc'] + '\n') \
-             + (params['other_details']) \
-             + ('#' + params['description'] + ' <OPTION>' + '\n') \
-             + ('\n') \
-             + (params['title'] + '\n') \
-             + ('\n') \
+             + (params['link0_section']) \
+             + ('#' + params['route_section'] + ' <OPTION>' + '\n') + ('\n') \
+             + (params['title'] + '\n') + ('\n') \
              + (str(params['charge']) + ' ' + str(params['multiplicity']) + '\n') \
              + '\''\
              + '\n#gaussian-header-end'
@@ -161,28 +146,25 @@ def load_input(gaussian_input_params):
                     section_number += 1
                     continue
 
-                #Check whether the line is in the first section
-                #TODO find out whether to expect more than these two % lines for other_details section
+                #Link0 and route section
                 if section_number == 1:
-                    if line.find('%mem') != -1:
-                        params['mem'] = line.strip()
-                    elif line.find('%nproc') != -1:
-                        params['nproc'] = line.strip()
-                    elif line.find('%') != -1:
-                        params['other_details'] = params['other_details'] + line + " "
+                    if line.find('%') != -1:
+                        params['link0_section'] = params['link0_section'] + line + " "
                     elif line.find('#') != -1:
+                        #TODO handle multiple instances of # lines
                         #Removes hashtag for parsing later
                         line = line.split('#')
                         #Removes opt and force, which will be put back in by the ART code at different stages
+                        #TODO handle cases like Opt=ModRedun
                         line[1] = line[1].replace('opt', '')
                         line[1] = line[1].replace('force', '')
-                        params['description'] = line[1].strip()
+                        params['route_section'] = line[1].strip()
 
                 #Title section
                 elif section_number == 2:
                     params['title'] = line.strip()
 
-                #Charge + Spin multiplicity section
+                #Molecule specification section
                 if section_number == 3:
                     string_integers = line.split()
                     params['charge'] = int(string_integers[0])
@@ -190,7 +172,7 @@ def load_input(gaussian_input_params):
                     section_number += 1
                     continue
 
-                #Atom coordinates
+                #Atom coordinates section
                 if section_number == 4:
                     params['natoms'] = params['natoms'] + 1
                     params['atom_coordinates'] = params['atom_coordinates'] + line
@@ -204,8 +186,7 @@ def load_input(gaussian_input_params):
 
 if __name__ == "__main__":
 
-
-    gaussian_input_params = {'mem': '', 'nproc': '', 'other_details': '', 'description': '',
+    gaussian_input_params = {'link0_section': '', 'route_section': '',
                     'title': '', 'natoms': 0, 'charge': None, 'multiplicity': None, 'atom_coordinates' : ''}
     print load_input(gaussian_input_params)
 

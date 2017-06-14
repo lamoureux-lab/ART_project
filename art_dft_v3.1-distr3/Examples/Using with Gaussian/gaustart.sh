@@ -57,21 +57,13 @@ setenv Max_Iter_Basin                        20   # Maximum number of iteraction
 #setenv DIIS_Check_Eigenvector          .false.   # Check that the final state is indeed a saddle
 #setenv DIIS_Step_Size                    0.005   # Step size for the position
 
-############### Gaussian #################################################################################
-#setenv GAU_mem        %mem=8000MB                 # The memory allocation for Gaussian
-#setenv GAU_nproc      %nproc=12                   # Number of processors allocated to Gaussian
-#setenv GAU_desc       rhf/3-21g nosymm opt       # Gaussian file description
-#setenv GAU_title       name
-#setenv GAU_charge     0                           # Charge
-#setenv GAU_multip     1                           # Multiplicity
-
 ############### Input              #######################################################################
 setenv FILECOUNTER      filecounter               # File tracking  the file (event) number - facultative
 setenv REFCONFIG        refconfig.dat             # Reference configuration (actual local minimum)
 ############### Output             #######################################################################
 setenv LOGFILE             log.file               # General output for message
 setenv EVENTSLIST       events.list               # list of events with success or failure
-setenv RESTART          restart.dat               # current data for restarting event
+setenv RESTART          restart.dat               # current data.sh for restarting event
 
 ############### Run the simulation #######################################################################
 

@@ -1,13 +1,15 @@
 #!/bin/bash
 
-#-------------
-#ART Variables
+#----------------------------------------------------
+# ART Variables
 natoms=$1
 optimization=$2  #this is 'force' when generated from gaussian_force or 'opt' when generated from gaussian_min
-#-------------
+#----------------------------------------------------
 
-#-------------
-#gaussian-header-begin (DO NOT REMOVE) 
+#----------------------------------------------------
+# Gaussian input file header inserted by run_gaussian_artdft.py
+#
+#gaussian-header-begin (DO NOT REMOVE THIS COMMENT LINE)
 header='%mem=8000MB
 %nproc=12
 #rhf/3-21g nosymm <OPTION>
@@ -17,12 +19,20 @@ name
 0 1
 '
 #gaussian-header-end
-#-------------
+#----------------------------------------------------
 
-mem='%mem=8000MB'
-nproc='%nproc=12'
+updated_header=$()
+# Update header with appropriate options depending on stage in ART
+if [ "$optimization" == "opt" ];
+then
+    updated_header=$(echo "$header" | sed 's/<OPTION>/opt/')
+elif [ "$optimization" == "force" ];
+then
+    updated_header=$(echo "$header" | sed 's/<OPTION>/force/')
+fi
 
-
+# Adds header information to gaussian input file
+echo "$updated_header" | cat - art2gaussian.inp > temp && mv temp art2gaussian.inp
 
 #sed -i '1d' art2gaussian.inp # removes chk point line
 #sed -i "s/0 1/1 1/g" art2gaussian.inp # change charge and multiplicity
@@ -39,6 +49,7 @@ nproc='%nproc=12'
 printf "$natoms\n" >>temp.xyz
 printf "MOLECULAR TITLE\n" >>temp.xyz
 
+#TODO handle hardcoding of coorLineNumber
 #Coordinate line where the data begins
 coorLineNumber=5
 
@@ -46,9 +57,9 @@ for ((i=1; i<=$natoms; i++)); do
 	awk 'FNR=='$coorLineNumber+$i' {print $0}' ./art2gaussian.inp >>temp.xyz
 done
 
-# Write number of processors and memory used for gaussian
-sed -i '1 i '$nproc art2gaussian.inp
-sed -i '1 i '$mem art2gaussian.inp
+## Write number of processors and memory used for gaussian
+#sed -i '1 i '$nproc art2gaussian.inp
+#sed -i '1 i '$mem art2gaussian.inp
 
 # Loads the latest version of Gaussian and calls it through g09
 g09 < art2gaussian.inp > gaussian.log
