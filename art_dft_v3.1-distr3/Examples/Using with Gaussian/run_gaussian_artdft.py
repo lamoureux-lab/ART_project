@@ -1,7 +1,9 @@
 
 # This is an adapter to allow the user to supply only a Gaussian formatted input file and have this run through ART
+import re
 
 input_file = 'testgaussian.inp'
+gaussian_execution_script = 'execute_gaussian.sh'
 refconfig_file = 'refconfig.dat'            #
 gaustart_file = 'gaustart.sh'               #Shell script containing the configuration parameters for the ART application
 
@@ -22,6 +24,7 @@ def create_ref_config(gaussian_input_params):
     config.write('total_energy:   0\n')     #Placeholder, as this will be optimized by ART to the correct value
     config.write('S   100.000000000000        100.000000000000        100.000000000000\n')
     config.write(gaussian_input_params['atom_coordinates'])
+    config.close()
 
 def set_env_config(gaussian_input_params):
     """
@@ -62,18 +65,18 @@ def set_env_config(gaussian_input_params):
             elif line[0].find('setenv REFCONFIG') != -1:
                 updated_line = 'setenv REFCONFIG        ' + refconfig_file+ '             '
 
-            elif line[0].find('setenv GAU_mem') != -1:
-                updated_line = 'setenv GAU_mem        ' + gaussian_input_params['mem'] + '                 '
-            elif line[0].find('setenv GAU_nproc') != -1:
-                updated_line = 'setenv GAU_nproc      ' + gaussian_input_params['nproc'] + '                   '
-            elif line[0].find('setenv GAU_desc') != -1:
-                updated_line = 'setenv GAU_desc       ' + gaussian_input_params['description'] + '       '
-            elif line[0].find('setenv GAU_title') != -1:
-                updated_line = 'setenv GAU_title       ' + gaussian_input_params['title'] + '       '
-            elif line[0].find('setenv GAU_charge') != -1:
-                updated_line = 'setenv GAU_charge     ' + str(gaussian_input_params['charge']) + '                           '
-            elif line[0].find('setenv GAU_multip') != -1:
-                updated_line = 'setenv GAU_multip     ' + str(gaussian_input_params['multiplicity']) + '                           '
+            # elif line[0].find('setenv GAU_mem') != -1:
+            #     updated_line = 'setenv GAU_mem        ' + gaussian_input_params['mem'] + '                 '
+            # elif line[0].find('setenv GAU_nproc') != -1:
+            #     updated_line = 'setenv GAU_nproc      ' + gaussian_input_params['nproc'] + '                   '
+            # elif line[0].find('setenv GAU_desc') != -1:
+            #     updated_line = 'setenv GAU_desc       ' + gaussian_input_params['description'] + '       '
+            # elif line[0].find('setenv GAU_title') != -1:
+            #     updated_line = 'setenv GAU_title       ' + gaussian_input_params['title'] + '       '
+            # elif line[0].find('setenv GAU_charge') != -1:
+            #     updated_line = 'setenv GAU_charge     ' + str(gaussian_input_params['charge']) + '                           '
+            # elif line[0].find('setenv GAU_multip') != -1:
+            #     updated_line = 'setenv GAU_multip     ' + str(gaussian_input_params['multiplicity']) + '                           '
 
             # Puts back configuration comments
             if comment_set and updated_line:
@@ -91,6 +94,48 @@ def set_env_config(gaussian_input_params):
     test = open(gaustart_file, 'w+')
     test.write(updated_text)
 
+
+def create_gaussian_file_header(gaussian_input_params):
+    """
+    This serves to insert a gaussian header file into the bash script that will be writing to
+    the art2gaussian.inp file and calling gaussian
+
+    :param gaussian_input_params:
+    :return:
+    """
+    global gaussian_execution_script
+    params = gaussian_input_params
+
+    # creates a regular expression pattern that will isolate the header insertion point
+    insertion_point = re.compile('#gaussian-header-begin.*?#gaussian-header-end', re.DOTALL)
+
+    # open file
+    f = open(gaussian_execution_script, 'r')
+    data = f.read()
+    f.close()
+
+    output = open(gaussian_execution_script, 'w+')
+
+    # Builds a header for the gaussian.inp file, <OPTION> Flag will be replaced by opt or force
+    header = '#gaussian-header-begin (DO NOT REMOVE) \n' \
+             + 'header=\'' \
+             + (params['mem'] + '\n') \
+             + (params['nproc'] + '\n') \
+             + (params['other_details']) \
+             + ('#' + params['description'] + ' <OPTION>' + '\n') \
+             + ('\n') \
+             + (params['title'] + '\n') \
+             + ('\n') \
+             + (str(params['charge']) + ' ' + str(params['multiplicity']) + '\n') \
+             + '\''\
+             + '\n#gaussian-header-end'
+    output.close()
+
+    # Writes the header as a string variable in the gaussian execution script
+    script_with_header = insertion_point.sub(header, data)
+    f = open(gaussian_execution_script, 'w')
+    f.write(script_with_header)
+    f.close()
 
 
 def load_input(gaussian_input_params):
@@ -126,7 +171,11 @@ def load_input(gaussian_input_params):
                     elif line.find('%') != -1:
                         params['other_details'] = params['other_details'] + line + " "
                     elif line.find('#') != -1:
+                        #Removes hashtag for parsing later
                         line = line.split('#')
+                        #Removes opt and force, which will be put back in by the ART code at different stages
+                        line[1] = line[1].replace('opt', '')
+                        line[1] = line[1].replace('force', '')
                         params['description'] = line[1].strip()
 
                 #Title section
@@ -162,3 +211,4 @@ if __name__ == "__main__":
 
     create_ref_config(gaussian_input_params)
     set_env_config(gaussian_input_params)
+    create_gaussian_file_header(gaussian_input_params)

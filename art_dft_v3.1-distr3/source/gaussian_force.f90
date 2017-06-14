@@ -52,12 +52,12 @@ subroutine calcforce_gau(nat,typa,posa,boxl,forca,energy)
 
 ! Prepares gaussian input file
 ! TODO cleanup to take config parameters
-     write(FGAUSS,"('%chk=temp.chk')")
-     write(FGAUSS,"('#rhf/3-21g nosymm force')")
-     write(FGAUSS,*)
-     write(FGAUSS,"('name')")
-     write(FGAUSS,*)
-     write(FGAUSS,"('0 1')")
+!     write(FGAUSS,"('%chk=temp.chk')")
+!     write(FGAUSS,"('#rhf/3-21g nosymm force')")
+!     write(FGAUSS,*)
+!     write(FGAUSS,"('name')")
+!     write(FGAUSS,*)
+!     write(FGAUSS,"('0 1')")
      write(FGAUSS,"(i4, f14.8, f14.8, f14.8)")  ( typa(i), xa(i), ya(i),za(i), i=1, NATOMS)
      write(FGAUSS,*)
      close(FGAUSS)
@@ -68,7 +68,9 @@ subroutine calcforce_gau(nat,typa,posa,boxl,forca,energy)
 
      !We now call Gaussian do to the minimization
      ! Bash parameters: natoms=$1, nproc=$2, mem=$3
-     call system('sh execute_gaussian.sh ' // string_natoms // ' ' // '%nproc=12 ' // '%mem=8000MB')
+     !call system('sh execute_gaussian.sh ' // string_natoms // ' ' // '%nproc=12 ' // '%mem=8000MB')
+     call system('sh execute_gaussian.sh ' // string_natoms)
+
 
      do i=1, 10000
         toto = dexp ( i * 0.001d0)

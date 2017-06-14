@@ -26,16 +26,18 @@ subroutine min_converge_gau(success)
   ! We first write to a file the format requested by GAUSS
   open(unit=FGAUSS,file=GAUSS,status='replace',action='write',iostat=ierror)
 
-!  write(FGAUSS,"('MD.TypeOfRun         cg')")
-!  write(FGAUSS,"('MD.NumCGsteps       150')")
-!  write(FGAUSS,"('MD.MaxCGDispl        0.1  Ang')")
-!  write(FGAUSS,"('MD.MaxForceTol      0.002 eV/Ang')")
-!  write(FGAUSS,*)
-!  write(FGAUSS,"('%block Atomic_Coordinates_and_Atomic_Species')")
-!  write(FGAUSS,"(f14.8, f14.8, f14.8, i4)")  ( x(i), y(i), z(i), typat(i), i=1, NATOMS )
-!  write(FGAUSS,"('%endblock Atomic_Coordinates_and_Atomic_Species')")
-!  write(FGAUSS,"('%include basicinfo.fdf')")
-!  close(FGAUSS)
+ ! character(len=15) :: GAU_mem
+ ! character(len=15) :: GAU_nproc
+ ! character(len=50) :: GAU_desc
+ ! character(len=30) :: GAU_title
+ ! integer           :: GAU_charge
+ ! integer           :: GAU_multip
+
+
+
+ !converting multiplicity to a string value
+  write(string_natoms, '(i10)' )  GAU
+
 
 ! TODO get this hardcoded data from parameters
      write(FGAUSS,"('%chk=temp.chk')")
@@ -47,13 +49,12 @@ subroutine min_converge_gau(success)
      write(FGAUSS,"(i4, f14.8, f14.8, f14.8)")  (typat(i),  x(i), y(i), z(i), i=1, NATOMS )
      write(FGAUSS,*)
      close(FGAUSS)
-! bharat ends
 
   !converting the number of atoms to a string value
   write(string_natoms, '(i10)' )  NATOMS
 
   ! We now call Gaussian do to the minimization
-  call system('sh execute_gaussian.sh ' // string_natoms // ' ' // '%nproc=12 ' // '%mem=8000MB')
+  call system('sh execute_gaussian.sh ' // string_natoms // ' ' // 'opt ' // '%mem=8000MB')
   
   do i=1, 10000
     toto = dexp ( i * 0.001d0)
@@ -66,7 +67,8 @@ subroutine min_converge_gau(success)
   do 
     read(FGAUSS,"(A40)") line
     if ( line  == "gaussi: Final energy (eV):" ) then
-write (*,*) 'test1 after energy'
+      ! Debug
+      write (*,*) 'test1 after energy'
       do i = 1, 7
         read(FGAUSS,"(A40)") line
       end do

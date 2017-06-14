@@ -58,12 +58,12 @@ setenv Max_Iter_Basin                        20   # Maximum number of iteraction
 #setenv DIIS_Step_Size                    0.005   # Step size for the position
 
 ############### Gaussian #################################################################################
-setenv GAU_mem        %mem=8000MB                 # The memory allocation for Gaussian
-setenv GAU_nproc      %nproc=12                   # Number of processors allocated to Gaussian
-setenv GAU_desc       rhf/3-21g nosymm opt       # Gaussian file description
-setenv GAU_title       name       
-setenv GAU_charge     0                           # Charge
-setenv GAU_multip     1                           # Multiplicity
+#setenv GAU_mem        %mem=8000MB                 # The memory allocation for Gaussian
+#setenv GAU_nproc      %nproc=12                   # Number of processors allocated to Gaussian
+#setenv GAU_desc       rhf/3-21g nosymm opt       # Gaussian file description
+#setenv GAU_title       name
+#setenv GAU_charge     0                           # Charge
+#setenv GAU_multip     1                           # Multiplicity
 
 ############### Input              #######################################################################
 setenv FILECOUNTER      filecounter               # File tracking  the file (event) number - facultative
@@ -75,25 +75,6 @@ setenv RESTART          restart.dat               # current data for restarting 
 
 ############### Run the simulation #######################################################################
 
-# #rhf/3-21g nosymm opt
-#/global/scratch/<username>/art_dft_v3.1-distr-2/art_dft_v3.1-distr/source/gaussian_art_v1/artdft
-
-# add extra threshold energy threshold
-#/global/scratch/<username>/art_dft_v3.1-distr-2/art_dft_v3.1-distr/source/gaussian_art_v4_rand/artdft
-
-# v6 opt
-#/global/scratch/<username>/art_dft_v3.1-distr-2/art_dft_v3.1-distr/source/gaussian_art_v6_opt/artdft
-
-#v7 opt
-#/global/scratch/<username>/ART/art_dft_v3.1-distr-2/art_dft_v3.1-distr/source/gaussian_art_v7/artdft
-
-#PSI v8
 #ensure that Gaussian is loaded (will be the most current version)
 /global/scratch/jwhatley/ART_project/art_dft_v3.1-distr3/source/artdft
 
-# for negative forces opt=5steps
-#/global/scratch/<username>/art_dft_v3.1-distr-2/art_dft_v3.1-distr/source/gaussian_art_v3_Force_Negative/artdft
-
-#using fire minimization on gaussian
-#/global/scratch/<username>/art_dft_v3.1-distr-2/art_dft_v3.1-distr/source/gaussian_art_v2_GAU_fire/artdft
-# echo this is test2
