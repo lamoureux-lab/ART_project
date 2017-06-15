@@ -24,14 +24,14 @@ def create_ref_config(gaussian_input_params):
     config = open(refconfig_file, 'w+')          #Overwrites of creates a new file if it doesn't exist
     config.write('run_id:         1000\n')
     config.write('total_energy:   0\n')     #Placeholder, as this will be optimized by ART to the correct value
+    #TODO see about removing these as they are not necessary for gaussian
     config.write('S   100.000000000000        100.000000000000        100.000000000000\n')
     config.write(gaussian_input_params['atom_coordinates'])
     config.close()
 
 def set_env_config(gaussian_input_params):
     """
-    Sets gaustart.sh which contains the general configuration for the ART environment. These will eventually be written
-    to the file submitted to Gaussian in the execute_gaussian.sh script
+    Sets critical parameters in gaustart.sh which contains the general configuration for the ART environment
 
     :param gaustart_file:
     :return:
@@ -110,7 +110,7 @@ def create_gaussian_file_header(gaussian_input_params):
     start_shell_script_marker = '#gaussian-header-begin (DO NOT REMOVE) \n'
     header = 'header=\'' \
              + (params['link0_section']) \
-             + (params['route_section'].rstrip() + ' <OPTION>' + '\n') + ('\n') \
+             + (params['route_section'].rstrip() + ' <PARAM>' + '\n') + ('\n') \
              + (params['title'] + '\n') + ('\n') \
              + (str(params['charge']) + ' ' + str(params['multiplicity']) + '\n' + '\'')
 
@@ -133,6 +133,7 @@ def get_coordinate_line_number(str):
 
 def load_input(gaussian_input_params):
     """
+    Loads the values gaussian parameters into a dictionary object, while removing certain route parameters
     :param gaussian_input_params
     :return:
     """

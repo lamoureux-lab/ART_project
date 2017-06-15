@@ -1,5 +1,12 @@
 #!/bin/bash
 
+#This script is called by gaussian_force and gaussian_min in order to add the header for a
+#Gaussian input file and to run the Gaussian program on that script. The header information
+#is added to this script dynamically by executing run_gaussian_ardft.py. The subroutine
+#in gaussian_force will set 'force' as a route parameter and the subroutine in gaussian_min
+#will set 'opt' as a route parameter.
+
+
 #-------------------------------------------------------------------------------
 # ART Variables
 natoms=$1
@@ -12,7 +19,7 @@ optimization=$2  #this is 'force' when generated from gaussian_force or 'opt' wh
 #gaussian-header-begin (DO NOT REMOVE) 
 header='%mem=8000mb
  %nproc=12
- #rhf/3-21g <OPTION>
+ #rhf/3-21g <PARAM>
 
 name
 
@@ -30,10 +37,10 @@ coorLineNumber=8
 updated_header=$()
 if [ "$optimization" == "opt" ];
 then
-    updated_header=$(echo "$header" | sed 's/<OPTION>/nosymm opt/')
+    updated_header=$(echo "$header" | sed 's/<PARAM>/nosymm opt/')
 elif [ "$optimization" == "force" ];
 then
-    updated_header=$(echo "$header" | sed 's/<OPTION>/nosymm force/')
+    updated_header=$(echo "$header" | sed 's/<PARAM>/nosymm force/')
 fi
 
 # Adds header information to gaussian input file
@@ -43,6 +50,7 @@ echo "$updated_header" | cat - art2gaussian.inp > temp && mv temp art2gaussian.i
 
 
 printf "$natoms\n" >>temp.xyz
+#TODO title from inp
 printf "MOLECULAR TITLE\n" >>temp.xyz
 
 
