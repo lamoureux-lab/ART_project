@@ -26,35 +26,16 @@ subroutine min_converge_gau(success)
   ! We first write to a file the format requested by GAUSS
   open(unit=FGAUSS,file=GAUSS,status='replace',action='write',iostat=ierror)
 
- ! character(len=15) :: GAU_mem
- ! character(len=15) :: GAU_nproc
- ! character(len=50) :: GAU_desc
- ! character(len=30) :: GAU_title
- ! integer           :: GAU_charge
- ! integer           :: GAU_multip
-
-
-
- !converting multiplicity to a string value
-  write(string_natoms, '(i10)' )  GAU
-
-
-! TODO get this hardcoded data from parameters
-     !write(FGAUSS,"('%chk=temp.chk')")
-     !write(FGAUSS,"('#rhf/3-21g nosymm opt')")
-     !write(FGAUSS,*)
-     !write(FGAUSS,"('message')")
-     !write(FGAUSS,*)
-     !write(FGAUSS,"('0 1')")
-     write(FGAUSS,"(i4, f14.8, f14.8, f14.8)")  (typat(i),  x(i), y(i), z(i), i=1, NATOMS )
-     write(FGAUSS,*)
-     close(FGAUSS)
+  ! Prepares gaussian input file coordinates
+  write(FGAUSS,"(i4, f14.8, f14.8, f14.8)")  (typat(i),  x(i), y(i), z(i), i=1, NATOMS )
+  write(FGAUSS,*)
+  close(FGAUSS)
 
   !converting the number of atoms to a string value
   write(string_natoms, '(i10)' )  NATOMS
 
   ! We now call Gaussian do to the minimization
-  !call system('sh execute_gaussian.sh ' // string_natoms // ' ' // 'opt ' // '%mem=8000MB')
+  ! Bash parameters: natoms=$1, optimization=$2
   call system('sh execute_gaussian.sh ' // string_natoms // ' ' // 'opt')
   
   do i=1, 10000

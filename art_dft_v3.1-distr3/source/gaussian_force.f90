@@ -50,32 +50,21 @@ subroutine calcforce_gau(nat,typa,posa,boxl,forca,energy)
      ! We first write to a file the format requested by Gaussian
      open(unit=FGAUSS,file=GAUSS,status='replace',action='write',iostat=ierror)
 
-! Prepares gaussian input file
-! TODO cleanup to take config parameters
-!     write(FGAUSS,"('%chk=temp.chk')")
-!     write(FGAUSS,"('#rhf/3-21g nosymm force')")
-!     write(FGAUSS,*)
-!     write(FGAUSS,"('name')")
-!     write(FGAUSS,*)
-!     write(FGAUSS,"('0 1')")
+     ! Prepares gaussian input file coordinates
      write(FGAUSS,"(i4, f14.8, f14.8, f14.8)")  ( typa(i), xa(i), ya(i),za(i), i=1, NATOMS)
      write(FGAUSS,*)
      close(FGAUSS)
 
-
      !converting the number of atoms to a string value
      write(string_natoms, '(i10)' )  NATOMS
 
-     !We now call Gaussian do to the minimization
-     ! Bash parameters: natoms=$1, nproc=$2, mem=$3
-     !call system('sh execute_gaussian.sh ' // string_natoms // ' ' // '%nproc=12 ' // '%mem=8000MB')
+     ! We now call Gaussian do to the minimization
+     ! Bash parameters: natoms=$1, optimization=$2
      call system('sh execute_gaussian.sh ' // string_natoms // ' ' // 'force')
-
 
      do i=1, 10000
         toto = dexp ( i * 0.001d0)
      end do
-
 
      ! We must now read the forces from Gaussian's output file
      open(unit=FGAUSS,file=GAUSSFORCE,status='old',action='read',iostat=ierror)
