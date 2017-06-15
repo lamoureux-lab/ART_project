@@ -100,28 +100,36 @@ def create_gaussian_file_header(gaussian_input_params):
 
     # open file
     f = open(gaussian_execution_script, 'r')
-    data = f.read()
+    initial_script = f.read()
     f.close()
 
     output = open(gaussian_execution_script, 'w+')
 
     # Builds a header for the gaussian.inp file, <OPTION> Flag will be replaced by opt or force
-    header = '#gaussian-header-begin (DO NOT REMOVE) \n' \
-             + 'header=\'' \
+
+    start_shell_script_marker = '#gaussian-header-begin (DO NOT REMOVE) \n'
+    header = 'header=\'' \
              + (params['link0_section']) \
-             + (params['route_section'].strip() + ' <OPTION>' + '\n') + ('\n') \
+             + (params['route_section'].rstrip() + ' <OPTION>' + '\n') + ('\n') \
              + (params['title'] + '\n') + ('\n') \
-             + (str(params['charge']) + ' ' + str(params['multiplicity']) + '\n') \
-             + '\''\
-             + '\n#gaussian-header-end'
+             + (str(params['charge']) + ' ' + str(params['multiplicity']) + '\n' + '\'')
+
+    coordinate_line_start = '\n#Coordinate line where data begins\n' \
+             + 'coorLineNumber=' + str(get_coordinate_line_number(header))
+
+    end_shell_script_marker = '\n\n#gaussian-header-end'
+
     output.close()
 
     # Writes the header as a string variable in the gaussian execution script
-    script_with_header = insertion_point.sub(header, data)
+    new_script_lines = start_shell_script_marker + header + coordinate_line_start + end_shell_script_marker
+    script_with_header = insertion_point.sub(new_script_lines, initial_script)
     f = open(gaussian_execution_script, 'w')
     f.write(script_with_header)
     f.close()
 
+def get_coordinate_line_number(str):
+    return len(str.split('\n'))
 
 def load_input(gaussian_input_params):
     """
