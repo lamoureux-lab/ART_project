@@ -9,10 +9,10 @@ optimization=$2  #this is 'force' when generated from gaussian_force or 'opt' wh
 #----------------------------------------------------
 # Gaussian input file header inserted by run_gaussian_artdft.py
 #
-#gaussian-header-begin (DO NOT REMOVE THIS COMMENT LINE)
+#gaussian-header-begin (DO NOT REMOVE) 
 header='%mem=8000MB
-%nproc=12
-#rhf/3-21g nosymm <OPTION>
+ %nproc=12
+ #rhf/3-21g nosymm <OPTION>
 
 name
 
@@ -57,13 +57,11 @@ for ((i=1; i<=$natoms; i++)); do
 	awk 'FNR=='$coorLineNumber+$i' {print $0}' ./art2gaussian.inp >>temp.xyz
 done
 
-## Write number of processors and memory used for gaussian
-#sed -i '1 i '$nproc art2gaussian.inp
-#sed -i '1 i '$mem art2gaussian.inp
-
 # Loads the latest version of Gaussian and calls it through g09
 g09 < art2gaussian.inp > gaussian.log
 
+
+#Outputs Results to a log
 printf  "outcoor:\n" >log
 positionLineNumber=$(sed -n '/Input orientation/=' gaussian.log | tail -1)
 

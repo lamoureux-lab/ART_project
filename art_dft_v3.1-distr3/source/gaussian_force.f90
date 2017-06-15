@@ -69,7 +69,7 @@ subroutine calcforce_gau(nat,typa,posa,boxl,forca,energy)
      !We now call Gaussian do to the minimization
      ! Bash parameters: natoms=$1, nproc=$2, mem=$3
      !call system('sh execute_gaussian.sh ' // string_natoms // ' ' // '%nproc=12 ' // '%mem=8000MB')
-     call system('sh execute_gaussian.sh ' // string_natoms)
+     call system('sh execute_gaussian.sh ' // string_natoms // ' ' // 'force')
 
 
      do i=1, 10000

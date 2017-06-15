@@ -4,7 +4,7 @@
 
 import re
 
-input_file = 'testgaussian.inp'
+input_file = 'sample.inp'
 gaussian_execution_script = 'execute_gaussian.sh'
 refconfig_file = 'refconfig.dat'            #
 gaustart_file = 'gaustart.sh'               #Shell script containing the configuration parameters for the ART application
