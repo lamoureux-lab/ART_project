@@ -71,13 +71,11 @@ subroutine min_converge_gau(success)
   read_final= .false.
   do 
     read(FGAUSS,"(A70)") line
+    !TODO change from hardcoded
     if ( line(1:8)  == "outcoor:" ) then
       do i = 1, NATOMS
-!        read(FGAUSS,*) x(i),y(i),z(i)
-! bharat starts
         read(FGAUSS,"(i7,i12,i12,f15.6,f13.6,f11.6)")idum,idum1,idum2,x(i),y(i),z(i)
-    write(*,*) "pos_min", idum,idum1,idum2,x(i),y(i),z(i)
-! bharat ends 
+        write(*,*) "pos_min", idum,idum1,idum2,x(i),y(i),z(i)
       end do
       read_done = .true.
     endif

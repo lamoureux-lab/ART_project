@@ -10,9 +10,10 @@ optimization=$2  #this is 'force' when generated from gaussian_force or 'opt' wh
 # Gaussian input file header inserted by run_gaussian_artdft.py
 #
 #gaussian-header-begin (DO NOT REMOVE) 
-header='%mem=8000MB
+header='%mem=8000mb
  %nproc=12
- #rhf/3-21g nosymm <OPTION>
+ #rhf/3-21g  
+# kasmdf akmsdfk <OPTION>
 
 name
 
@@ -25,26 +26,15 @@ updated_header=$()
 # Update header with appropriate options depending on stage in ART
 if [ "$optimization" == "opt" ];
 then
-    updated_header=$(echo "$header" | sed 's/<OPTION>/opt/')
+    updated_header=$(echo "$header" | sed 's/<OPTION>/nosymm opt/')
 elif [ "$optimization" == "force" ];
 then
-    updated_header=$(echo "$header" | sed 's/<OPTION>/force/')
+    updated_header=$(echo "$header" | sed 's/<OPTION>/nosymm force/')
 fi
 
 # Adds header information to gaussian input file
 echo "$updated_header" | cat - art2gaussian.inp > temp && mv temp art2gaussian.inp
 
-#sed -i '1d' art2gaussian.inp # removes chk point line
-#sed -i "s/0 1/1 1/g" art2gaussian.inp # change charge and multiplicity
-
-# for b3lyp
-#sed -i "s/rhf/b3lyp/g" art2gaussian.inp # change method
-#sed -i "s/3-21g/6-311++G(d,p)/g" art2gaussian.inp # change basis set
-
-# Maps from numerical value to letter for atoms
-# sed 's/\([^ ]*\) [0-9]*[1-9][0-9]* /\1 C /' temp.xyz > output.xyz
-# sed 's/\([^ ]*\) [6]*[6][6]* /\1 C /; s/\([^ ]*\) [1]*[1][1]* /\1 H /' temp.xyz > ethane_output.xyz
-# for temp.xyz STARTS
 
 printf "$natoms\n" >>temp.xyz
 printf "MOLECULAR TITLE\n" >>temp.xyz
@@ -61,7 +51,7 @@ done
 g09 < art2gaussian.inp > gaussian.log
 
 
-#Outputs Results to a log
+#Outputs results to a log
 printf  "outcoor:\n" >log
 positionLineNumber=$(sed -n '/Input orientation/=' gaussian.log | tail -1)
 
@@ -82,3 +72,16 @@ for k in {1..10}; do
 	grep 'E(' gaussian.log | tail -1 | awk '{printf "gaussi:         Total =  %.10f\n", $5*27.2113838668}' >>log
 done
 
+
+#Deprecated
+#sed -i '1d' art2gaussian.inp # removes chk point line
+#sed -i "s/0 1/1 1/g" art2gaussian.inp # change charge and multiplicity
+
+# for b3lyp
+#sed -i "s/rhf/b3lyp/g" art2gaussian.inp # change method
+#sed -i "s/3-21g/6-311++G(d,p)/g" art2gaussian.inp # change basis set
+
+# Maps from numerical value to letter for atoms
+# sed 's/\([^ ]*\) [0-9]*[1-9][0-9]* /\1 C /' temp.xyz > output.xyz
+# sed 's/\([^ ]*\) [6]*[6][6]* /\1 C /; s/\([^ ]*\) [1]*[1][1]* /\1 H /' temp.xyz > ethane_output.xyz
+# for temp.xyz STARTS

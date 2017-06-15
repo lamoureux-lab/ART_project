@@ -109,7 +109,7 @@ def create_gaussian_file_header(gaussian_input_params):
     header = '#gaussian-header-begin (DO NOT REMOVE) \n' \
              + 'header=\'' \
              + (params['link0_section']) \
-             + ('#' + params['route_section'] + ' <OPTION>' + '\n') + ('\n') \
+             + (params['route_section'].strip() + ' <OPTION>' + '\n') + ('\n') \
              + (params['title'] + '\n') + ('\n') \
              + (str(params['charge']) + ' ' + str(params['multiplicity']) + '\n') \
              + '\''\
@@ -135,8 +135,8 @@ def load_input(gaussian_input_params):
 
         for line in input:
                 # This will load the relevant information from a gaussian input file expecting:
-                # 1. A number of % lines (or maybe none)
-                # 2. One # line describing the job
+                # 1. A number of % lines (or maybe none) representing the link 0 section
+                # 2. A number of # line describing the job representing the route section
                 # 3. Blank line, title line, blank line
                 # 4. Charge + Spin multiplicity line (two integers)
                 # 5. Atom coordinates
@@ -148,17 +148,27 @@ def load_input(gaussian_input_params):
 
                 #Link0 and route section
                 if section_number == 1:
+                    # For case issues
+                    line = line.lower()
                     if line.find('%') != -1:
                         params['link0_section'] = params['link0_section'] + line + " "
                     elif line.find('#') != -1:
-                        #TODO handle multiple instances of # lines
-                        #Removes hashtag for parsing later
-                        line = line.split('#')
-                        #Removes opt and force, which will be put back in by the ART code at different stages
-                        #TODO handle cases like Opt=ModRedun
-                        line[1] = line[1].replace('opt', '')
-                        line[1] = line[1].replace('force', '')
-                        params['route_section'] = line[1].strip()
+                        # Removes opt and force, which will be put back in by the ART code at different stages
+                        print line
+                        # Removes route parameters with options
+                        line = re.sub(r'(\s)opt=\w+', r'\1', line)
+                        line = re.sub(r'(#)opt=\w+', r'\1', line)
+                        line = re.sub(r'(\s)force=\w+', r'\1', line)
+                        line = re.sub(r'(#)force=\w+', r'\1', line)
+                        line = re.sub(r'(\s)nosymm=\w+', r'\1', line)
+                        line = re.sub(r'(#)nosymm=\w+', r'\1', line)
+
+                        # Removes route parameters without options
+                        line = line.replace('nosymm', '')
+                        line = line.replace('opt', '')
+                        line = line.replace('force', '')
+                        if line.strip() != '#':
+                            params['route_section'] = params['route_section'] +  line
 
                 #Title section
                 elif section_number == 2:
@@ -181,7 +191,6 @@ def load_input(gaussian_input_params):
                     break
 
         return params
-
 
 
 if __name__ == "__main__":
