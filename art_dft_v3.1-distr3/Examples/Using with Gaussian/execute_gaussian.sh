@@ -10,7 +10,7 @@
 #*******************************************************************************
 # ART Variables
 natoms=$1
-optimization=$2  #this is 'force' when generated from gaussian_force or 'opt' when generated from gaussian_min
+optimization=$2  #this is 'force' when called from gaussian_force or 'opt' when from gaussian_min
 #*******************************************************************************
 
 #*******************************************************************************

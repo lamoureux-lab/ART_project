@@ -174,6 +174,13 @@ def load_input(gaussian_input_params):
                         # Removes opt and force, which will be put back in by the ART code at different stages
 
                         # Removes route parameters with options
+                        #TODO handle additional cases s.t.
+                        #TODO Options to keywords may be specified in any of the following forms:
+                        #keyword = option
+                        #keyword(option)
+                        #keyword=(option1, option2, …)
+                        #keyword(option1, option2, …)
+
                         line = re.sub(r'(\s)opt=\w+', r'\1', line)
                         line = re.sub(r'(#)opt=\w+', r'\1', line)
                         line = re.sub(r'(\s)force=\w+', r'\1', line)
@@ -187,6 +194,9 @@ def load_input(gaussian_input_params):
                         line = line.replace('force', '')
                         if line.strip() != '#':
                             params['route_section'] = params['route_section'] +  line
+
+                #TODO handle comment lines starting with !: Comments begin with an exclamation point (!),
+                #TODO which may appear anywhere on a line. Separate comment lines may appear anywhere within the input file.
 
                 #Title section
                 elif section_number == 2:
@@ -209,6 +219,10 @@ def load_input(gaussian_input_params):
                     break
 
         return params
+
+def option_removal_helper(option_type, string):
+    for line in re.findall('(.+)%s(.+)' % option_type, string):
+        print('made it')
 
 
 if __name__ == "__main__":
