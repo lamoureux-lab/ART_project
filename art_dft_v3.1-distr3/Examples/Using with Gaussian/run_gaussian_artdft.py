@@ -5,7 +5,7 @@
 import re
 import argparse
 
-# input_file = 'sample.inp'
+input_file = 'sample.inp'
 gaussian_execution_script = 'execute_gaussian.sh'
 refconfig_file = 'refconfig.dat'            #
 gaustart_file = 'gaustart.sh'               #Shell script containing the configuration parameters for the ART application
@@ -147,7 +147,14 @@ def load_input(gaussian_input_params):
     params = gaussian_input_params
     section_number = 1
 
-    with open(args.input_file) as input:
+    global input_file
+    if (args.input_file):
+        input_file = args.input_file
+        print('Loading gaussian input file: ' + args.input_file)
+    else:
+        print('Input file location not set, using default gaussian input file: ' + input_file)
+
+    with open(input_file) as input:
 
         for line in input:
                 # This will load the relevant information from a gaussian input file expecting:
@@ -173,25 +180,11 @@ def load_input(gaussian_input_params):
                     elif line.find('#') != -1:
                         # Removes opt and force, which will be put back in by the ART code at different stages
 
-                        # Removes route parameters with options
-                        #TODO handle additional cases s.t.
-                        #TODO Options to keywords may be specified in any of the following forms:
-                        #keyword = option
-                        #keyword(option)
-                        #keyword=(option1, option2, …)
-                        #keyword(option1, option2, …)
+                        # Removes route parameters with and without options
+                        line = option_removal_helper('opt', line)
+                        line = option_removal_helper('force', line)
+                        line = option_removal_helper('nosymm', line)
 
-                        line = re.sub(r'(\s)opt=\w+', r'\1', line)
-                        line = re.sub(r'(#)opt=\w+', r'\1', line)
-                        line = re.sub(r'(\s)force=\w+', r'\1', line)
-                        line = re.sub(r'(#)force=\w+', r'\1', line)
-                        line = re.sub(r'(\s)nosymm=\w+', r'\1', line)
-                        line = re.sub(r'(#)nosymm=\w+', r'\1', line)
-
-                        # Removes route parameters without options
-                        line = line.replace('nosymm', '')
-                        line = line.replace('opt', '')
-                        line = line.replace('force', '')
                         if line.strip() != '#':
                             params['route_section'] = params['route_section'] +  line
 
@@ -220,10 +213,36 @@ def load_input(gaussian_input_params):
 
         return params
 
-def option_removal_helper(option_type, string):
-    for line in re.findall('(.+)%s(.+)' % option_type, string):
-        print('made it')
+def option_removal_helper(option_type, line):
+    #Handles different options to keyword structures for removal to have them dynamically assigned by ART:
+    #keyword = option
+    #keyword(option)
+    #keyword=(option1, option2)
+    #keyword(option1, option2)
 
+    #For keyword = option
+    line = re.sub(r'(\s)' + re.escape(option_type) +'=\w+', r'\1', line)
+    line = re.sub(r'(#)' + re.escape(option_type) +'=\w+', r'\1', line)
+    line = re.sub(r'(\s)' + re.escape(option_type) +' =\w+', r'\1', line)
+    line = re.sub(r'(#)' + re.escape(option_type) +' =\w+', r'\1', line)
+    line = re.sub(r'(\s)' + re.escape(option_type) +' = \w+', r'\1', line)
+    line = re.sub(r'(#)' + re.escape(option_type) +' = \w+', r'\1', line)
+    line = re.sub(r'(\s)' + re.escape(option_type) +' = \w+', r'\1', line)
+    line = re.sub(r'(#)' + re.escape(option_type) +' = \w+', r'\1', line)
+
+    #For keyword(option..)
+    line = re.sub(r'(\s)' + re.escape(option_type) + '\([^()]*\)', '', line)
+    line = re.sub(r'(#)' + re.escape(option_type) + '\([^()]*\)', '', line)
+
+    #For keyword=(option..)
+    line = re.sub(r'(\s)' + re.escape(option_type) + '=\([^()]*\)', '', line)
+    line = re.sub(r'(#)' + re.escape(option_type) + '=\([^()]*\)', '', line)
+
+    #For lone keyword
+    line = re.sub(r'(\s)' + re.escape(option_type), r'\1', line)
+    line = re.sub(r'(#)' + re.escape(option_type), r'\1', line)
+
+    return line
 
 if __name__ == "__main__":
 
