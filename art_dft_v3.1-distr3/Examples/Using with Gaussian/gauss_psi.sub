@@ -19,6 +19,11 @@
 #-q default
 #PBS -l walltime=010:00:00
 
+#************************************************************
+# Run python setup script
+python run_gaussian_artdft.py -f $gaussian_input
+#************************************************************
+
 #*****DO NOT CHANGE 2 FOLLOWING LINES************************
 cd $PBS_O_WORKDIR
 #mkdir /state/partition1/$LOGNAME"_"$PBS_JOBID
@@ -27,6 +32,9 @@ cd $PBS_O_WORKDIR
 #echo "Running on `hostname`"
 
 #echo "Starting run at: `date`"
+
+# Run python setup script
+python run_gaussian_artdft.py -f $gaussian_input
 
 # Run g09, change name of input file
 #g09 H2N

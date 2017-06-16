@@ -3,13 +3,20 @@
 # For reference: http://gaussian.com/input/
 
 import re
+import argparse
 
-input_file = 'sample.inp'
+# input_file = 'sample.inp'
 gaussian_execution_script = 'execute_gaussian.sh'
 refconfig_file = 'refconfig.dat'            #
 gaustart_file = 'gaustart.sh'               #Shell script containing the configuration parameters for the ART application
 
-def create_ref_config(gaussian_input_params):
+
+#Handles file parameter passing
+parser = argparse.ArgumentParser(description='Gaussian inputfile preperation for ART')
+parser.add_argument('-f', '--input_file',help='The input file location')
+args = parser.parse_args()
+
+def create_ref_config(atom_coordinates):
     """
     Sets up refconfig.dat file which will be used as a starting reference by ART for atom coordinates before it is
     overwritten and updated
@@ -21,15 +28,15 @@ def create_ref_config(gaussian_input_params):
     global refconfig_file
     global gaustart_file
 
-    config = open(refconfig_file, 'w+')          #Overwrites of creates a new file if it doesn't exist
+    config = open(refconfig_file, 'w+')     #Overwrites of creates a new file if it doesn't exist
     config.write('run_id:         1000\n')
     config.write('total_energy:   0\n')     #Placeholder, as this will be optimized by ART to the correct value
     #TODO see about removing these as they are not necessary for gaussian
     config.write('S   100.000000000000        100.000000000000        100.000000000000\n')
-    config.write(gaussian_input_params['atom_coordinates'])
+    config.write(atom_coordinates)
     config.close()
 
-def set_env_config(gaussian_input_params):
+def set_env_config(natoms):
     """
     Sets critical parameters in gaustart.sh which contains the general configuration for the ART environment
 
@@ -61,7 +68,7 @@ def set_env_config(gaussian_input_params):
 
             #Sets the number of atoms
             elif line[0].find('setenv NATOMS') != -1:
-                updated_line = 'setenv NATOMS     '+ str(gaussian_input_params['natoms']) + '         '
+                updated_line = 'setenv NATOMS     '+ str(natoms) + '         '
 
             #Sets reference configuration file that is updated throughout
             elif line[0].find('setenv REFCONFIG') != -1:
@@ -86,7 +93,7 @@ def set_env_config(gaussian_input_params):
 
 def create_gaussian_file_header(gaussian_input_params):
     """
-    This serves to insert a gaussian header file into the bash script that will be writing to
+    Inserts a gaussian header file into the bash script that will be writing to
     the art2gaussian.inp file and calling gaussian
 
     :param gaussian_input_params:
@@ -140,7 +147,7 @@ def load_input(gaussian_input_params):
     params = gaussian_input_params
     section_number = 1
 
-    with open(input_file) as input:
+    with open(args.input_file) as input:
 
         for line in input:
                 # This will load the relevant information from a gaussian input file expecting:
@@ -157,13 +164,15 @@ def load_input(gaussian_input_params):
 
                 #Link0 and route section
                 if section_number == 1:
-                    # For case issues
+                    #For case issues
                     line = line.lower()
+                    #Link0
                     if line.find('%') != -1:
                         params['link0_section'] = params['link0_section'] + line + " "
+                    #Route section
                     elif line.find('#') != -1:
                         # Removes opt and force, which will be put back in by the ART code at different stages
-                        print line
+
                         # Removes route parameters with options
                         line = re.sub(r'(\s)opt=\w+', r'\1', line)
                         line = re.sub(r'(#)opt=\w+', r'\1', line)
@@ -208,6 +217,6 @@ if __name__ == "__main__":
                     'title': '', 'natoms': 0, 'charge': None, 'multiplicity': None, 'atom_coordinates' : ''}
     print load_input(gaussian_input_params)
 
-    create_ref_config(gaussian_input_params)
-    set_env_config(gaussian_input_params)
+    create_ref_config(gaussian_input_params['atom_coordinates'])
+    set_env_config(gaussian_input_params['natoms'])
     create_gaussian_file_header(gaussian_input_params)
