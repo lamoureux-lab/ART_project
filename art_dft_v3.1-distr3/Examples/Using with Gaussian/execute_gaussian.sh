@@ -18,7 +18,7 @@ optimization=$2  #this is 'force' when called from gaussian_force or 'opt' when 
 #
 #gaussian-header-begin (DO NOT REMOVE) 
 header='%mem=8000mb
- %nproc=12
+ %nproc=12 
  #rhf/3-21g <PARAM>
 
 name

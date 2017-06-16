@@ -52,15 +52,12 @@ def set_env_config(natoms):
         for line in input:
             original_line = line
             updated_line = ''
-            comment_set = False
 
             #Remove comments from the strings
             line = line.split("#")
-            try:
-                if line[1].strip() != '':
-                    comment_set = True
-            except:
-                comment_set = False
+            comment_set = False
+            if len(line) > 1:
+                comment_set = True
 
             #Checks that GAU is set for energy calculation and sets it if it is not
             if line[0].find('setenv ENERGY_CALC') != -1:
@@ -164,9 +161,19 @@ def load_input(gaussian_input_params):
                 # 4. Charge + Spin multiplicity line (two integers)
                 # 5. Atom coordinates
 
+                # Remove all comments from the gaussian input file
+                comment_set = False
+                line = line.split("!")
+                if len(line) > 1:
+                    comment_set = True
+                line = line[0]
+                if comment_set:
+                    line = line + '\n'
+
                 #Check for an empty line to increment section
                 if line.strip() == '':
-                    section_number += 1
+                    if not comment_set:
+                        section_number += 1
                     continue
 
                 #Link0 and route section
@@ -186,10 +193,7 @@ def load_input(gaussian_input_params):
                         line = option_removal_helper('nosymm', line)
 
                         if line.strip() != '#':
-                            params['route_section'] = params['route_section'] +  line
-
-                #TODO handle comment lines starting with !: Comments begin with an exclamation point (!),
-                #TODO which may appear anywhere on a line. Separate comment lines may appear anywhere within the input file.
+                            params['route_section'] = params['route_section'] + line
 
                 #Title section
                 elif section_number == 2:
