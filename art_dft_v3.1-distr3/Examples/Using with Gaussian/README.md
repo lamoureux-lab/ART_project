@@ -32,7 +32,7 @@ Once there, compile the ART code by running
     `make /global/scratch/<username>/ART_project/gaussian_art_v8 artdft`
  
 For quick tests to ensure functionality, execute the following in the sample file directory:
-	`csh gaustart.sh > output.log`
+	`csh gaussian_art.sh > output.log`
 	
 For actual simulations, submit the job to the GREX queue using:
     `qsub -N art-test gauss_grex.sub`
@@ -46,7 +46,7 @@ http://beige.ucs.indiana.edu/I590/node35.html
 
 Change the following configuration values in accordance to the sample:
 1: execute_gaussian.sh => number of atoms natoms
-2: change gaustart.sh => NATOMS, TYPE OF ATOMS and other as require 
+2: change gaussian_art.sh => NATOMS, TYPE OF ATOMS and other as require 
  
  
 ## Troubleshooting

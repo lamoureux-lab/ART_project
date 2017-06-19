@@ -39,4 +39,4 @@ python run_gaussian_artdft.py -f $gaussian_input
 # Run g09, change name of input file
 #g09 H2N
 #rm -rf /state/partition1/$LOGNAME"_"$PBS_JOBID
-csh gaustart.sh >output.log
+csh gaussian_art.sh >output.log

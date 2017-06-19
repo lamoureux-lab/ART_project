@@ -8,7 +8,7 @@ import argparse
 input_file = 'sample.inp'
 gaussian_execution_script = 'execute_gaussian.sh'
 refconfig_file = 'refconfig.dat'            #
-gaustart_file = 'gaustart.sh'               #Shell script containing the configuration parameters for the ART application
+gaussian_art_file = 'gaussian_art.sh'               #Shell script containing the configuration parameters for the ART application
 
 
 #Handles file parameter passing
@@ -26,7 +26,7 @@ def create_ref_config(atom_coordinates):
     :return:
     """
     global refconfig_file
-    global gaustart_file
+    global gaussian_art_file
 
     config = open(refconfig_file, 'w+')     #Overwrites of creates a new file if it doesn't exist
     config.write('run_id:         1000\n')
@@ -38,15 +38,15 @@ def create_ref_config(atom_coordinates):
 
 def set_env_config(natoms):
     """
-    Sets critical parameters in gaustart.sh which contains the general configuration for the ART environment
+    Sets critical parameters in gaussian_art.sh which contains the general configuration for the ART environment
 
-    :param gaustart_file:
+    :param natoms:
     :return:
     """
     global refconfig_file
-    global gaustart_file
+    global gaussian_art_file
 
-    with open(gaustart_file) as input:
+    with open(gaussian_art_file) as input:
 
         updated_text = ''
         for line in input:
@@ -84,7 +84,7 @@ def set_env_config(natoms):
                 updated_text = updated_text + original_line
 
     # overwrites the configuration file with appropriate values from the gaussian input file
-    test = open(gaustart_file, 'w+')
+    test = open(gaussian_art_file, 'w+')
     test.write(updated_text)
 
 

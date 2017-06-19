@@ -36,4 +36,4 @@ python run_gaussian_artdft.py -f $gaussian_input
 
 # Run g09 
 #g09 pipes debug log information to output.log
-csh gaustart.sh > output.log
+csh gaussian_art.sh > output.log
