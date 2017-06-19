@@ -14,7 +14,7 @@ optimization=$2  #this is 'force' when called from gaussian_force or 'opt' when 
 #*******************************************************************************
 
 #*******************************************************************************
-# Gaussian input file header and coorLineNumber inserted by run_gaussian_artdft.py
+# Gaussian input file header and coorLineNumber inserted by prepare_gaussian_art.py
 #
 #gaussian-header-begin (DO NOT REMOVE) 
 header='%mem=8000mb
