@@ -17,7 +17,7 @@ subroutine calcforce_gau(nat,typa,posa,boxl,forca,energy)
   integer, parameter :: FGAUSS = 21
   real*8, parameter :: ZERO = 0.0d0
   character(len=20) :: GAUSS   = 'art2gaussian.inp'
-  character(len=20) :: GAUSSFORCE = 'log'
+  character(len=20) :: GAUSSFORCE = 'gaussian2art'
   character(len=40) :: line
   character(len=10) :: string_natoms
   logical :: read_done,read_final,read_doneF,read_doneC, success

@@ -10,7 +10,7 @@ subroutine min_converge_gau(success)
   real*8, parameter :: ZERO = 0.0d0
   real*8, dimension(natoms) :: xx, yy, zz
   character(len=20) :: GAUSS   = 'art2gaussian.inp'
-  character(len=20) :: GAUSSFORCE = 'log'
+  character(len=20) :: GAUSSFORCE = 'gaussian2art'
   character(len=70) :: line
   character(len=10) :: string_natoms
   logical :: read_done,read_final
@@ -37,10 +37,12 @@ subroutine min_converge_gau(success)
   ! We now call Gaussian do to the minimization
   ! Bash parameters: natoms=$1, optimization=$2
   call system('sh execute_gaussian.sh ' // string_natoms // ' ' // 'opt')
-  
+
+  !TODO remove toto as not used
   do i=1, 10000
     toto = dexp ( i * 0.001d0)
   end do
+
   ! We must now read the energy and positions from gaussian's output file
   open(unit=FGAUSS,file=GAUSSFORCE,status='old',action='read',iostat=ierror)
 

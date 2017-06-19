@@ -63,24 +63,25 @@ g09 < art2gaussian.inp > gaussian.log
 
 #*******************************************************************************
 #Outputs results to a log
-printf  "outcoor:\n" >log
+printf  "outcoor:\n" >gaussian2art
 positionLineNumber=$(sed -n '/Input orientation/=' gaussian.log | tail -1)
 
 for ((i=1; i<=$natoms; i++)); do
-	awk 'FNR=='$positionLineNumber+4+$i' {print $0}' ./gaussian.log >>log
+	awk 'FNR=='$positionLineNumber+4+$i' {print $0}' ./gaussian.log >>gaussian2art
 done
 
-printf  "gaussi: Atomic forces (eV/Ang):\n" >>log
+printf  "gaussi: Atomic forces (eV/Ang):\n" >>gaussian2art
 forceLineNumber=$(sed -n '/Forces (Hartrees/=' gaussian.log | tail -1)
 
 for ((j=1; j<=$natoms; j++)); do
-	awk 'FNR=='$forceLineNumber+2+$j' {print $0}' gaussian.log >>log # formats and units are already taken care
+	awk 'FNR=='$forceLineNumber+2+$j' {print $0}' gaussian.log >>gaussian2art # formats and units are already taken care
 done
 
-printf  "gaussi: Final energy (eV):\n" >>log
+printf  "gaussi: Final energy (eV):\n" >>gaussian2art
 
+#TODO is this loop limit hardcoded/what are the 10 elements
 for k in {1..10}; do
-	grep 'E(' gaussian.log | tail -1 | awk '{printf "gaussi:         Total =  %.10f\n", $5*27.2113838668}' >>log
+	grep 'E(' gaussian.log | tail -1 | awk '{printf "gaussi:         Total =  %.10f\n", $5*27.2113838668}' >>gaussian2art
 done
 #*******************************************************************************
 
