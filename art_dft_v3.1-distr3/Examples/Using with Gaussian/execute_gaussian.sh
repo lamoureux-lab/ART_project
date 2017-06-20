@@ -63,8 +63,6 @@ g09 < art2gaussian > gaussian.log
 #*******************************************************************************
 #Outputs results to the gaussian2art file that are read by ART
 
-gaussian2art='gaussian2art'
-
 #Number of atoms
 printf  "natoms:\n" >$gaussian2art
 printf  "$natoms\n" >>$gaussian2art
