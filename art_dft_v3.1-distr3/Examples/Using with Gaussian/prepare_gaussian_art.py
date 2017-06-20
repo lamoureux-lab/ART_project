@@ -91,7 +91,7 @@ def set_env_config(natoms):
 def create_gaussian_file_header(gaussian_input_params):
     """
     Inserts a gaussian header file into the bash script that will be writing to
-    the art2gaussian.inp file and calling gaussian
+    the art2gaussian file and calling gaussian
 
     :param gaussian_input_params:
     :return:

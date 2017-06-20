@@ -9,7 +9,7 @@ subroutine min_converge_gau(success)
   integer, parameter :: FGAUSS = 21
   real*8, parameter :: ZERO = 0.0d0
   real*8, dimension(natoms) :: xx, yy, zz
-  character(len=20) :: GAUSS   = 'art2gaussian.inp'
+  character(len=20) :: GAUSS   = 'art2gaussian'
   character(len=20) :: GAUSSFORCE = 'gaussian2art'
   character(len=70) :: line
   character(len=10) :: string_natoms
