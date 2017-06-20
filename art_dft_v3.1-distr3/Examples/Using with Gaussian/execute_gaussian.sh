@@ -11,16 +11,19 @@
 # ART Variables
 natoms=$1
 optimization=$2  #this is 'force' when called from gaussian_force or 'opt' when from gaussian_min
-#*******************************************************************************
 
 #*******************************************************************************
-# Gaussian input file header and coorLineNumber inserted by prepare_gaussian_art.py
+#*******************************************************************************
+
+# Gaussian input file header data, including the coorLineNumber and title information
+# are inserted dynamically by prepare_gaussian_art.py between the gaussian-header-begin
+# and gaussian-header-end flags.
 #
 #gaussian-header-begin (DO NOT REMOVE) 
 
-#gaussian-header-end
-#*******************************************************************************
+#gaussian-header-end (DO NOT REMOVE)
 
+#*******************************************************************************
 #*******************************************************************************
 # Update header with appropriate options depending on stage in ART
 
@@ -39,22 +42,27 @@ fi
 echo "$updated_header" | cat - art2gaussian > temp && mv temp art2gaussian
 
 #*******************************************************************************
+#*******************************************************************************
 
+# Updates running record of atom coordinates throughout program execution
 
 printf "$natoms\n" >>temp.xyz
-#TODO title from inp
-printf "MOLECULAR TITLE\n" >>temp.xyz
+printf "$title\n" >>temp.xyz
 
 for ((i=1; i<=$natoms; i++)); do
 	awk 'FNR=='$coorLineNumber+$i' {print $0}' ./art2gaussian >>temp.xyz
 done
 
+
+#*******************************************************************************
+#*******************************************************************************
 # Loads the latest version of Gaussian and calls it through g09
 g09 < art2gaussian > gaussian.log
 
-
+#*******************************************************************************
 #*******************************************************************************
 #Outputs results to the gaussian2art file that are read by ART
+
 gaussian2art='gaussian2art'
 
 #Number of atoms

@@ -100,7 +100,7 @@ def create_gaussian_file_header(gaussian_input_params):
     params = gaussian_input_params
 
     # creates a regular expression pattern that will isolate the header insertion point
-    insertion_point = re.compile('#gaussian-header-begin.*?#gaussian-header-end', re.DOTALL)
+    insertion_point = re.compile('#gaussian-header-begin.*?#gaussian-header-end (DO NOT REMOVE)', re.DOTALL)
 
     # open file
     f = open(gaussian_execution_script, 'r')
@@ -121,12 +121,15 @@ def create_gaussian_file_header(gaussian_input_params):
     coordinate_line_start = '\n#Coordinate line where data begins\n' \
              + 'coorLineNumber=' + str(get_coordinate_line_number(header))
 
-    end_shell_script_marker = '\n\n#gaussian-header-end'
+    title_line_start = '\n#Title of the gaussian input file\n' \
+             + 'title=' + str(gaussian_input_params['title'])
+
+    end_shell_script_marker = '\n\n#gaussian-header-end (DO NOT REMOVE) '
 
     output.close()
 
     # Writes the header as a string variable in the gaussian execution script
-    new_script_lines = start_shell_script_marker + header + coordinate_line_start + end_shell_script_marker
+    new_script_lines = start_shell_script_marker + header + coordinate_line_start + title_line_start + end_shell_script_marker
     script_with_header = insertion_point.sub(new_script_lines, initial_script)
     f = open(gaussian_execution_script, 'w')
     f.write(script_with_header)
@@ -252,7 +255,7 @@ if __name__ == "__main__":
 
     gaussian_input_params = {'link0_section': '', 'route_section': '',
                     'title': '', 'natoms': 0, 'charge': None, 'multiplicity': None, 'atom_coordinates' : ''}
-    print load_input(gaussian_input_params)
+    gaussian_input_params = load_input(gaussian_input_params)
 
     create_ref_config(gaussian_input_params['atom_coordinates'])
     set_env_config(gaussian_input_params['natoms'])
