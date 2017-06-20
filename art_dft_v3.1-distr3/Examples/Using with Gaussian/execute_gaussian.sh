@@ -2,7 +2,7 @@
 
 #This script is called by gaussian_force and gaussian_min in order to add the header for a
 #Gaussian input file and to run the Gaussian program on that script. The header information
-#is added to this script dynamically by executing run_gaussian_ardft.py. The subroutine
+#is added to this script dynamically by executing prepare_gaussian_art.py. The subroutine
 #in gaussian_force will set 'force' as a route parameter and the subroutine in gaussian_min
 #will set 'opt' as a route parameter.
 
@@ -34,6 +34,8 @@ coorLineNumber=8
 #*******************************************************************************
 # Update header with appropriate options depending on stage in ART
 
+#coorLineNumber=5
+
 updated_header=$()
 if [ "$optimization" == "opt" ];
 then
@@ -53,13 +55,12 @@ printf "$natoms\n" >>temp.xyz
 #TODO title from inp
 printf "MOLECULAR TITLE\n" >>temp.xyz
 
-
 for ((i=1; i<=$natoms; i++)); do
 	awk 'FNR=='$coorLineNumber+$i' {print $0}' ./art2gaussian.inp >>temp.xyz
 done
 
 # Loads the latest version of Gaussian and calls it through g09
-g09 < art2gaussian.inp > gaussian.log
+g09 < art2gaussian.inp > test.log
 
 #*******************************************************************************
 #Outputs results to a log
@@ -79,11 +80,25 @@ done
 
 printf  "gaussi: Final energy (eV):\n" >>gaussian2art
 
-#TODO is this loop limit hardcoded/what are the 10 elements
+#TODO gets the values of the past ten outputs
 for k in {1..10}; do
 	grep 'E(' gaussian.log | tail -1 | awk '{printf "gaussi:         Total =  %.10f\n", $5*27.2113838668}' >>gaussian2art
 done
+
 #*******************************************************************************
+#Outputs results to the gaussian2art file that are read by ART
+#
+##Number of atoms
+#printf  "natoms:\n" >gaussian2art_test
+#printf  "$natoms" >gaussian2art_test
+#
+##Output coordinates
+#printf  "outcoor:\n" >gaussian2art_test
+#positionLineNumber=$(sed -n '/Input orientation/=' gaussian.log | tail -1)
+#
+##Energy
+#printf  "energy:\n" >>gaussian2art_test
+
 
 #Deprecated
 
