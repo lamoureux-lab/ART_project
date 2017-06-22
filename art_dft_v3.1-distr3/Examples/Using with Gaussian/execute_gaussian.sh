@@ -5,7 +5,9 @@
 #is added to this script dynamically by executing prepare_gaussian_art.py. The subroutine
 #in gaussian_force will set 'force' as a route parameter and the subroutine in gaussian_min
 #will set 'opt' as a route parameter.
-
+gaussian2art='log'
+art2gaussian='art2gaussian.inp'
+gaussian_output='gaussian.log'
 
 #*******************************************************************************
 # ART Variables
@@ -19,15 +21,13 @@ optimization=$2  #this is 'force' when called from gaussian_force or 'opt' when 
 # are inserted dynamically by prepare_gaussian_art.py between the gaussian-header-begin
 # and gaussian-header-end flags.
 #
-#gaussian-header-begin (DO NOT REMOVE) 
+#gaussian-header-begin (DO NOT REMOVE)
 
 #gaussian-header-end (DO NOT REMOVE)
 
 #*******************************************************************************
 #*******************************************************************************
 # Update header with appropriate options depending on stage in ART
-
-#coorLineNumber=5
 
 updated_header=$()
 if [ "$optimization" == "opt" ];
@@ -39,7 +39,7 @@ then
 fi
 
 # Adds header information to gaussian input file
-echo "$updated_header" | cat - art2gaussian > temp && mv temp art2gaussian
+echo "$updated_header" | cat - "$art2gaussian" > temp && mv temp "$art2gaussian"
 
 #*******************************************************************************
 #*******************************************************************************
@@ -50,24 +50,25 @@ printf "$natoms\n" >>temp.xyz
 printf "$title\n" >>temp.xyz
 
 for ((i=1; i<=$natoms; i++)); do
-	awk 'FNR=='$coorLineNumber+$i' {print $0}' ./art2gaussian >>temp.xyz
+	awk 'FNR=='$coorLineNumber+$i' {print $0}' "$art2gaussian" >>temp.xyz
 done
 
 
 #*******************************************************************************
 #*******************************************************************************
-# Loads the latest version of Gaussian and calls it through g09
-g09 < art2gaussian > gaussian.log
+# Loads the latest version of Gaussian and calls it through g09, saving the output
+# to gaussian.log
+g09 < $art2gaussian > $gaussian_output
 
 #*******************************************************************************
 #*******************************************************************************
-#Outputs results to the gaussian2art file that are read by ART
+# Prepares the gaussian results for ART in the gaussian2art file format
 
 #Number of atoms
 printf  "natoms:\n" >$gaussian2art
 printf  "$natoms\n" >>$gaussian2art
 
-#Coordinates
+# Coordinates
 printf  "outcoor:\n" >>$gaussian2art
 positionLineNumber=$(sed -n '/Input orientation/=' gaussian.log | tail -1)
 
@@ -77,12 +78,13 @@ for ((i=1; i<=$natoms; i++)); do
 	echo "$TEMP" | cut -d ' ' -f4- >>$gaussian2art
 done
 
-#Energy
+# Energy
 printf  "energy:\n" >>$gaussian2art
-grep 'E(' gaussian.log | tail -1 | awk '{printf "%.10f\n", $5*27.2113838668}' >>$gaussian2art
+grep 'E(' "$gaussian_output" | tail -1 | awk '{printf "%.10f\n", $5*27.2113838668}' >>$gaussian2art
 
-#Forces
+# Forces
 forceLineNumber=$(sed -n '/Forces (Hartrees/=' gaussian.log | tail -1)
+# Prepares force information when available
 if [ "$forceLineNumber" != "" ]
 then
     printf  "forces:\n" >>$gaussian2art
@@ -95,6 +97,11 @@ fi
 
 
 #*******************************************************************************
+
+
+#*******************************************************************************e header data, including the coorLineNumber and title information
+# are inserted dynamically by prepare_gaussian_art.py between the gaussian-header-begin
+# and gaussian-header-end
 
 ##*******************************************************************************
 ##Outputs results to the gaussian2art file that are read by ART (OLD STRUCTURE)
@@ -114,7 +121,7 @@ fi
 #
 #printf  "gaussi: Final energy (eV):\n" >>gaussian2art
 #
-##TODO figure out why there are 10 inputs
+
 #for k in {1..10}; do
 #	grep 'E(' gaussian.log | tail -1 | awk '{printf "gaussi:         Total =  %.10f\n", $5*27.2113838668}' >>gaussian2art
 #done
