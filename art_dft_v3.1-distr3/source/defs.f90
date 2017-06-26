@@ -165,14 +165,6 @@ module defs
 
   character(len=20) :: eventtype 
   character(len=11),parameter :: pos_units = "angstroemd0"
-  
-  !Gaussian parameters
-  character(len=15) :: GAU_mem
-  character(len=15) :: GAU_nproc
-  character(len=50) :: GAU_desc
-  character(len=30) :: GAU_title
-  integer           :: GAU_charge
-  integer           :: GAU_multip
 
 
 #ifdef MPI

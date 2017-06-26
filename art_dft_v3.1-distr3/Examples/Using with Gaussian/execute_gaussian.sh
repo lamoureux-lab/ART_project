@@ -5,7 +5,7 @@
 #is added to this script dynamically by executing prepare_gaussian_art.py. The subroutine
 #in gaussian_force will set 'force' as a route parameter and the subroutine in gaussian_min
 #will set 'opt' as a route parameter.
-gaussian2art='log'
+gaussian2art='gaussian2art'
 art2gaussian='art2gaussian.inp'
 gaussian_output='gaussian.log'
 
@@ -97,11 +97,6 @@ fi
 
 
 #*******************************************************************************
-
-
-#*******************************************************************************e header data, including the coorLineNumber and title information
-# are inserted dynamically by prepare_gaussian_art.py between the gaussian-header-begin
-# and gaussian-header-end
 
 ##*******************************************************************************
 ##Outputs results to the gaussian2art file that are read by ART (OLD STRUCTURE)
