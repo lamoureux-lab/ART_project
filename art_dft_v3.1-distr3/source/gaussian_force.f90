@@ -78,7 +78,6 @@ subroutine calcforce_gau(nat,typa,posa,boxl,forca,energy)
      ! close(FGAUSS)
      
      !NEW SECTION
-     do
      open(unit=FGAUSS,file=GAUSSFORCE,status='old',action='read',iostat=ierror)
 
      read_force_done = .false.
