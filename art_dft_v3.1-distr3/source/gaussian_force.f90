@@ -102,9 +102,7 @@ subroutine calcforce_gau(nat,typa,posa,boxl,forca,energy)
         if ( line  == "outcoor:" ) then
            do i = 1, NATOMS
              ! read(FGAUSS,"(f15.6,f13.6,f11.6)") xS(i),yS(i),zS(i)
-              read(FGAUSS,*) test1, test2, test3
-              write (*,*) "outcoor: "
-              write (*,*) test1, test2, test3
+              read(FGAUSS,*) xS(i),yS(i),zS(i)
            end do
            read_coordinates_done = .true.
         endif
