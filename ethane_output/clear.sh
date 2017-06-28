@@ -16,4 +16,4 @@ rm DM*
 rm fdf.log
 rm min1*
 rm sad1*
-rm art2gaussian.inp gaussian2art.log temp.chk log events.list test.log temp.xyz
+rm art2gaussian gaussian2art.log temp.chk log events.list test.log temp.xyz

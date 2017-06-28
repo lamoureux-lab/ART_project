@@ -6,7 +6,7 @@
 #in gaussian_force will set 'force' as a route parameter and the subroutine in gaussian_min
 #will set 'opt' as a route parameter.
 gaussian2art='gaussian2art'
-art2gaussian='art2gaussian.inp'
+art2gaussian='art2gaussian'
 gaussian_output='gaussian.log'
 
 #*******************************************************************************
@@ -99,27 +99,6 @@ fi
 #*******************************************************************************
 
 ##*******************************************************************************
-##Outputs results to the gaussian2art file that are read by ART (OLD STRUCTURE)
-#printf  "outcoor:\n" >gaussian2art
-#positionLineNumber=$(sed -n '/Input orientation/=' gaussian.log | tail -1)
-#
-#for ((i=1; i<=$natoms; i++)); do
-#	awk 'FNR=='$positionLineNumber+4+$i' {print $0}' ./gaussian.log >>gaussian2art
-#done
-#
-#printf  "gaussi: Atomic forces (eV/Ang):\n" >>gaussian2art
-#forceLineNumber=$(sed -n '/Forces (Hartrees/=' gaussian.log | tail -1)
-#
-#for ((j=1; j<=$natoms; j++)); do
-#	awk 'FNR=='$forceLineNumber+2+$j' {print $0}' gaussian.log >>gaussian2art # formats and units are already taken care
-#done
-#
-#printf  "gaussi: Final energy (eV):\n" >>gaussian2art
-#
-
-#for k in {1..10}; do
-#	grep 'E(' gaussian.log | tail -1 | awk '{printf "gaussi:         Total =  %.10f\n", $5*27.2113838668}' >>gaussian2art
-#done
 
 
 #Deprecated
