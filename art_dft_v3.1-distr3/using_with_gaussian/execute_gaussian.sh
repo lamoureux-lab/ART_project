@@ -21,9 +21,9 @@ optimization=$2  #this is 'force' when called from gaussian_force or 'opt' when 
 # are inserted dynamically by prepare_gaussian_art.py between the gaussian-header-begin
 # and gaussian-header-end flags.
 #
-#gaussian-header-begin (DO NOT REMOVE)
+#gaussian-header-begin (DO NOT REMOVE) 
 
-#gaussian-header-end (DO NOT REMOVE)
+#gaussian-header-end (DO NOT REMOVE)   
 
 #*******************************************************************************
 #*******************************************************************************

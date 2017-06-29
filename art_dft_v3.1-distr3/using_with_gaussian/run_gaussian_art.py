@@ -129,7 +129,7 @@ def create_gaussian_file_header(gaussian_input_params):
              + 'coorLineNumber=' + str(get_coordinate_line_number(header))
 
     title_line_start = '\n#Title of the gaussian input file\n' \
-             + 'title=' + str(gaussian_input_params['title'])
+             + 'title=' + '\'' + str(gaussian_input_params['title']) + '\''
 
     end_shell_script_marker = '\n\n#gaussian-header-end (DO NOT REMOVE) '
 
@@ -228,16 +228,12 @@ def load_input(gaussian_input_params):
                     temp_line = line.split()
                     element = temp_line[0]
                     if not element.isdigit():
-
-                        print 'Got value: ' + element
-
                         #Loads the periodic table data if it is not already set
                         if not periodic_table_dict:
                             periodic_table_dict = load_periodic_table()
-
+                        #Replaces atomic symbols with atomic numbers
                         temp_line[0] = periodic_table_dict[element]
                         line = '    '.join(temp_line) + '\n'
-                        print line
 
                     params['atom_coordinates'] = params['atom_coordinates'] + line
 
