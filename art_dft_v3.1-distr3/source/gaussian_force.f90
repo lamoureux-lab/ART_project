@@ -14,7 +14,7 @@ subroutine calcforce_gau(nat,typa,posa,boxl,forca,energy)
   integer :: end_of_file = -1
   integer, parameter :: FGAUSS = 21
   real*8, parameter :: ZERO = 0.0d0
-  character(len=20) :: GAUSS   = 'art2gaussian.inp'
+  character(len=20) :: GAUSS   = 'art2gaussian'
   character(len=20) :: GAUSSFORCE = 'gaussian2art'
   character(len=40) :: line
   character(len=10) :: string_natoms
@@ -60,23 +60,6 @@ subroutine calcforce_gau(nat,typa,posa,boxl,forca,energy)
      ! Bash parameters: natoms=$1, optimization=$2
      call system('sh execute_gaussian.sh ' // string_natoms // ' ' // 'force')
 
-     ! open(unit=FGAUSS,file=GAUSSFORCE,status='old',action='read',iostat=ierror)
-
-     ! TODO find out if there was a reason to read the file twice
-     ! read_done = .false.
-     ! do 
-     !    read(FGAUSS,"(A40)") line
-     !    if ( line  == "gaussi: Final energy (eV):" ) then
-     !       do i = 1, 7
-     !          read(FGAUSS,"(A40)") line
-     !       end do
-     !       read(FGAUSS,"(A24,f14.6)") line, energy
-     !       read_done = .true.
-     !    endif
-     !    if(read_done) exit
-     ! end do
-     ! close(FGAUSS)
-     
      !NEW SECTION
      open(unit=FGAUSS,file=GAUSSFORCE,status='old',action='read',iostat=ierror)
 

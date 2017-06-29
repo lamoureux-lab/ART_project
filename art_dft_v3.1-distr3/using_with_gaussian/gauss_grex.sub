@@ -32,7 +32,7 @@ echo "Starting run at: `date`"
 module load gaussian
 
 # Run python setup script
-python run_gaussian_artdft.py -f $gaussian_input
+python run_gaussian_art.py -f $gaussian_input
 
 # Run g09 
 #g09 pipes debug log information to output.log

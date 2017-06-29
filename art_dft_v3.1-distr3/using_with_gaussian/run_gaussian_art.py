@@ -3,18 +3,25 @@
 # For reference: http://gaussian.com/input/
 
 import re
+import os.path
 import argparse
+
+script_folder = 'scripts'
 
 input_file = 'sample.inp'
 gaussian_execution_script = 'execute_gaussian.sh'
 refconfig_file = 'refconfig.dat'            #
 gaussian_art_file = 'gaussian_art.sh'               #Shell script containing the configuration parameters for the ART application
+periodic_table_data = os.path.join(script_folder, 'periodic_table_data.csv')
+
 
 
 #Handles file parameter passing
 parser = argparse.ArgumentParser(description='Gaussian inputfile preperation for ART')
 parser.add_argument('-f', '--input_file',help='The input file location')
 args = parser.parse_args()
+
+
 
 def create_ref_config(atom_coordinates):
     """
@@ -156,6 +163,9 @@ def load_input(gaussian_input_params):
 
     with open(input_file) as input:
 
+        #The periodic_table_dict will be loaded once if conversion is needed from atomic symbol to number
+        periodic_table_dict = None
+
         for line in input:
                 # This will load the relevant information from a gaussian input file expecting:
                 # 1. A number of % lines (or maybe none) representing the link 0 section
@@ -213,12 +223,45 @@ def load_input(gaussian_input_params):
                 #Atom coordinates section
                 if section_number == 4:
                     params['natoms'] = params['natoms'] + 1
+
+                    #Checks if the atom is in non-numerical format (e.g., H instead of 1)
+                    temp_line = line.split()
+                    element = temp_line[0]
+                    if not element.isdigit():
+
+                        print 'Got value: ' + element
+
+                        #Loads the periodic table data if it is not already set
+                        if not periodic_table_dict:
+                            periodic_table_dict = load_periodic_table()
+
+                        temp_line[0] = periodic_table_dict[element]
+                        line = '    '.join(temp_line) + '\n'
+                        print line
+
                     params['atom_coordinates'] = params['atom_coordinates'] + line
 
                 if section_number == 5:
                     break
 
         return params
+
+
+def load_periodic_table():
+    """
+    Loads a periodic table csv file to extract the atomic symbols and numbers to create a mapping between these
+    :return: A dictionary mapping atomic symbol to number
+    """
+    global periodic_table_data
+
+    atomic_symbol_number_map = {}
+    with open(periodic_table_data) as input:
+        for line in input:
+            line = line.split(',')
+            atomic_symbol_number_map[line[1].strip()] = line[0].strip()
+
+    return atomic_symbol_number_map
+
 
 def option_removal_helper(option_type, line):
     #Handles different options to keyword structures for removal to have them dynamically assigned by ART:
@@ -252,6 +295,7 @@ def option_removal_helper(option_type, line):
     return line
 
 if __name__ == "__main__":
+    load_periodic_table()
 
     gaussian_input_params = {'link0_section': '', 'route_section': '',
                     'title': '', 'natoms': 0, 'charge': None, 'multiplicity': None, 'atom_coordinates' : ''}
