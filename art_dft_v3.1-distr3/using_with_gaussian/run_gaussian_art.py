@@ -3,24 +3,58 @@
 # For reference: http://gaussian.com/input/
 
 import re
-import os.path
 import argparse
+from os import listdir
+from os.path import isfile, join
 
-script_folder = 'scripts'
 
-input_file = 'sample.inp'
-gaussian_execution_script = 'execute_gaussian.sh'
-refconfig_file = 'refconfig.dat'            #
-gaussian_art_file = 'gaussian_art.sh'               #Shell script containing the configuration parameters for the ART application
-periodic_table_data = os.path.join(script_folder, 'periodic_table_data.csv')
+#Program directories
+script_directory = 'scripts'
+program_data_directory = 'program_data'
+default_input_file_directory = 'input_files'
+default_submission = 'GREX' #GREX or PSI
 
+#Program files
+gaussian_execution_script = join(script_directory, 'execute_gaussian.sh')
+refconfig_file = 'refconfig.dat'
+gaussian_art_file = join(script_directory, 'gaussian_art.sh')     #Shell script containing the configuration parameters for the ART application
+periodic_table_data = join(program_data_directory, 'periodic_table_data.csv')
 
 
 #Handles file parameter passing
-parser = argparse.ArgumentParser(description='Gaussian inputfile preperation for ART')
-parser.add_argument('-f', '--input_file',help='The input file location')
+parser = argparse.ArgumentParser(description='Gaussian_ART ... ') #TODO add a good application description
+parser.add_argument('-d', '--project_directory',
+                    help='(optional) project directory containing gaussian input files', default=default_input_file_directory)
+#TODO add handling for several input_file arguments
+parser.add_argument('-f', '--input_files',
+                    help='(optional) specific input files to submit from project directory')
+parser.add_argument('-s', '--submission_type', choices=['GREX', 'PSI'], default=default_submission,
+                    help='GREX or PSI submissions supported')
 args = parser.parse_args()
 
+
+def get_gaussian_input_files(input_file_directory, select_input_files):
+    # Gets file names from gaussian input files directory
+
+    #Load all files in that directory
+    files_in_directory = [f for f in listdir(input_file_directory) if isfile(join(input_file_directory, f))]
+
+    #Adds only those files selected by the user
+    final_file_list = []
+    if (select_input_files):
+        for file_name in select_input_files:
+            if file_name in files_in_directory:
+                final_file_list.append(file_name)
+            else:
+                print 'File not found: ' + file_name
+    else:
+        final_file_list = files_in_directory
+
+    print('Preparing the following gaussian input file(s) for submission: ' )
+    for file in final_file_list:
+        print file
+
+    return final_file_list
 
 
 def create_ref_config(atom_coordinates):
@@ -145,7 +179,7 @@ def create_gaussian_file_header(gaussian_input_params):
 def get_coordinate_line_number(str):
     return len(str.split('\n'))
 
-def load_input(gaussian_input_params):
+def load_input(input_file, gaussian_input_params):
     """
     Loads the values gaussian parameters into a dictionary object, while removing certain route parameters
     :param gaussian_input_params
@@ -153,13 +187,6 @@ def load_input(gaussian_input_params):
     """
     params = gaussian_input_params
     section_number = 1
-
-    global input_file
-    if (args.input_file):
-        input_file = args.input_file
-        print('Loading gaussian input file: ' + args.input_file)
-    else:
-        print('Input file location not set, using default gaussian input file: ' + input_file)
 
     with open(input_file) as input:
 
@@ -291,12 +318,23 @@ def option_removal_helper(option_type, line):
     return line
 
 if __name__ == "__main__":
-    load_periodic_table()
 
-    gaussian_input_params = {'link0_section': '', 'route_section': '',
+    #Get input file names:
+    project_directory = args.project_directory
+    print 'Loading files from directory:  ' + project_directory
+    input_files = get_gaussian_input_files(project_directory, args.input_files)
+
+    #Initialize gaussian.inp file parameters
+
+    input_data = {}
+    for input in input_files:
+        gaussian_input_params = {'link0_section': '', 'route_section': '',
                     'title': '', 'natoms': 0, 'charge': None, 'multiplicity': None, 'atom_coordinates' : ''}
-    gaussian_input_params = load_input(gaussian_input_params)
+        input_data[input] = load_input(join(project_directory, input), gaussian_input_params)
+        print input_data[input]
 
+    #TODO only call this if reset_ref_config is set, otherwise it should continue from latest value
     create_ref_config(gaussian_input_params['atom_coordinates'])
+
     set_env_config(gaussian_input_params['natoms'])
     create_gaussian_file_header(gaussian_input_params)

@@ -22,8 +22,19 @@ optimization=$2  #this is 'force' when called from gaussian_force or 'opt' when 
 # and gaussian-header-end flags.
 #
 #gaussian-header-begin (DO NOT REMOVE) 
+header='% chk=propane.chk
+ #  hf/6-31g geom=connectivity <PARAM>
 
-#gaussian-header-end (DO NOT REMOVE)   
+Title Card Required
+
+0 1
+'
+#Coordinate line where data begins
+coorLineNumber=7
+#Title of the gaussian input file
+title='Title Card Required'
+
+#gaussian-header-end (DO NOT REMOVE)      
 
 #*******************************************************************************
 #*******************************************************************************
