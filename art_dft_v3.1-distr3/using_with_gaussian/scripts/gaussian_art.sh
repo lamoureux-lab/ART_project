@@ -9,7 +9,7 @@ setenv EVENT_TYPE  NEW      # Either 'NEW', 'REFINE_SADDLE' when further converg
 
 #setenv LABEL_SIESTA SIGA_INT
 
-setenv NATOMS     11         # Number of atoms in the problem
+setenv NATOMS     8         # Number of atoms in the problem
 
 setenv Prefactor_Push_Over_Saddle 0.3 # The prefactor for pushing over the saddle point, fraction of distance from initial minimum to saddle point 0.15 (default) 0.3 (siesta)
 
@@ -68,5 +68,5 @@ setenv RESTART          restart.dat               # current data.sh for restarti
 ############### Run the simulation #######################################################################
 
 #ensure that Gaussian is loaded (will be the most current version)
-../source/artdft
+../../source/artdft
 

@@ -1,5 +1,5 @@
 #!/bin/bash
-gaussian_input='sample.inp'
+
 # Gaussian job submission script
 
 #************************************************************
@@ -12,7 +12,7 @@ gaussian_input='sample.inp'
 
 # Cluster submission details
 #PBS -S /bin/bash
-#PBS -l mem=2000MB 
+#PBS -l mem=8000MB
 #PBS -l nodes=1:ppn=8
 #PBS -l walltime=010:00:00
 
@@ -24,16 +24,13 @@ gaussian_input='sample.inp'
 
 cd $PBS_O_WORKDIR
 
-echo "Current working directory is `pwd`" 
+echo "Current working directory is `pwd`"
 echo "Running on `hostname`"
 echo "Starting run at: `date`"
 
 # Set up the Gaussian environment using the module command:
 module load gaussian
 
-# Run python setup script
-python run_gaussian_art.py -f $gaussian_input
-
-# Run g09 
+# Run g09
 #g09 pipes debug log information to output.log
 csh gaussian_art.sh > output.log

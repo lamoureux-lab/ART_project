@@ -33,9 +33,6 @@ cd $PBS_O_WORKDIR
 
 #echo "Starting run at: `date`"
 
-# Run python setup script
-python run_gaussian_artdft.py -f $gaussian_input
-
 # Run g09, change name of input file
 #g09 H2N
 #rm -rf /state/partition1/$LOGNAME"_"$PBS_JOBID

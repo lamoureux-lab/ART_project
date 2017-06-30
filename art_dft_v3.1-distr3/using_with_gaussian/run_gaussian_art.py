@@ -4,9 +4,10 @@
 
 import re
 import argparse
-from os import listdir, makedirs
-from os.path import isfile, join, exists, splitext
-
+from os import listdir, makedirs, getcwd
+from os.path import isfile, join, exists
+from shutil import copy
+from subprocess import call
 
 #Program directories
 script_directory = 'scripts'
@@ -20,6 +21,8 @@ gaussian_execution_script = join(script_directory, 'execute_gaussian.sh')
 refconfig_file = 'refconfig.dat'
 gaussian_art_file = join(script_directory, 'gaussian_art.sh')     #Shell script containing the configuration parameters for the ART application
 periodic_table_data = join(program_data_directory, 'periodic_table_data.csv')
+grex_submission_script = 'gauss_grex.sub'
+psi_submission_script =  'gauss_psi.sub'
 
 
 #Handles file parameter passing
@@ -349,16 +352,20 @@ if __name__ == "__main__":
             makedirs(structure_output_directory)
 
 
+        #TODO only call this if reset_ref_config is set, otherwise it should continue from latest value
+        create_ref_config(gaussian_input_params['atom_coordinates'])
+        set_env_config(gaussian_input_params['natoms'])
+        create_gaussian_file_header(gaussian_input_params)
 
+        #TODO
+        # Temporary method to simply copy scripts to appropriate structure directories
+        copy(gaussian_execution_script, structure_output_directory)
+        copy(refconfig_file, structure_output_directory)
+        copy(gaussian_art_file, structure_output_directory)
 
-
-
-    
-        
-    # for input in input_files:
-
-    #TODO only call this if reset_ref_config is set, otherwise it should continue from latest value
-    create_ref_config(gaussian_input_params['atom_coordinates'])
-
-    set_env_config(gaussian_input_params['natoms'])
-    create_gaussian_file_header(gaussian_input_params)
+        submission_type = args.submission_type
+        if submission_type == 'GREX':
+            copy(join(script_directory,grex_submission_script), structure_output_directory)
+            submission_file = join(structure_output_directory, grex_submission_script)
+            print 'Running submission file for: ' + structure
+            call(['qsub', submission_file], shell=False)
