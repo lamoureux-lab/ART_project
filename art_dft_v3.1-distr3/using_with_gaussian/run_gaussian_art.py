@@ -4,14 +4,15 @@
 
 import re
 import argparse
-from os import listdir
-from os.path import isfile, join
+from os import listdir, makedirs
+from os.path import isfile, join, exists, splitext
 
 
 #Program directories
 script_directory = 'scripts'
 program_data_directory = 'program_data'
 default_input_file_directory = 'input_files'
+default_output_directory = 'output'
 default_submission = 'GREX' #GREX or PSI
 
 #Program files
@@ -25,6 +26,8 @@ periodic_table_data = join(program_data_directory, 'periodic_table_data.csv')
 parser = argparse.ArgumentParser(description='Gaussian_ART ... ') #TODO add a good application description
 parser.add_argument('-d', '--project_directory',
                     help='(optional) project directory containing gaussian input files', default=default_input_file_directory)
+parser.add_argument('-o', '--output_directory',
+                    help='(optional) project directory where output files are saved', default=default_output_directory)
 #TODO add handling for several input_file arguments
 parser.add_argument('-f', '--input_files',
                     help='(optional) specific input files to submit from project directory')
@@ -324,14 +327,35 @@ if __name__ == "__main__":
     print 'Loading files from directory:  ' + project_directory
     input_files = get_gaussian_input_files(project_directory, args.input_files)
 
-    #Initialize gaussian.inp file parameters
+    # Creates an output directory if not already present
+    output_directory = args.output_directory
+    if not exists(output_directory):
+        makedirs(output_directory)
 
+    #Initialize gaussian.inp file parameters
     input_data = {}
-    for input in input_files:
+    for input_file_name in input_files:
         gaussian_input_params = {'link0_section': '', 'route_section': '',
                     'title': '', 'natoms': 0, 'charge': None, 'multiplicity': None, 'atom_coordinates' : ''}
-        input_data[input] = load_input(join(project_directory, input), gaussian_input_params)
-        print input_data[input]
+
+        structure = input_file_name.split('.')[0]
+
+        # Loads input data for each Gaussian input file
+        input_data[structure] = load_input(join(project_directory, input_file_name), gaussian_input_params)
+
+        # Creates output directories for each structure if not already present
+        structure_output_directory = join(output_directory, structure)
+        if not exists(structure_output_directory):
+            makedirs(structure_output_directory)
+
+
+
+
+
+
+    
+        
+    # for input in input_files:
 
     #TODO only call this if reset_ref_config is set, otherwise it should continue from latest value
     create_ref_config(gaussian_input_params['atom_coordinates'])
