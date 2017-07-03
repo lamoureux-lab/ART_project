@@ -31,8 +31,7 @@ parser.add_argument('-d', '--project_directory',
                     help='(optional) project directory containing gaussian input files', default=default_input_file_directory)
 parser.add_argument('-o', '--output_directory',
                     help='(optional) project directory where output files are saved', default=default_output_directory)
-#TODO add handling for several input_file arguments
-parser.add_argument('-f', '--input_files',
+parser.add_argument('-f', '--input_files', nargs='*',
                     help='(optional) specific input files to submit from project directory')
 parser.add_argument('-s', '--submission_type', choices=['GREX', 'PSI'], default=default_submission,
                     help='GREX or PSI submissions supported')
@@ -362,10 +361,12 @@ if __name__ == "__main__":
         copy(gaussian_execution_script, structure_output_directory)
         copy(refconfig_file, structure_output_directory)
         copy(gaussian_art_file, structure_output_directory)
+        copy('filecounter', structure_output_directory)
+        copy('list_atoms.dat', structure_output_directory)
 
         submission_type = args.submission_type
         if submission_type == 'GREX':
             copy(join(script_directory,grex_submission_script), structure_output_directory)
-            submission_file = join(structure_output_directory, grex_submission_script)
-            print 'Running submission file for: ' + structure
-            call(['qsub', submission_file], shell=False)
+            # submission_file = join(structure_output_directory, grex_submission_script)
+            # print 'Running submission file for: ' + structure
+            # call(['qsub', submission_file], shell=False)
