@@ -29,8 +29,9 @@ psi_submission_script =  'gauss_psi.sub'
 parser = argparse.ArgumentParser(description='Gaussian_ART ... ') #TODO add a good application description
 parser.add_argument('-d', '--project_directory',
                     help='(optional) project directory containing gaussian input files', default=default_input_file_directory)
-parser.add_argument('-o', '--output_directory',
-                    help='(optional) project directory where output files are saved', default=default_output_directory)
+#TODO consider not allowing change of output because this effects program directory for ../../../source/ardft in execute_gaussian.sh
+# parser.add_argument('-o', '--output_directory',
+#                     help='(optional) project directory where output files are saved', default=default_output_directory)
 parser.add_argument('-f', '--input_files', nargs='*',
                     help='(optional) specific input files to submit from project directory')
 parser.add_argument('-s', '--submission_type', choices=['GREX', 'PSI'], default=default_submission,

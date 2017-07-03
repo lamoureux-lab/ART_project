@@ -68,5 +68,5 @@ setenv RESTART          restart.dat               # current data.sh for restarti
 ############### Run the simulation #######################################################################
 
 #ensure that Gaussian is loaded (will be the most current version)
-../../source/artdft
+../../../source/artdft
 
