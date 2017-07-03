@@ -1,5 +1,6 @@
 import glob
-import scipy.spatial.distance as sp
+import numpy as np
+
 files = glob.glob("min1*")
 dict = {} #Initialize a Dictionary
 for min in files:
@@ -14,7 +15,6 @@ for min in files:
                 z = float(coord[3])
                 coords.append((x,y,z))
     dict[min] = coords #Added coordinates to the dictionary
-import numpy as np
 cluster = {}
 map_to_cluster = {}
 for key in sorted(dict.keys()):
