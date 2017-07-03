@@ -4,7 +4,7 @@
 
 import re
 import argparse
-from os import listdir, makedirs, getcwd
+from os import listdir, makedirs, getcwd, chdir
 from os.path import isfile, join, exists
 from shutil import copy
 from subprocess import call
@@ -368,5 +368,8 @@ if __name__ == "__main__":
         if submission_type == 'GREX':
             copy(join(script_directory,grex_submission_script), structure_output_directory)
             # submission_file = join(structure_output_directory, grex_submission_script)
-            # print 'Running submission file for: ' + structure
-            # call(['qsub', submission_file], shell=False)
+            print 'Running submission file for: ' + structure
+            wd = getcwd()
+            chdir(join(wd, structure_output_directory))
+            call(['qsub', grex_submission_script], shell=False)
+            chdir(wd)
