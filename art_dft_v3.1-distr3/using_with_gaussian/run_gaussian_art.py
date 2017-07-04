@@ -4,9 +4,10 @@
 
 import re
 import argparse
+import sys
 from os import listdir, makedirs, getcwd, chdir
 from os.path import isfile, join, exists
-from shutil import copy
+from shutil import copy, rmtree
 from subprocess import call
 
 #Program directories
@@ -17,9 +18,9 @@ default_output_directory = 'output'
 default_submission = 'GREX' #GREX or PSI
 
 #Program files
-gaussian_execution_script = join(script_directory, 'execute_gaussian.sh')
-refconfig_file = 'refconfig.dat'
-gaussian_art_file = join(script_directory, 'gaussian_art.sh')     #Shell script containing the configuration parameters for the ART application
+gaussian_execution_script = 'execute_gaussian.sh'
+refconfig_filename = 'refconfig.dat'
+gaussian_art_filename = 'gaussian_art.sh'     #Shell script containing the configuration parameters for the ART application
 periodic_table_data = join(program_data_directory, 'periodic_table_data.csv')
 grex_submission_script = 'gauss_grex.sub'
 psi_submission_script =  'gauss_psi.sub'
@@ -29,13 +30,12 @@ psi_submission_script =  'gauss_psi.sub'
 parser = argparse.ArgumentParser(description='Gaussian_ART ... ') #TODO add a good application description
 parser.add_argument('-d', '--project_directory',
                     help='(optional) project directory containing gaussian input files', default=default_input_file_directory)
-#TODO consider not allowing change of output because this effects program directory for ../../../source/ardft in execute_gaussian.sh
-# parser.add_argument('-o', '--output_directory',
-#                     help='(optional) project directory where output files are saved', default=default_output_directory)
 parser.add_argument('-f', '--input_files', nargs='*',
                     help='(optional) specific input files to submit from project directory')
 parser.add_argument('-s', '--submission_type', choices=['GREX', 'PSI'], default=default_submission,
-                    help='GREX or PSI submissions supported')
+                    help='GREX or PSI submissions supported. ' + default_submission + ' is the default')
+parser.add_argument('-r', '--restart', action='store_true',
+                    help='restarts the output directory instead of continuing from latest referenced configuration')
 args = parser.parse_args()
 
 
@@ -72,10 +72,10 @@ def create_ref_config(atom_coordinates):
     :param gaussian_input_params:
     :return:
     """
-    global refconfig_file
-    global gaussian_art_file
+    global script_directory
+    global refconfig_filename
 
-    config = open(refconfig_file, 'w+')     #Overwrites of creates a new file if it doesn't exist
+    config = open(join(script_directory, refconfig_filename), 'w+')     #Overwrites of creates a new file if it doesn't exist
     config.write('run_id:         1000\n')
     config.write('total_energy:   0\n')     #Placeholder, as this will be optimized by ART to the correct value
     #TODO see about removing these as they are not necessary for gaussian
@@ -90,10 +90,11 @@ def set_env_config(natoms):
     :param natoms:
     :return:
     """
-    global refconfig_file
-    global gaussian_art_file
+    global script_directory
+    global refconfig_filename
+    global gaussian_art_filename
 
-    with open(gaussian_art_file) as input:
+    with open(join(script_directory, gaussian_art_filename)) as input:
 
         updated_text = ''
         for line in input:
@@ -116,7 +117,7 @@ def set_env_config(natoms):
 
             #Sets reference configuration file that is updated throughout
             elif line[0].find('setenv REFCONFIG') != -1:
-                updated_line = 'setenv REFCONFIG        ' + refconfig_file+ '             '
+                updated_line = 'setenv REFCONFIG        ' + refconfig_filename + '             '
 
             # Puts back configuration comments
             if comment_set and updated_line:
@@ -131,7 +132,7 @@ def set_env_config(natoms):
                 updated_text = updated_text + original_line
 
     # overwrites the configuration file with appropriate values from the gaussian input file
-    test = open(gaussian_art_file, 'w+')
+    test = open(join(script_directory, gaussian_art_filename), 'w+')
     test.write(updated_text)
 
 
@@ -143,18 +144,20 @@ def create_gaussian_file_header(gaussian_input_params):
     :param gaussian_input_params:
     :return:
     """
+    global script_directory
     global gaussian_execution_script
+    gaussian_execution_script_local = join(script_directory, gaussian_execution_script)
     params = gaussian_input_params
 
     # creates a regular expression pattern that will isolate the header insertion point
     insertion_point = re.compile('#gaussian-header-begin.*?#gaussian-header-end \(DO NOT REMOVE\)', re.DOTALL)
 
     # open file
-    f = open(gaussian_execution_script, 'r')
+    f = open(gaussian_execution_script_local, 'r')
     initial_script = f.read()
     f.close()
 
-    output = open(gaussian_execution_script, 'w+')
+    output = open(gaussian_execution_script_local, 'w+')
 
     # Builds a header for the gaussian.inp file, <OPTION> Flag will be replaced by opt or force
 
@@ -178,7 +181,7 @@ def create_gaussian_file_header(gaussian_input_params):
     # Writes the header as a string variable in the gaussian execution script
     new_script_lines = start_shell_script_marker + header + coordinate_line_start + title_line_start + end_shell_script_marker
     script_with_header = insertion_point.sub(new_script_lines, initial_script)
-    f = open(gaussian_execution_script, 'w')
+    f = open(gaussian_execution_script_local, 'w')
     f.write(script_with_header)
     f.close()
 
@@ -323,47 +326,126 @@ def option_removal_helper(option_type, line):
 
     return line
 
+def query_yes_no(question, default="yes"):
+    """
+    From Python recipe http://code.activestate.com/recipes/577058/
+    Asks a yes/no question via raw_input() and return their answer.
+
+    "question" is a string that is presented to the user.
+    "default" is the presumed answer if the user just hits <Enter>.
+        It must be "yes" (the default), "no" or None (meaning
+        an answer is required of the user).
+
+    The "answer" return value is True for "yes" or False for "no".
+    """
+    valid = {"yes": True, "y": True, "ye": True,
+             "no": False, "n": False}
+    if default is None:
+        prompt = " [y/n] "
+    elif default == "yes":
+        prompt = " [Y/n] "
+    elif default == "no":
+        prompt = " [y/N] "
+    else:
+        raise ValueError("invalid default answer: '%s'" % default)
+
+    while True:
+        sys.stdout.write(question + prompt)
+        choice = raw_input().lower()
+        if default is not None and choice == '':
+            return valid[default]
+        elif choice in valid:
+            return valid[choice]
+        else:
+            sys.stdout.write("Please respond with 'yes' or 'no' "
+                             "(or 'y' or 'n').\n")
+
+
+def create_directory(directory):
+    """
+    Creates a new directory if it does not already exist
+    :param directory:
+    :return:
+    """
+    if not exists(directory):
+        makedirs(directory)
+        return True
+    return False
+
+def check_file_exists(filename):
+    if not isfile(filename):
+        print 'Missing: ' + filename
+        return False
+    return True
+
 if __name__ == "__main__":
 
-    #Get input file names:
+    # Get input file names:
     project_directory = args.project_directory
     print 'Loading files from directory:  ' + project_directory
     input_files = get_gaussian_input_files(project_directory, args.input_files)
 
-    # Creates an output directory if not already present
-    output_directory = args.output_directory
-    if not exists(output_directory):
-        makedirs(output_directory)
+    # Restart variable will determine whether to reset existing data in a directory to start anew (e.g., if
+    # previous run data was generated from an incorrect gaussian.inp file
+    start_from_scratch = args.restart
 
-    #Initialize gaussian.inp file parameters
+    # Creates an output directory if not already present
+    output_directory = default_output_directory
+    if create_directory(output_directory):
+        start_from_scratch = True
+
+    # Initialize gaussian.inp file parameters
     input_data = {}
     for input_file_name in input_files:
         gaussian_input_params = {'link0_section': '', 'route_section': '',
                     'title': '', 'natoms': 0, 'charge': None, 'multiplicity': None, 'atom_coordinates' : ''}
-
+        is_new_structure = False
         structure = input_file_name.split('.')[0]
-
-        # Loads input data for each Gaussian input file
-        input_data[structure] = load_input(join(project_directory, input_file_name), gaussian_input_params)
 
         # Creates output directories for each structure if not already present
         structure_output_directory = join(output_directory, structure)
-        if not exists(structure_output_directory):
-            makedirs(structure_output_directory)
+        if create_directory(structure_output_directory):
+            is_new_structure = True
 
+        # Checks that an existing structure directory has the correct files to continue running ART
+        # The option will be given to skip directory and submit files for the remaining gaussian.inp
+        # or to clear the directory and restart
+        if not is_new_structure and not start_from_scratch:
+            file_missing = False
+            if not check_file_exists(join(structure_output_directory, gaussian_execution_script)):
+                file_missing = True
+            if not check_file_exists(join(structure_output_directory, gaussian_art_filename)):
+                file_missing = True
+            if not check_file_exists(join(structure_output_directory, refconfig_filename)):
+                file_missing = True
+            if not check_file_exists(join(structure_output_directory, 'filecounter')):
+                file_missing = True
+            if not check_file_exists(join(structure_output_directory, 'list_atoms.dat')):
+                file_missing = True
+            if file_missing:
+                print 'A critical file is missing from: ' + structure_output_directory + '\n'
+                question =  'Reset this directory erasing it\'s data (y) or skip structure (n)'
+                erase = query_yes_no(question)
+                if erase:
+                    rmtree(structure_output_directory)
+                    if create_directory(structure_output_directory):
+                        is_new_structure = True
 
-        #TODO only call this if reset_ref_config is set, otherwise it should continue from latest value
-        create_ref_config(gaussian_input_params['atom_coordinates'])
-        set_env_config(gaussian_input_params['natoms'])
-        create_gaussian_file_header(gaussian_input_params)
+        # This is only called when the user wants to restart the structure or it was not already set
+        if start_from_scratch or is_new_structure:
+            # Loads input data for each Gaussian input file
+            input_data[structure] = load_input(join(project_directory, input_file_name), gaussian_input_params)
 
-        #TODO
-        # Temporary method to simply copy scripts to appropriate structure directories
-        copy(gaussian_execution_script, structure_output_directory)
-        copy(refconfig_file, structure_output_directory)
-        copy(gaussian_art_file, structure_output_directory)
-        copy('filecounter', structure_output_directory)
-        copy('list_atoms.dat', structure_output_directory)
+            create_ref_config(gaussian_input_params['atom_coordinates'])
+            set_env_config(gaussian_input_params['natoms'])
+            create_gaussian_file_header(gaussian_input_params)
+
+            # Temporary method to simply copy scripts to appropriate structure directories
+            copy(join(script_directory, gaussian_execution_script), structure_output_directory)
+            copy(refconfig_filename, structure_output_directory)
+            copy(join(script_directory, gaussian_art_filename), structure_output_directory)
+            copy('filecounter', structure_output_directory)
+            copy('list_atoms.dat', structure_output_directory)
 
         submission_type = args.submission_type
         if submission_type == 'GREX':
@@ -374,3 +456,6 @@ if __name__ == "__main__":
             chdir(join(wd, structure_output_directory))
             call(['qsub', grex_submission_script], shell=False)
             chdir(wd)
+        else:
+            print 'Only GREX submission is currently available'
+        #TODO handle other submission types
