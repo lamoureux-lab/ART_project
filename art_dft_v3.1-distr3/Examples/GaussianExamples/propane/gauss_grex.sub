@@ -1,0 +1,36 @@
+#!/bin/bash
+
+# Gaussian job submission script
+
+#************************************************************
+#
+# These are variables sent to the queueing system
+# Change them following your needs
+# NOTE: nodes=1 never changes for Gaussian jobs
+#
+#************************************************************
+
+# Cluster submission details
+#PBS -S /bin/bash
+#PBS -l mem=8000MB
+#PBS -l nodes=1:ppn=8
+#PBS -l walltime=010:00:00
+
+#Gaussian input starting file
+gaussian_input='sample.inp'
+
+
+# Adjust the mem and ppn above to match the requirements of your job
+
+cd $PBS_O_WORKDIR
+
+echo "Current working directory is `pwd`"
+echo "Running on `hostname`"
+echo "Starting run at: `date`"
+
+# Set up the Gaussian environment using the module command:
+module load gaussian
+
+# Run g09
+#g09 pipes debug log information to output.log
+csh gaussian_art.sh > output.log

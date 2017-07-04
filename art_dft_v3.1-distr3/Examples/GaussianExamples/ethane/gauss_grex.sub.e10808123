@@ -1,0 +1,15 @@
+=>> PBS: job killed: walltime 36006 exceeded limit 36000
+forrtl: error (78): process killed (SIGTERM)
+Image              PC                Routine            Line        Source             
+artdft             00000000004D68C9  Unknown               Unknown  Unknown
+artdft             00000000004D519E  Unknown               Unknown  Unknown
+artdft             0000000000489132  Unknown               Unknown  Unknown
+artdft             0000000000448B43  Unknown               Unknown  Unknown
+artdft             000000000044C6F9  Unknown               Unknown  Unknown
+libpthread.so.0    00002B979818D7E0  Unknown               Unknown  Unknown
+libc.so.6          00002B97984477BC  Unknown               Unknown  Unknown
+libc.so.6          00002B97983D95C9  Unknown               Unknown  Unknown
+artdft             000000000044590A  Unknown               Unknown  Unknown
+artdft             000000000044464F  Unknown               Unknown  Unknown
+
+Stack trace terminated abnormally.
