@@ -34,8 +34,8 @@ parser.add_argument('-f', '--input_files', nargs='*',
                     help='(optional) specific input files to submit from project directory')
 parser.add_argument('-s', '--submission_type', choices=['GREX', 'PSI'], default=default_submission,
                     help='GREX or PSI submissions supported. ' + default_submission + ' is the default')
-parser.add_argument('-r', '--restart', action='store_true',
-                    help='restarts the output directory instead of continuing from latest referenced configuration')
+parser.add_argument('-r', '--reset', action='store_true',
+                    help='resets the output directory instead of continuing from latest referenced configuration')
 args = parser.parse_args()
 
 
@@ -385,9 +385,9 @@ if __name__ == "__main__":
     print 'Loading files from directory:  ' + project_directory
     input_files = get_gaussian_input_files(project_directory, args.input_files)
 
-    # Restart variable will determine whether to reset existing data in a directory to start anew (e.g., if
+    # Reset variable will determine whether to reset existing data in a directory to start anew (e.g., if
     # previous run data was generated from an incorrect gaussian.inp file
-    start_from_scratch = args.restart
+    start_from_scratch = args.reset
 
     # Creates an output directory if not already present
     output_directory = default_output_directory
