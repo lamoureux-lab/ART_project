@@ -31,15 +31,66 @@ file_counter_start = 1000
 #Handles file parameter passing
 parser = argparse.ArgumentParser(description='Gaussian_ART ... ') #TODO add a good application description
 parser.add_argument('-d', '--project_directory',
-                    help='(optional) project directory containing gaussian input files', default=default_input_file_directory)
+                    help='project directory containing gaussian input files', default=default_input_file_directory)
 parser.add_argument('-f', '--input_files', nargs='*',
-                    help='(optional) specific input files to submit from project directory')
+                    help='specific input files to submit from project directory')
 parser.add_argument('-s', '--submission_type', choices=['GREX', 'PSI'], default=default_submission,
                     help='GREX or PSI submissions supported. ' + default_submission + ' is the default')
 parser.add_argument('-r', '--reset', action='store_true',
                     help='resets the output directory instead of continuing from latest referenced configuration')
+parser.add_argument('-t', '--time',
+                    help='changes the submissions job time (e.g., -t \'walltime=010:00:00\' ')
+parser.add_argument('-m', '--memory',
+                    help='changes the submissions job memory cap (e.g., -m \'mem=8000MB\' ')
+parser.add_argument('-p', '--processor_info',
+                    help='changes the submissions job processor cap (e.g., -m \'nodes=1:ppn=8\' ')
 args = parser.parse_args()
 
+
+def set_submission_script(submission_script, time = None, memory = None, processor_info = None):
+    """
+        Sets submissions parameters in gaussian_art.sh which contains the general configuration for the ART environment
+
+        :param natoms:
+        :return:
+        """
+    global script_directory
+    submission_script = join(script_directory, submission_script)
+
+    with open(submission_script) as input:
+        updated_text = ''
+        for line in input:
+            original_line = line
+            updated_line = ''
+
+            # Sets the time
+            if time:
+                time_flag = '#PBS -l walltime'
+                if time_flag in line:
+                    updated_line = '#PBS -l ' + time + '\n'
+
+            # Sets the memory
+            if memory:
+                memory_flag = '#PBS -l mem'
+                if memory_flag in line:
+                    updated_line = '#PBS -l ' + memory + '\n'
+
+            # Sets the processor information
+            if processor_info:
+                processor_flag = '#PBS -l nodes'
+                if processor_flag in line:
+                    updated_line = '#PBS -l ' + processor_info + '\n'
+
+            # updates the submission file string
+            if updated_line:
+                updated_text = updated_text + updated_line
+            else:
+                updated_text = updated_text + original_line
+
+    # overwrites the submissions file with appropriate values from the gaussian input file
+    sub = open(submission_script, 'w+')
+    sub.write(updated_text)
+    sub.close()
 
 def get_gaussian_input_files(input_file_directory, select_input_files):
     # Gets file names from gaussian input files directory
@@ -142,8 +193,9 @@ def set_env_config(natoms):
                 updated_text = updated_text + original_line
 
     # overwrites the configuration file with appropriate values from the gaussian input file
-    test = open(join(script_directory, gaussian_art_filename), 'w+')
-    test.write(updated_text)
+    config = open(join(script_directory, gaussian_art_filename), 'w+')
+    config.write(updated_text)
+    config.close()
 
 
 def create_gaussian_file_header(gaussian_input_params, structure_output_directory):
@@ -462,6 +514,7 @@ if __name__ == "__main__":
 
         submission_type = args.submission_type
         if submission_type == 'GREX':
+            set_submission_script(grex_submission_script, time = args.time, memory = args.memory, processor_info = args.processor_info)
             copy(join(script_directory,grex_submission_script), structure_output_directory)
             print 'Running submission file for: ' + structure
             wd = getcwd()
