@@ -146,7 +146,7 @@ subroutine store( fname )
 
   ! Added by Fedwa El-Mellouhi July 2002, writes the configuration in .xyz format. 
   ! Modified by E. Machado-charry for v_sim and BigDFT.
-!  if ( write_xyz ) then
+  if ( write_xyz ) then
 
      ! If there is a constraint over a given atom, is written in the geometry file.
      do i = 1, NATOMS
@@ -176,7 +176,7 @@ subroutine store( fname )
         write(XYZ,'(1x,A2,3(2x,f16.8),2x,a4)')   Atom(i), x(i), y(i), z(i), frzchain(i)
      end do
      close(XYZ)
-!  end if
+end if
 
 END SUBROUTINE store
 
