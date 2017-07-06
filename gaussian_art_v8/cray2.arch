@@ -1,5 +1,0 @@
-#On IBM
-FFLAGS =  -O3 #-bnoquiet
-LLIBS =  -lacml
-FORTRAN = pgf90 -Mipa=fast -tp k8-64 
-FLAGS =  $(FFLAGS)

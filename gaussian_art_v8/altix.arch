@@ -1,5 +1,0 @@
-#On IBM
-FFLAGS =  -O3 -IPF_fp_relaxed -fno-fnalias -fno-alias -ftz
-LLIBS =  -lscs
-FORTRAN = ifort
-FLAGS =  $(FFLAGS)

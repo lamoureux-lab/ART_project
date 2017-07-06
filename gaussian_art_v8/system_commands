@@ -1,4 +1,0 @@
-# grep last E( and print $5 value
-grep 'E(' gaussian.logs | tail -1| awk '{print $5}'
-
-
