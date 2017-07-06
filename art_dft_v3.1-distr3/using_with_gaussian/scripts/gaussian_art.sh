@@ -9,7 +9,7 @@ setenv EVENT_TYPE  NEW      # Either 'NEW', 'REFINE_SADDLE' when further converg
 
 #setenv LABEL_SIESTA SIGA_INT
 
-setenv NATOMS     11         # Number of atoms in the problem
+setenv NATOMS     8         # Number of atoms in the problem
 
 setenv Prefactor_Push_Over_Saddle 0.3 # The prefactor for pushing over the saddle point, fraction of distance from initial minimum to saddle point 0.15 (default) 0.3 (siesta)
 
@@ -48,6 +48,7 @@ setenv delta_threshold                      4.0   # Energy threshold during Lanc
 setenv Max_Perp_Moves_Activ                   8   # Maximum number of perpendicular steps during activation 12 (default) 8 (siesta)
 setenv Force_Threshold_Perp_Rel             0.5   # Threshold for perpendicular relaxation 0.5 (Siesta)
 setenv Max_Iter_Basin                        20   # Maximum number of iteraction for leaving the basin (kter) 100 (default) 200(Siesta)
+
 setenv Write_xyz                         .true.   # Generates .xyz files
 
 ################## Direction inversion in iterative subspace
