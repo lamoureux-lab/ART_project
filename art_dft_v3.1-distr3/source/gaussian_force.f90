@@ -14,8 +14,8 @@ subroutine calcforce_gau(nat,typa,posa,boxl,forca,energy)
   integer :: end_of_file = -1
   integer, parameter :: FGAUSS = 21
   real*8, parameter :: ZERO = 0.0d0
-  character(len=20) :: GAUSS   = 'art2gaussian'
-  character(len=20) :: GAUSSFORCE = 'gaussian2art'
+  character(len=20) :: GAUSS   = '.art2gaussian'
+  character(len=20) :: GAUSSFORCE = '.gaussian2art'
   character(len=40) :: line
   character(len=10) :: string_natoms
   logical :: read_energy_done,read_force_done,read_coordinates_done, success
@@ -58,7 +58,7 @@ subroutine calcforce_gau(nat,typa,posa,boxl,forca,energy)
 
      ! We now call Gaussian do to the minimization
      ! Bash parameters: natoms=$1, optimization=$2
-     call system('sh execute_gaussian.sh ' // string_natoms // ' ' // 'force')
+     call system('sh .execute_gaussian.sh ' // string_natoms // ' ' // 'force')
 
      !NEW SECTION
      open(unit=FGAUSS,file=GAUSSFORCE,status='old',action='read',iostat=ierror)

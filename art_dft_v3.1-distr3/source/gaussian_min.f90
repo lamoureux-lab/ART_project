@@ -8,8 +8,8 @@ subroutine min_converge_gau(success)
   integer, parameter :: FGAUSS = 21
   real*8, parameter :: ZERO = 0.0d0
   real*8, dimension(natoms) :: xx, yy, zz
-  character(len=20) :: GAUSS   = 'art2gaussian'
-  character(len=20) :: GAUSSFORCE = 'gaussian2art'
+  character(len=20) :: GAUSS   = '.art2gaussian'
+  character(len=20) :: GAUSSFORCE = '.gaussian2art'
   character(len=70) :: line
   character(len=10) :: string_natoms
   logical :: read_coordinates_done,read_energy_done
@@ -34,7 +34,7 @@ subroutine min_converge_gau(success)
 
   ! We now call Gaussian do to the minimization
   ! Bash parameters: natoms=$1, optimization=$2
-  call system('sh execute_gaussian.sh ' // string_natoms // ' ' // 'opt')
+  call system('sh .execute_gaussian.sh ' // string_natoms // ' ' // 'opt')
 
   ! ! We first read the total energy
   ! read_done = .false.

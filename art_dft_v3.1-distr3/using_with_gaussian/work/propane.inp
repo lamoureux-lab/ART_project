@@ -1,5 +1,5 @@
 % chk=Propane.chk
-# opt hf/6-31g geom=connectivity
+# opt hf/6-31g
 
 Title Card Required
 

@@ -5,7 +5,7 @@
 import re
 import argparse
 import sys
-from os import listdir, makedirs, getcwd, chdir
+from os import listdir, makedirs, getcwd, chdir, rename
 from os.path import isfile, join, exists
 from shutil import copy, rmtree
 from subprocess import call
@@ -13,18 +13,20 @@ from subprocess import call
 #Program directories
 script_directory = 'scripts'
 program_data_directory = 'program_data'
-default_input_file_directory = 'input_files'
-default_output_directory = 'output'
+default_input_file_directory = 'work'
+default_output_directory = default_input_file_directory
 default_submission = 'GREX' #GREX or PSI
 
 #Program files
 gaussian_execution_script = 'execute_gaussian.sh'
 refconfig_filename = 'refconfig.dat'
 gaussian_art_filename = 'gaussian_art.sh'     #Shell script containing the configuration parameters for the ART application
-periodic_table_data = join(program_data_directory, 'periodic_table_data.csv')
+periodic_table_data = 'periodic_table_data.csv'
 grex_submission_script = 'gauss_grex.sub'
 psi_submission_script =  'gauss_psi.sub'
 
+#Default configurations
+file_counter_start = 1000
 
 #Handles file parameter passing
 parser = argparse.ArgumentParser(description='Gaussian_ART ... ') #TODO add a good application description
@@ -62,8 +64,17 @@ def get_gaussian_input_files(input_file_directory, select_input_files):
 
     return final_file_list
 
+def create_file_counter(file_counter_start, output_directory):
+    """
+    Creates a file counter that is used by the ART application to indicate the min/saddle file event
+    :param file_counter_start:
+    :param output_directory:
+    """
+    file_counter = open(join(output_directory, 'filecounter'), 'w+')
+    file_counter.write('Counter:      ' + str(file_counter_start))
+    file_counter.close()
 
-def create_ref_config(atom_coordinates):
+def create_ref_config(atom_coordinates, output_directory):
     """
     Sets up refconfig.dat file which will be used as a starting reference by ART for atom coordinates before it is
     overwritten and updated
@@ -72,10 +83,9 @@ def create_ref_config(atom_coordinates):
     :param gaussian_input_params:
     :return:
     """
-    global script_directory
     global refconfig_filename
 
-    config = open(join(script_directory, refconfig_filename), 'w+')     #Overwrites of creates a new file if it doesn't exist
+    config = open(join(output_directory, refconfig_filename), 'w+')     #Overwrites or creates a new file if it doesn't exist
     config.write('run_id:         1000\n')
     config.write('total_energy:   0\n')     #Placeholder, as this will be optimized by ART to the correct value
     #TODO see about removing these as they are not necessary for gaussian
@@ -136,7 +146,7 @@ def set_env_config(natoms):
     test.write(updated_text)
 
 
-def create_gaussian_file_header(gaussian_input_params):
+def create_gaussian_file_header(gaussian_input_params, structure_output_directory):
     """
     Inserts a gaussian header file into the bash script that will be writing to
     the art2gaussian.inp file and calling gaussian
@@ -146,7 +156,10 @@ def create_gaussian_file_header(gaussian_input_params):
     """
     global script_directory
     global gaussian_execution_script
-    gaussian_execution_script_local = join(script_directory, gaussian_execution_script)
+    gaussian_execution_script_global = join(script_directory, gaussian_execution_script)
+    copy(gaussian_execution_script_global, structure_output_directory)
+    gaussian_execution_script_local = join(structure_output_directory, gaussian_execution_script)
+
     params = gaussian_input_params
 
     # creates a regular expression pattern that will isolate the header insertion point
@@ -184,6 +197,10 @@ def create_gaussian_file_header(gaussian_input_params):
     f = open(gaussian_execution_script_local, 'w')
     f.write(script_with_header)
     f.close()
+
+    # Hides script to reduce clutter
+    rename(gaussian_execution_script_local, join(structure_output_directory, '.' + gaussian_execution_script))
+
 
 def get_coordinate_line_number(str):
     return len(str.split('\n'))
@@ -285,9 +302,10 @@ def load_periodic_table():
     :return: A dictionary mapping atomic symbol to number
     """
     global periodic_table_data
+    global program_data_directory
 
     atomic_symbol_number_map = {}
-    with open(periodic_table_data) as input:
+    with open(join(program_data_directory, periodic_table_data)) as input:
         for line in input:
             line = line.split(',')
             atomic_symbol_number_map[line[1].strip()] = line[0].strip()
@@ -412,7 +430,7 @@ if __name__ == "__main__":
         # or to clear the directory and restart
         if not is_new_structure and not start_from_scratch:
             file_missing = False
-            if not check_file_exists(join(structure_output_directory, gaussian_execution_script)):
+            if not check_file_exists(join(structure_output_directory, '.'+gaussian_execution_script)):
                 file_missing = True
             if not check_file_exists(join(structure_output_directory, gaussian_art_filename)):
                 file_missing = True
@@ -420,11 +438,9 @@ if __name__ == "__main__":
                 file_missing = True
             if not check_file_exists(join(structure_output_directory, 'filecounter')):
                 file_missing = True
-            if not check_file_exists(join(structure_output_directory, 'list_atoms.dat')):
-                file_missing = True
             if file_missing:
                 print 'A critical file is missing from: ' + structure_output_directory + '\n'
-                question =  'Reset this directory erasing it\'s data (y) or skip structure (n)'
+                question = 'Reset this directory erasing it\'s data (y) or skip structure (n)'
                 erase = query_yes_no(question)
                 if erase:
                     rmtree(structure_output_directory)
@@ -436,25 +452,21 @@ if __name__ == "__main__":
             # Loads input data for each Gaussian input file
             input_data[structure] = load_input(join(project_directory, input_file_name), gaussian_input_params)
 
-            create_ref_config(gaussian_input_params['atom_coordinates'])
+            create_ref_config(gaussian_input_params['atom_coordinates'],structure_output_directory)
             set_env_config(gaussian_input_params['natoms'])
-            create_gaussian_file_header(gaussian_input_params)
+            create_gaussian_file_header(gaussian_input_params, structure_output_directory)
+            create_file_counter(file_counter_start, structure_output_directory)
 
-            # Temporary method to simply copy scripts to appropriate structure directories
-            copy(join(script_directory, gaussian_execution_script), structure_output_directory)
-            copy(refconfig_filename, structure_output_directory)
+            # TODO Temporary method to simply copy scripts to appropriate structure directories
             copy(join(script_directory, gaussian_art_filename), structure_output_directory)
-            copy('filecounter', structure_output_directory)
-            copy('list_atoms.dat', structure_output_directory)
 
         submission_type = args.submission_type
         if submission_type == 'GREX':
             copy(join(script_directory,grex_submission_script), structure_output_directory)
-            # submission_file = join(structure_output_directory, grex_submission_script)
             print 'Running submission file for: ' + structure
             wd = getcwd()
             chdir(join(wd, structure_output_directory))
-            call(['qsub', grex_submission_script], shell=False)
+            call(['qsub', '-N ' + 'gau_art_'+ structure, grex_submission_script], shell=False)
             chdir(wd)
         else:
             print 'Only GREX submission is currently available'

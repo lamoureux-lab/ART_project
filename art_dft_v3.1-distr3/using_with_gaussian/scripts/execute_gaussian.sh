@@ -5,8 +5,8 @@
 #is added to this script dynamically by executing prepare_gaussian_art.py. The subroutine
 #in gaussian_force will set 'force' as a route parameter and the subroutine in gaussian_min
 #will set 'opt' as a route parameter.
-gaussian2art='gaussian2art'
-art2gaussian='art2gaussian'
+gaussian2art='.gaussian2art'
+art2gaussian='.art2gaussian'
 gaussian_output='gaussian.log'
 
 #*******************************************************************************
@@ -21,9 +21,8 @@ optimization=$2  #this is 'force' when called from gaussian_force or 'opt' when 
 # are inserted dynamically by prepare_gaussian_art.py between the gaussian-header-begin
 # and gaussian-header-end flags.
 #
-#gaussian-header-begin (DO NOT REMOVE) 
-
-#gaussian-header-end (DO NOT REMOVE)         
+#gaussian-header-begin (DO NOT REMOVE)
+#gaussian-header-end (DO NOT REMOVE)                              
 
 #*******************************************************************************
 #*******************************************************************************
@@ -97,7 +96,6 @@ fi
 
 
 #*******************************************************************************
-
 ##*******************************************************************************
 
 
