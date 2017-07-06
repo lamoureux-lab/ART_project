@@ -48,6 +48,7 @@ setenv delta_threshold                      4.0   # Energy threshold during Lanc
 setenv Max_Perp_Moves_Activ                   8   # Maximum number of perpendicular steps during activation 12 (default) 8 (siesta)
 setenv Force_Threshold_Perp_Rel             0.5   # Threshold for perpendicular relaxation 0.5 (Siesta)
 setenv Max_Iter_Basin                        20   # Maximum number of iteraction for leaving the basin (kter) 100 (default) 200(Siesta)
+setenv Write_xyz                         .true.   # Generates .xyz files
 
 ################## Direction inversion in iterative subspace
 #setenv Use_DIIS                        .false.   # Use DIIS for the final convergence to saddle
