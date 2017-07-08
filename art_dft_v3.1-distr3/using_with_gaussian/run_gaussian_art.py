@@ -44,10 +44,13 @@ parser.add_argument('-m', '--memory',
                     help='changes the submissions job memory cap (e.g., -m \'mem=8000MB\' ')
 parser.add_argument('-p', '--processor_info',
                     help='changes the submissions job processor cap (e.g., -p \'nodes=1:ppn=8\' ')
+parser.add_argument('-o', '--optimize', action='store_true',
+                    help='sets submission job memory and number of processors to what is specified in the file\n '
+                         '(note: specifying --memory or --processor_info will take precedence)')
 args = parser.parse_args()
 
 
-def set_submission_script(submission_script, structure_output_directory, time = None, memory = None, processor_info = None):
+def set_submission_script(submission_script, structure_output_directory, link0_section, optimize=False, time = None, memory = None, processor_info = None):
     """
         Sets submissions parameters in gaussian_art.sh which contains the general configuration for the ART environment
 
@@ -56,6 +59,7 @@ def set_submission_script(submission_script, structure_output_directory, time = 
         """
     global script_directory
     submission_script_template = join(script_directory, submission_script)
+    link0_arr = link0_section.splitlines()
 
     with open(submission_script_template) as input:
         updated_text = ''
@@ -64,22 +68,35 @@ def set_submission_script(submission_script, structure_output_directory, time = 
             updated_line = ''
 
             # Sets the time
-            if time:
-                time_flag = '#PBS -l walltime'
-                if time_flag in line:
+            time_flag = '#PBS -l walltime'
+            if time_flag in line:
+                if time:
                     updated_line = '#PBS -l ' + time + '\n'
 
             # Sets the memory
-            if memory:
-                memory_flag = '#PBS -l mem'
-                if memory_flag in line:
+            memory_flag = '#PBS -l mem'
+            if memory_flag in line:
+                if memory:
                     updated_line = '#PBS -l ' + memory + '\n'
+                elif optimize:
+                    for item in link0_arr:
+                        link0_memory = extract_link0_parameter('mem', item)
+                        #Checks if the memory is set in the gaussian input file
+                        if link0_memory:
+                            updated_line = '#PBS -l mem=' + link0_memory + '\n'
 
             # Sets the processor information
-            if processor_info:
-                processor_flag = '#PBS -l nodes'
-                if processor_flag in line:
+            processor_flag = '#PBS -l nodes'
+            if processor_flag in line:
+                if processor_info:
                     updated_line = '#PBS -l ' + processor_info + '\n'
+                elif optimize:
+                    # % nproc = 12
+                    for item in link0_arr:
+                        link0_nproc = extract_link0_parameter('nproc', item)
+                        # Checks if the nproc is set in the gaussian input file
+                        if link0_nproc:
+                            updated_line = '#PBS -l nodes=1:ppn=' + link0_nproc + '\n'
 
             # updates the submission file string
             if updated_line:
@@ -90,7 +107,19 @@ def set_submission_script(submission_script, structure_output_directory, time = 
     # overwrites the submissions file with appropriate values from the gaussian input file
     sub = open(join(structure_output_directory, submission_script), 'w+')
     sub.write(updated_text)
+    # print updated_text
     sub.close()
+
+def extract_link0_parameter(flag, link0_line):
+    """
+    Gets the parameter assigned for memory or number of processors in a gaussian.inp file
+    :return:
+    """
+    if flag in link0_line:
+        return link0_line.split("=")[1].strip()
+    return None
+
+
 
 def get_gaussian_input_files(input_file_directory, select_input_files):
     # Gets file names from gaussian input files directory
@@ -514,11 +543,11 @@ if __name__ == "__main__":
 
         submission_type = args.submission_type
         if submission_type == 'GREX':
-            set_submission_script(grex_submission_script, structure_output_directory, time = args.time, memory = args.memory, processor_info = args.processor_info)
+            set_submission_script(grex_submission_script, structure_output_directory, gaussian_input_params['link0_section'], args.optimize, time = args.time, memory = args.memory, processor_info = args.processor_info)
             print 'Running submission file for: ' + structure
             wd = getcwd()
             chdir(join(wd, structure_output_directory))
-            call(['qsub', '-N','gau_art_'+ structure, grex_submission_script], shell=False)
+            # call(['qsub', '-N','gau_art_'+ structure, grex_submission_script], shell=False)
             chdir(wd)
         else:
             print 'Only GREX submission is currently available'
