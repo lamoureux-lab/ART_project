@@ -8,8 +8,8 @@ subroutine min_converge_gau(success)
   integer, parameter :: FGAUSS = 21
   real*8, parameter :: ZERO = 0.0d0
   real*8, dimension(natoms) :: xx, yy, zz
-  character(len=20) :: GAUSS   = '.art2gaussian'
-  character(len=20) :: GAUSSFORCE = '.gaussian2art'
+  character(len=20) :: GAUSS   = 'art2gaussian'
+  character(len=20) :: GAUSSFORCE = 'gaussian2art'
   character(len=70) :: line
   character(len=10) :: string_natoms
   logical :: read_coordinates_done,read_energy_done
@@ -25,7 +25,9 @@ subroutine min_converge_gau(success)
   open(unit=FGAUSS,file=GAUSS,status='replace',action='write',iostat=ierror)
 
   ! Prepares gaussian input file coordinates
-  write(FGAUSS,"(i4, f14.8, f14.8, f14.8)")  (typat(i),  x(i), y(i), z(i), i=1, NATOMS )
+  write(FGAUSS,"(a, f14.8, f14.8, f14.8)")  (typat(i),  x(i), y(i), z(i), i=1, NATOMS )
+  
+ ! write(FGAUSS,*)  (typat(i),  x(i), y(i), z(i), i=1, NATOMS )
   write(FGAUSS,*)
   close(FGAUSS)
 
@@ -33,8 +35,9 @@ subroutine min_converge_gau(success)
   write(string_natoms, '(i10)' )  NATOMS
 
   ! We now call Gaussian do to the minimization
-  ! Bash parameters: natoms=$1, optimization=$2
-  call system('sh .execute_gaussian.sh ' // string_natoms // ' ' // 'opt')
+  ! Bash parameters: natoms=$1, optimization=$2ls
+
+  call system('sh execute_gaussian.sh ' // string_natoms // ' ' // 'opt')
 
   ! ! We first read the total energy
   ! read_done = .false.
@@ -67,17 +70,18 @@ subroutine min_converge_gau(success)
 
   do 
     !Gets the Gaussian output coordinates
-    read(FGAUSS,"(A70)") line
+    read(FGAUSS,"(A40)") line
 
+    write(*,*) 'In first block', line
     ! Checks for IO errors or EOF marker
-    ! if (ierror .eq. end_of_file) then
-    !   if (.not.success) then
-    !     write(*,*) 'IO error in gaussian_min.f90'
-    !     stop
-    !   endif
-    !   success = .false.
-    !   exit
-    ! endif
+   ! if (ierror .eq. end_of_file) then
+      !if (.not.success) then
+        !write(*,*) 'IO error in gaussian_min.f90'
+       ! stop
+      !endif
+      !success = .false.
+     ! exit
+    !endif
 
     if ( line  == "outcoor:" ) then
       do i = 1, NATOMS
@@ -96,14 +100,16 @@ subroutine min_converge_gau(success)
   do 
     read(FGAUSS,"(A40)") line
     ! Checks for IO errors or EOF marker
-    ! if (ierror .eq. end_of_file) then
-    !   if (.not.success) then
-    !     write(*,*) 'IO error in gaussian_min.f90'
-    !     stop
-    !   endif
-    !   success = .false.
-    !   exit
-    ! endif
+    
+    write(*,*) 'In second block', line
+    !if (ierror .eq. end_of_file) then
+     ! if (.not.success) then
+      !  write(*,*) 'IO error in gaussian_min.f90'
+       ! stop
+      !endif
+      !success = .false.
+      !exit
+    !endif
 
     !Gets the final energy
     if ( line  == "energy:" ) then

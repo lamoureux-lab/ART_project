@@ -30,13 +30,16 @@ subroutine read_parameters( )
   end if
 
   !!__________________
-  ! We now get the types - define up to 5
+  ! Type worked by mapping arbitraty numbers to atomic symbols and is now deprecated, simply include atomic
+  ! number or atomic symbol left of coordinate values in the refconfig files and these will be written to both
+  ! regular min, sad output files and .xyz files
   call getenv('type1',temporary)
   if (temporary .eq. '') then
-     write(*,*) 'Error, must at least define 1 type of atoms -  use "setenv type1 Si", for example'
-     stop
+     !write(*,*) 'Error, must at least define 1 type of atoms -  use "setenv type1 Si", for example'
+     !stop
   else
      read(temporary,*) type_name(1)
+     write(*,*) type_name(1)
   end if
 
   call getenv('type2',temporary)
@@ -44,6 +47,7 @@ subroutine read_parameters( )
      type_name(2) = ''
   else
      read(temporary,*) type_name(2)
+     write(*,*) type_name(2)
   end if
 
   call getenv('type3',temporary)
@@ -686,7 +690,7 @@ subroutine read_parameters( )
      ! type of atom 
      call getenv('Type_selected',temporary)
      if (temporary .eq. '') then
-        type_sel = 0
+        type_sel = ''
      else
         read(temporary,*) type_sel 
      end if

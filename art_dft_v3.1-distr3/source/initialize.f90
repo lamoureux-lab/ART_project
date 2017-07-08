@@ -31,7 +31,7 @@ subroutine initialize()
   logical           :: flag, success
 
   integer                    :: nat_test
-  integer, pointer           :: typ_a(:)    ! Atomic type
+  character(len=3), pointer  :: typ_a(:)    ! Atomic type
   real(kind=8), pointer      :: pos_a(:)    ! Working positions of the atoms
   real(kind=8), dimension(:), pointer :: xa, ya, za
 
@@ -85,9 +85,9 @@ subroutine initialize()
      deallocate(pos_a)
   
 
-     !atomic type copy in atom (obsolete)
+     !atomic type copy in atom
      do i = 1, NATOMS
-        Atom(i) = type_name(typat(i))
+        Atom(i) = typat(i)
      end do
 
   ! write

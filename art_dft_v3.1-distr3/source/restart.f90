@@ -74,7 +74,7 @@ subroutine restart_states( istatus, ieventcurrent, iterations, iatp )
   close(FRESTART)
 
   do i = 1, NATOMS
-     Atom(i) = type_name(typat(i))
+     Atom(i) = typat(i)
   end do
                                       ! DEBUG 
   if ( iproc == 0 ) then

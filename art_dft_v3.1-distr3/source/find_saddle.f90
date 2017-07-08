@@ -797,9 +797,9 @@ subroutine coord_based_move( )
   do 
      that = int( NATOMS * ran3() + 1 ) 
      if ( in_list(that) ==1 .and. constr(that) == 0 ) then
-        if ( typat(that) == type_sel .and. type_sel/= 0 ) then
+        if ( typat(that) == type_sel .and. type_sel/= '' ) then
            exit 
-        else if ( type_sel == 0 ) then 
+        else if ( type_sel == '' ) then 
            exit
         else 
            cycle

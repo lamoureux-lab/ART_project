@@ -56,11 +56,11 @@ module defs
   ! Name of the file storing the current configurations
   character(len=20) :: conf_initial, conf_saddle, conf_final
   
-  integer,      dimension(:), allocatable          :: typat    ! Atomic type
-  integer,      dimension(:), allocatable          :: constr   ! Constraint over atoms
-  real(kind=8), dimension(:), allocatable, target  :: force    ! Working forces on the atoms
-  real(kind=8), dimension(:), allocatable, target  :: pos      ! Working positions of the atoms
-  real(kind=8), dimension(:), allocatable, target  :: posref   ! Reference position
+  character(len=3),  dimension(:), allocatable          :: typat    ! Atomic type
+  integer,           dimension(:), allocatable          :: constr   ! Constraint over atoms
+  real(kind=8),      dimension(:), allocatable, target  :: force    ! Working forces on the atoms
+  real(kind=8),      dimension(:), allocatable, target  :: pos      ! Working positions of the atoms
+  real(kind=8),      dimension(:), allocatable, target  :: posref   ! Reference position
 
   logical      :: write_xyz
   ! restart   
@@ -149,10 +149,10 @@ module defs
   ! only around a given atom. 
   ! Forces in the other molecule will be zero
   ! This is only for Type_of_events == local or list_local 
-  logical      :: dual_search              
-  integer      :: central_atom
-  real(kind=8) :: size_system
-  integer      :: type_sel
+  logical           :: dual_search              
+  integer           :: central_atom
+  real(kind=8)      :: size_system
+  character(len=3)  :: type_sel
   !__________________
   
   character(len=20) :: LOGFILE
@@ -164,7 +164,7 @@ module defs
   character(len=11) :: COUNTER
 
   character(len=20) :: eventtype 
-  character(len=11),parameter :: pos_units = "angstroemd0"
+  character(len=11),parameter :: pos_units = "angstroem"
 
 
 #ifdef MPI

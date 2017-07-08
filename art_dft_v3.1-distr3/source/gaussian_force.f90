@@ -3,7 +3,8 @@
 subroutine calcforce_gau(nat,typa,posa,boxl,forca,energy)
   use defs
   integer, intent(in) :: nat
-  integer, intent(in), dimension(NATOMS) :: typa
+  character(len=3) :: temp_string
+  !character(len=3), dimension(NATOMS) :: typa
   real*8, intent(in), dimension(VECSIZE),target :: posa
   real*8, dimension(VECSIZE), target:: posS
   real*8, intent(in) :: boxl
@@ -14,8 +15,8 @@ subroutine calcforce_gau(nat,typa,posa,boxl,forca,energy)
   integer :: end_of_file = -1
   integer, parameter :: FGAUSS = 21
   real*8, parameter :: ZERO = 0.0d0
-  character(len=20) :: GAUSS   = '.art2gaussian'
-  character(len=20) :: GAUSSFORCE = '.gaussian2art'
+  character(len=20) :: GAUSS   = 'art2gaussian'
+  character(len=20) :: GAUSSFORCE = 'gaussian2art'
   character(len=40) :: line
   character(len=10) :: string_natoms
   logical :: read_energy_done,read_force_done,read_coordinates_done, success
@@ -49,17 +50,47 @@ subroutine calcforce_gau(nat,typa,posa,boxl,forca,energy)
      open(unit=FGAUSS,file=GAUSS,status='replace',action='write',iostat=ierror)
 
      ! Prepares gaussian input file coordinates
-     write(FGAUSS,"(i4, f14.8, f14.8, f14.8)")  ( typa(i), xa(i), ya(i),za(i), i=1, NATOMS)
-     write(FGAUSS,*)
+     !write(FGAUSS,"(a, f14.8, f14.8, f14.8)")  (typa(i), xa(i), ya(i),za(i), i=1, NATOMS)
+     do i = 1, NATOMS
+        !write(FGAUSS, *)  typat(i), xa(i), ya(i),za(i)
+        write(FGAUSS,"(a, f14.8, f14.8, f14.8)") typat(i), xa(i), ya(i),za(i)
+     end do
+     write(FGAUSS,*)    
+     
      close(FGAUSS)
-
+    ! write(*,*) 'made it!'
+    ! do i = 1, NATOMS 
+        !write(*, *)  typat(i), xa(i), ya(i),za(i) 
+        !write(*,"(i3, f14.8, f14.8, f14.8)")  typat(i), xa(i), ya(i),za(i)
+        !write(*,"(a, f14.8, f14.8, f14.8)")  typat(i), xa(i), ya(i),za(i)
+        !write(*,"(a3, f14.8, f14.8, f14.8)")  typat(i), xa(i), ya(i),za(i)
+    ! end do
+ 
+ 
      !converting the number of atoms to a string value
      write(string_natoms, '(i10)' )  NATOMS
-
+     
      ! We now call Gaussian do to the minimization
      ! Bash parameters: natoms=$1, optimization=$2
-     call system('sh .execute_gaussian.sh ' // string_natoms // ' ' // 'force')
+     call system('sh execute_gaussian.sh ' // string_natoms // ' ' // 'force')
 
+     ! open(unit=FGAUSS,file=GAUSSFORCE,status='old',action='read',iostat=ierror)
+
+     ! TODO find out if there was a reason to read the file twice
+     ! read_done = .false.
+     ! do 
+     !    read(FGAUSS,"(A40)") line
+     !    if ( line  == "gaussi: Final energy (eV):" ) then
+     !       do i = 1, 7
+     !          read(FGAUSS,"(A40)") line
+     !       end do
+     !       read(FGAUSS,"(A24,f14.6)") line, energy
+     !       read_done = .true.
+     !    endif
+     !    if(read_done) exit
+     ! end do
+     ! close(FGAUSS)
+     
      !NEW SECTION
      open(unit=FGAUSS,file=GAUSSFORCE,status='old',action='read',iostat=ierror)
 

@@ -140,7 +140,7 @@ subroutine store( fname )
   write(FCONF,*) 'total_energy: ', total_energy
   write(FCONF,*) boundary, boxl
   do i=1, NATOMS
-     write(FCONF,'(1x,i6,3(2x,f16.8))') typat(i), x(i), y(i), z(i)
+     write(FCONF,'(1x,a,3(2x,f16.8))') typat(i), x(i), y(i), z(i)
   end do
   close(FCONF)
 
@@ -164,7 +164,7 @@ subroutine store( fname )
      fnamexyz = trim(fname) // extension
      write(*,*) ' Writing to file : ', fnamexyz
      open(unit=XYZ,file=fnamexyz,status='unknown',action='write',iostat=ierror)
-     write(XYZ,*) NATOMS , 'angstroemd0' 
+     write(XYZ,*) NATOMS , 'angstroem'
      if (boundary == 'P') then
         write(XYZ,'(a,3(1x,1p,e24.17,0p))')'periodic', (boxl(i),i=1,3)
      else if (boundary == 'S') then
@@ -341,7 +341,7 @@ subroutine write_refconfig( )
   write(FREFCONFIG,*) 'total_energy: ', total_energy
   write(FREFCONFIG,*) boundary, boxl
   do i = 1, NATOMS
-     write(FREFCONFIG,'(1x,i6, 3(2x,F16.8))') typat(i), x(i), y(i), z(i)
+     write(FREFCONFIG,'(1x,a,3(2x,F16.8))') typat(i), x(i), y(i), z(i)
   end do
   close(FREFCONFIG)
 
