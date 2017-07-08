@@ -230,7 +230,7 @@ subroutine save_intermediate( stage )
 
      open(unit=XYZ,file=fname,status='unknown',action='write',iostat=ierror)
 
-     write(XYZ,*) NATOMS,  'angstroemd0' 
+     write(XYZ,*) NATOMS,  'angstroem' 
 
      if (boundary == 'P') then
         write(XYZ,'(a,3(1x,1p,e24.17,0p))') 'periodic', (boxl(i),i=1,3)
