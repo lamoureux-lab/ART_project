@@ -1,0 +1,25 @@
+#!/bin/bash 
+#PBS -S /bin/bash
+#PBS -l mem=2000MB 
+#PBS -l nodes=1:ppn=8
+#PBS -l walltime=012:00:00  
+# Adjust the mem and ppn above to match the requirements of your job
+
+cd $PBS_O_WORKDIR
+
+echo "Current working directory is `pwd`" 
+echo "Running on `hostname`"
+echo "Starting run at: `date`"
+
+# Set up the Gaussian environment using the module command:
+module load gaussian
+#module load gaussian/g09.b01
+#module load intel/14.0.2.144
+#module load intel/ompi/1.6.5
+
+#module for siesta
+#module load siesta/4.0b
+
+# Run g09 
+#g09 input.inp output.log
+csh siestart.sh >output.log
