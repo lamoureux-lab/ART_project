@@ -155,7 +155,7 @@ def create_new_gaussian_input(gaussian_input_params, new_directory, file_name, g
     params = gaussian_input_params
 
     header = (params['link0_section']) \
-             + (params['route_section'].rstrip() + ' <PARAM>' + '\n') + ('\n') \
+             + (params['route_section'].rstrip()) + ('\n') \
              + (params['title'] + '\n') + ('\n') \
              + (str(params['charge']) + ' ' + str(params['multiplicity']) + '\n')
 
