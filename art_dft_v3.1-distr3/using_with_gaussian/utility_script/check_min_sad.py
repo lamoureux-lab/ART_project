@@ -68,17 +68,19 @@ g09 ''' + filename + '''.com''')
 
 def check_min_or_sad(logfile):
     with open(logfile)as f:
-        frequency = []
-        for line in f:
-            if line.startswith(" Frequencies"):
-                frequency.append(line)
-                print(line)
+        if logfile.startswith('min'):
+            frequency = []
+            for line in f:
+                if line.startswith(" Frequencies"):
+                    frequency.append(line)
+                    print(line)
 
-    for line in frequency:
-        freq = line.split()
-        check = float(freq[2])
-        if check < 0:
-            print("Saddle")
+            for line in frequency:
+                freq = line.split()
+                check = float(freq[2])
+                if check < 0:
+                    print("Optimization failed")
+
 
 def load_gaussian_input(input_file, gaussian_input_params):
     """
