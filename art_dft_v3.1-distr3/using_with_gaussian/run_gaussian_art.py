@@ -10,44 +10,57 @@ from os.path import isfile, join, exists
 from shutil import copy, rmtree
 from subprocess import call
 
+
 #Program directories
 script_directory = 'scripts'
+python_subdirectory  = 'parsing_src'
 program_data_directory = 'program_data'
 default_input_file_directory = 'work'
 default_output_directory = default_input_file_directory
 default_submission = 'GREX' #GREX or PSI
 
+#Data
+periodic_table_data = 'periodic_table_data.csv'
+
 #Program files
 gaussian_execution_script = 'execute_gaussian.sh'
 refconfig_filename = 'refconfig.dat'
 gaussian_art_filename = 'gaussian_art.sh'     #Shell script containing the configuration parameters for the ART application
-periodic_table_data = 'periodic_table_data.csv'
 grex_submission_script = 'gauss_grex.sub'
 psi_submission_script =  'gauss_psi.sub'
+
+#Loads parsing scripts
+sys.path.insert(0, join(script_directory, python_subdirectory))
+import parsing_arguments
+import parsing_gaussian_files
+import parsing_art_files
+import utility
 
 #Default configurations
 file_counter_start = 1000
 
 #Handles file parameter passing
-parser = argparse.ArgumentParser(description='Gaussian_ART ... ') #TODO add a good application description
-parser.add_argument('-d', '--project_directory',
-                    help='project directory containing gaussian input files', default=default_input_file_directory)
-parser.add_argument('-f', '--input_files', nargs='*',
-                    help='specific input files to submit from project directory')
-parser.add_argument('-s', '--submission_type', choices=['GREX', 'PSI'], default=default_submission,
-                    help='GREX or PSI submissions supported. ' + default_submission + ' is the default')
-parser.add_argument('-r', '--reset', action='store_true',
-                    help='resets the output directory instead of continuing from latest referenced configuration')
-parser.add_argument('-t', '--time',
-                    help='changes the submissions job time (e.g., -t \'walltime=010:00:00\' ')
-parser.add_argument('-m', '--memory',
-                    help='changes the submissions job memory cap (e.g., -m \'mem=8000MB\' ')
-parser.add_argument('-p', '--processor_info',
-                    help='changes the submissions job processor cap (e.g., -p \'nodes=1:ppn=8\' ')
-parser.add_argument('-o', '--optimize', action='store_true',
-                    help='sets submission job memory and number of processors to what is specified in the file\n '
-                         '(note: specifying --memory or --processor_info will take precedence)')
-args = parser.parse_args()
+def argument_parser():
+    parser = argparse.ArgumentParser(description='Gaussian_ART ... ') #TODO add a good application description
+    parser.add_argument('-d', '--project_directory',
+                        help='project directory containing gaussian input files', default=default_input_file_directory)
+    parser.add_argument('-f', '--input_files', nargs='*',
+                        help='specific input files to submit from project directory')
+    parser.add_argument('-s', '--submission_type', choices=['GREX', 'PSI'], default=default_submission,
+                        help='GREX or PSI submissions supported. ' + default_submission + ' is the default')
+    parser.add_argument('-r', '--reset', action='store_true',
+                        help='resets the output directory instead of continuing from latest referenced configuration')
+    parser.add_argument('-t', '--time',
+                        help='changes the submissions job time (e.g., -t \'walltime=010:00:00\' ')
+    parser.add_argument('-m', '--memory',
+                        help='changes the submissions job memory cap (e.g., -m \'mem=8000MB\' ')
+    parser.add_argument('-p', '--processor_info',
+                        help='changes the submissions job processor cap (e.g., -p \'nodes=1:ppn=8\' ')
+    parser.add_argument('-o', '--optimize', action='store_true',
+                        help='sets submission job memory and number of processors to what is specified in the file\n '
+                             '(note: specifying --memory or --processor_info will take precedence)')
+    args = parser.parse_args()
+    return args
 
 
 def set_submission_script(submission_script, structure_output_directory, link0_section, optimize=False, time = None, memory = None, processor_info = None):
@@ -286,144 +299,6 @@ def create_gaussian_file_header(gaussian_input_params, structure_output_director
 def get_coordinate_line_number(str):
     return len(str.split('\n'))
 
-def load_input(input_file, gaussian_input_params):
-    """
-    Loads the values gaussian parameters into a dictionary object, while removing certain route parameters
-    :param gaussian_input_params
-    :return:
-    """
-    params = gaussian_input_params
-    section_number = 1
-
-    with open(input_file) as input:
-
-        #The periodic_table_dict will be loaded once if conversion is needed from atomic symbol to number
-        periodic_table_dict = None
-
-        for line in input:
-                # This will load the relevant information from a gaussian input file expecting:
-                # 1. A number of % lines (or maybe none) representing the link 0 section
-                # 2. A number of # line describing the job representing the route section
-                # 3. Blank line, title line, blank line
-                # 4. Charge + Spin multiplicity line (two integers)
-                # 5. Atom coordinates
-
-                # Remove all comments from the gaussian input file
-                comment_set = False
-                line = line.split("!")
-                if len(line) > 1:
-                    comment_set = True
-                line = line[0]
-                if comment_set:
-                    line = line + '\n'
-
-                #Check for an empty line to increment section
-                if line.strip() == '':
-                    if not comment_set:
-                        section_number += 1
-                    continue
-
-                #Link0 and route section
-                if section_number == 1:
-                    #For case issues
-                    line = line.lower()
-                    #Link0
-                    if line.find('%') != -1:
-                        params['link0_section'] = params['link0_section'] + line + " "
-                    #Route section
-                    elif line.find('#') != -1:
-                        # Removes opt and force, which will be put back in by the ART code at different stages
-
-                        # Removes route parameters with and without options
-                        line = option_removal_helper('opt', line)
-                        line = option_removal_helper('force', line)
-                        line = option_removal_helper('nosymm', line)
-
-                        if line.strip() != '#':
-                            params['route_section'] = params['route_section'] + line
-
-                #Title section
-                elif section_number == 2:
-                    params['title'] = line.strip()
-
-                #Molecule specification section
-                if section_number == 3:
-                    string_integers = line.split()
-                    params['charge'] = int(string_integers[0])
-                    params['multiplicity'] = int(string_integers[1])
-                    section_number += 1
-                    continue
-
-                #Atom coordinates section
-                if section_number == 4:
-                    params['natoms'] = params['natoms'] + 1
-
-                    #Checks if the atom is in non-numerical format (e.g., H instead of 1)
-                    temp_line = line.split()
-                    element = temp_line[0]
-                    if not element.isdigit():
-                        #Loads the periodic table data if it is not already set
-                        if not periodic_table_dict:
-                            periodic_table_dict = load_periodic_table()
-                        #Replaces atomic symbols with atomic numbers
-                        temp_line[0] = periodic_table_dict[element]
-                        line = '    '.join(temp_line) + '\n'
-
-                    params['atom_coordinates'] = params['atom_coordinates'] + line
-
-                if section_number == 5:
-                    break
-
-        return params
-
-
-def load_periodic_table():
-    """
-    Loads a periodic table csv file to extract the atomic symbols and numbers to create a mapping between these
-    :return: A dictionary mapping atomic symbol to number
-    """
-    global periodic_table_data
-    global program_data_directory
-
-    atomic_symbol_number_map = {}
-    with open(join(program_data_directory, periodic_table_data)) as input:
-        for line in input:
-            line = line.split(',')
-            atomic_symbol_number_map[line[1].strip()] = line[0].strip()
-
-    return atomic_symbol_number_map
-
-
-def option_removal_helper(option_type, line):
-    #Handles different options to keyword structures for removal to have them dynamically assigned by ART:
-    #keyword = option
-    #keyword(option)
-    #keyword=(option1, option2)
-    #keyword(option1, option2)
-
-    #For keyword = option
-    line = re.sub(r'(\s)' + re.escape(option_type) +'=\w+', r'\1', line)
-    line = re.sub(r'(#)' + re.escape(option_type) +'=\w+', r'\1', line)
-    line = re.sub(r'(\s)' + re.escape(option_type) +' =\w+', r'\1', line)
-    line = re.sub(r'(#)' + re.escape(option_type) +' =\w+', r'\1', line)
-    line = re.sub(r'(\s)' + re.escape(option_type) +' = \w+', r'\1', line)
-    line = re.sub(r'(#)' + re.escape(option_type) +' = \w+', r'\1', line)
-    line = re.sub(r'(\s)' + re.escape(option_type) +' = \w+', r'\1', line)
-    line = re.sub(r'(#)' + re.escape(option_type) +' = \w+', r'\1', line)
-
-    #For keyword(option..)
-    line = re.sub(r'(\s)' + re.escape(option_type) + '\([^()]*\)', '', line)
-    line = re.sub(r'(#)' + re.escape(option_type) + '\([^()]*\)', '', line)
-
-    #For keyword=(option..)
-    line = re.sub(r'(\s)' + re.escape(option_type) + '=\([^()]*\)', '', line)
-    line = re.sub(r'(#)' + re.escape(option_type) + '=\([^()]*\)', '', line)
-
-    #For lone keyword
-    line = re.sub(r'(\s)' + re.escape(option_type), r'\1', line)
-    line = re.sub(r'(#)' + re.escape(option_type), r'\1', line)
-
-    return line
 
 def query_yes_no(question, default="yes"):
     """
@@ -464,7 +339,7 @@ def create_directory(directory):
     """
     Creates a new directory if it does not already exist
     :param directory:
-    :return:
+    :return: boolean indicating that a new directory was created (True) or already existed and was not created (False)
     """
     if not exists(directory):
         makedirs(directory)
@@ -472,12 +347,49 @@ def create_directory(directory):
     return False
 
 def check_file_exists(filename):
+    """
+    Checks that a file exists, printing a message that it is missing if it does not
+    :param directory:
+    :return: boolean indicating that the file does or does not exist
+    """
     if not isfile(filename):
         print 'Missing: ' + filename
         return False
     return True
 
+def check_for_missing_files(file_directory, filename_list):
+    '''
+    Checks that an existing structure directory has the correct files to continue running ART
+    The option will be given to skip directory and submit files for the remaining gaussian.inp
+    or to clear the directory and restart
+
+    :param file_directory:
+    :param filename_list:
+    :return:
+    '''
+    reset = False
+    file_missing = False
+
+    print filename_list
+    for filename in filename_list:
+        print filename
+        if not check_file_exists(join(file_directory, filename)):
+            file_missing = True
+
+    if file_missing:
+        print 'A critical file is missing from: ' + structure_output_directory + '\n'
+        question = 'Reset this directory erasing it\'s data (y) or skip structure (n)'
+        erase = query_yes_no(question)
+        if erase:
+            rmtree(structure_output_directory)
+            if create_directory(structure_output_directory):
+                reset = True
+
+    return reset
+
 if __name__ == "__main__":
+
+    args = argument_parser()
 
     # Get input file names:
     project_directory = args.project_directory
@@ -496,10 +408,13 @@ if __name__ == "__main__":
     # Initialize gaussian.inp file parameters
     input_data = {}
     for input_file_name in input_files:
-        gaussian_input_params = {'link0_section': '', 'route_section': '',
-                    'title': '', 'natoms': 0, 'charge': None, 'multiplicity': None, 'atom_coordinates' : ''}
         is_new_structure = False
         structure = input_file_name.split('.')[0]
+
+        # Creates object containing all gaussian.inp information
+        input_data[structure] = parsing_gaussian_files.load_input(join(project_directory, input_file_name))
+        input_data[structure].remove_route_parameter(['opt', 'force', 'nosymm'])
+        # input_data[structure].symbol_to_atomic_number(join(program_data_directory, periodic_table_data))
 
         # Creates output directories for each structure if not already present
         structure_output_directory = join(output_directory, structure)
@@ -507,47 +422,36 @@ if __name__ == "__main__":
             is_new_structure = True
 
         # Checks that an existing structure directory has the correct files to continue running ART
-        # The option will be given to skip directory and submit files for the remaining gaussian.inp
-        # or to clear the directory and restart
-        if not is_new_structure and not start_from_scratch:
-            file_missing = False
-            if not check_file_exists(join(structure_output_directory, '.'+gaussian_execution_script)):
-                file_missing = True
-            if not check_file_exists(join(structure_output_directory, gaussian_art_filename)):
-                file_missing = True
-            if not check_file_exists(join(structure_output_directory, refconfig_filename)):
-                file_missing = True
-            if not check_file_exists(join(structure_output_directory, 'filecounter')):
-                file_missing = True
-            if file_missing:
-                print 'A critical file is missing from: ' + structure_output_directory + '\n'
-                question = 'Reset this directory erasing it\'s data (y) or skip structure (n)'
-                erase = query_yes_no(question)
-                if erase:
-                    rmtree(structure_output_directory)
-                    if create_directory(structure_output_directory):
-                        is_new_structure = True
+        if not start_from_scratch:
+            filename_list = ['.'+gaussian_execution_script, gaussian_art_filename, refconfig_filename, 'filecounter']
+            start_from_scratch = check_for_missing_files(structure_output_directory, filename_list)
 
         # This is only called when the user wants to restart the structure or it was not already set
-        if start_from_scratch or is_new_structure:
-            # Loads input data for each Gaussian input file
-            input_data[structure] = load_input(join(project_directory, input_file_name), gaussian_input_params)
-
-            create_ref_config(gaussian_input_params['atom_coordinates'],structure_output_directory)
-            set_env_config(gaussian_input_params['natoms'])
-            create_gaussian_file_header(gaussian_input_params, structure_output_directory)
-            create_file_counter(file_counter_start, structure_output_directory)
+        if start_from_scratch:
+            #TODO make this work in new format
+            # create_ref_config(gaussian_input_params['atom_coordinates'],structure_output_directory)
+            # set_env_config(gaussian_input_params['natoms'])
+            # create_gaussian_file_header(gaussian_input_params, structure_output_directory)
+            # create_file_counter(file_counter_start, structure_output_directory)
 
             # TODO Temporary method to simply copy scripts to appropriate structure directories
             copy(join(script_directory, gaussian_art_filename), structure_output_directory)
 
+        elif is_new_structure:
+            # TODO make sure that new structure data can be used on old coordinates by default if not resetting
+            # Simply change the scripts without removing refconfig/min/sad files
+            pass
+
         submission_type = args.submission_type
         if submission_type == 'GREX':
-            set_submission_script(grex_submission_script, structure_output_directory, gaussian_input_params['link0_section'], args.optimize, time = args.time, memory = args.memory, processor_info = args.processor_info)
+            #TODO fix - link0section will only be loaded on new structures
+            set_submission_script(grex_submission_script, structure_output_directory,
+                                  input_data[structure].gaussian_input_params['link0_section'], args.optimize,
+                                  time = args.time, memory = args.memory, processor_info = args.processor_info)
             print 'Running submission file for: ' + structure
             wd = getcwd()
             chdir(join(wd, structure_output_directory))
-            call(['qsub', '-N','gau_art_'+ structure, grex_submission_script], shell=False)
+            # call(['qsub', '-N','gau_art_'+ structure, grex_submission_script], shell=False)
             chdir(wd)
         else:
             print 'Only GREX submission is currently available'
