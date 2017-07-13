@@ -26,6 +26,7 @@ parser.add_argument('-sad_opt','--sad_optimization',
                     help = 'Route section optimization setting for sad files (note - previous optimization will be removed from original.inp')
 parser.add_argument('-f', '--input_files', nargs='*',
                     help='specific input files to submit from project directory')
+parser.add_argument('-i','--gaussian_input', help='Gaussian input file to extract the method and basis set from')
 parser.add_argument('-out','--output_file',
                     help = 'Name of the output file')
 args = parser.parse_args()
