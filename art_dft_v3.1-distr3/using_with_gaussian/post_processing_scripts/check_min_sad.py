@@ -20,12 +20,13 @@ default_input_file = 'ethane.inp'
 # #TODO add a good application description
 
 parser = argparse.ArgumentParser(description = 'Create an input and submission file')
-parser.add_argument('-min_opt','--min_optimization', default = 'opt freq hf/6-31g',
+parser.add_argument('-min_opt','--min_optimization',
                     help = 'Route section optimization setting for min files (note - previous optimization will be removed from original.inp')
-parser.add_argument('-sad_opt','--sad_optimization', default = 'opt(qst3) freq hf/6-31g',
+parser.add_argument('-sad_opt','--sad_optimization',
                     help = 'Route section optimization setting for sad files (note - previous optimization will be removed from original.inp')
-parser.add_argument('-f', '--input_files', nargs='*', default = default_input_file,
+parser.add_argument('-f', '--input_files', nargs='*',
                     help='specific input files to submit from project directory')
+parser.add_argument('-i','--gaussian_input', help='Gaussian input file to extract the method and basis set from')
 parser.add_argument('-out','--output_file',
                     help = 'Name of the output file')
 args = parser.parse_args()
@@ -68,17 +69,19 @@ g09 ''' + filename + '''.com''')
 
 def check_min_or_sad(logfile):
     with open(logfile)as f:
-        frequency = []
-        for line in f:
-            if line.startswith(" Frequencies"):
-                frequency.append(line)
-                print(line)
+        if logfile.startswith('min'):
+            frequency = []
+            for line in f:
+                if line.startswith(" Frequencies"):
+                    frequency.append(line)
+                    print(line)
 
-    for line in frequency:
-        freq = line.split()
-        check = float(freq[2])
-        if check < 0:
-            print("Saddle")
+            for line in frequency:
+                freq = line.split()
+                check = float(freq[2])
+                if check < 0:
+                    print("Optimization failed")
+
 
 def load_gaussian_input(input_file, gaussian_input_params):
     """
