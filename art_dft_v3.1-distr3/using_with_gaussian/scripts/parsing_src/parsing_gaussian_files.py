@@ -1,21 +1,20 @@
 import re
 from os.path import join
 
-def load_input(input_file):
+class load_input:
     """
     Loads the values gaussian parameters into a dictionary object
     :param gaussian_input_params
     :return:
     """
-    def __init__(self):
+    def __init__(self, input_file):
         self.input = input_file
         self.gaussian_input_params = {'link0_section': '', 'route_section': '',
-                    'title': '', 'natoms': 0, 'charge': None, 'multiplicity': None, 'atom_coordinates' : ''}
-        self.gaussian_input_params = read_gaussian_input(self)
+                                      'title': '', 'natoms': 0, 'charge': None, 'multiplicity': None, 'atom_coordinates' : ''}
+        self.gaussian_input_params = self.read_gaussian_input()
 
     def read_gaussian_input(self):
-        input_file = self.input_file
-        #TODO check if memory reference means we don't need to return the dictionary
+        input_file = self.input
         params = self.gaussian_input_params
         with open(input_file) as input:
 
@@ -75,32 +74,35 @@ def load_input(input_file):
 
                     if section_number == 5:
                         break
+            return params
 
-    def symbol_to_atomic_number(self):
+    def symbol_to_atomic_number(self, periodic_table):
         # Checks if the atom is in non-numerical format (e.g., H instead of 1)
         periodic_table_dict = None
-        route_section = self.gaussian_input_params['atom_coordinates']
+        atom_coordinates = self.gaussian_input_params['atom_coordinates'].strip().split('\n')
         self.gaussian_input_params['atom_coordinates'] = ''
 
-        for line in route_section:
+
+        for line in atom_coordinates:
             temp_line = line.split()
             element = temp_line[0]
             if not element.isdigit():
                 # Loads the periodic table data if it is not already set
                 if not periodic_table_dict:
-                    periodic_table_dict = self._load_periodic_table()
+                    periodic_table_dict = self._load_periodic_table(periodic_table)
                 # Replaces atomic symbols with atomic numbers
                 temp_line[0] = periodic_table_dict[element]
                 line = '    '.join(temp_line) + '\n'
+            self.gaussian_input_params['atom_coordinates'] = self.gaussian_input_params['atom_coordinates'] + line
 
-    def _load_periodic_table(periodic_table_data, program_data_directory):
+    def _load_periodic_table(self, periodic_table):
         """
         Loads a periodic table csv file to extract the atomic symbols and numbers to create a mapping between these
         :return: A dictionary mapping atomic symbol to number
         """
 
         atomic_symbol_number_map = {}
-        with open(join(program_data_directory, periodic_table_data)) as input:
+        with open(periodic_table) as input:
             for line in input:
                 line = line.split(',')
                 atomic_symbol_number_map[line[1].strip()] = line[0].strip()
@@ -115,13 +117,12 @@ def load_input(input_file):
 
         for line in route_section:
             for option in parameter_list:
-
                 line = self._option_removal_helper(option, line)
             if line.strip() != '#':
                 self.gaussian_input_params['route_section'] = self.gaussian_input_params['route_section'] + line
 
 
-    def _option_removal_helper(option_type, line):
+    def _option_removal_helper(self, option_type, line):
             # Handles different options to keyword structures for removal to have them dynamically assigned by ART:
             # keyword = option
             # keyword(option)

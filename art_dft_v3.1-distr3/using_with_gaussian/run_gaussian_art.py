@@ -15,8 +15,8 @@ from subprocess import call
 script_directory = 'scripts'
 python_subdirectory  = 'parsing_src'
 program_data_directory = 'program_data'
-default_input_file_directory = 'work'
-default_output_directory = default_input_file_directory
+project_input_directory = 'work'
+project_output_directory = project_input_directory
 default_submission = 'GREX' #GREX or PSI
 
 #Data
@@ -42,8 +42,12 @@ file_counter_start = 1000
 #Handles file parameter passing
 def argument_parser():
     parser = argparse.ArgumentParser(description='Gaussian_ART ... ') #TODO add a good application description
-    parser.add_argument('-d', '--project_directory',
-                        help='project directory containing gaussian input files', default=default_input_file_directory)
+    #TODO take away project directory option and
+    # parser.add_argument('-d', '--project_directory',
+    #                     help='project directory containing gaussian input files', default=default_input_file_directory)
+    parser.add_argument('-n', '--new_gaussian_header', action='store_true',
+                        help='this will apply new gaussian.inp header data while continuing from previous coordinates '
+                             'obtained by ART')
     parser.add_argument('-f', '--input_files', nargs='*',
                         help='specific input files to submit from project directory')
     parser.add_argument('-s', '--submission_type', choices=['GREX', 'PSI'], default=default_submission,
@@ -392,34 +396,34 @@ if __name__ == "__main__":
     args = argument_parser()
 
     # Get input file names:
-    project_directory = args.project_directory
-    print 'Loading files from directory:  ' + project_directory
-    input_files = get_gaussian_input_files(project_directory, args.input_files)
 
-    # Reset variable will determine whether to reset existing data in a directory to start anew (e.g., if
-    # previous run data was generated from an incorrect gaussian.inp file
-    start_from_scratch = args.reset
+    print 'Loading files from directory:  ' + project_input_directory
+    input_files = get_gaussian_input_files(project_input_directory, args.input_files)
+
+
+    is_new_header = args.new_gaussian_header
 
     # Creates an output directory if not already present
-    output_directory = default_output_directory
+    output_directory = project_output_directory
     if create_directory(output_directory):
         start_from_scratch = True
 
     # Initialize gaussian.inp file parameters
     input_data = {}
     for input_file_name in input_files:
-        is_new_structure = False
+        # Reset variable will be passed by user to restart an output directory, erasing all data
+        start_from_scratch = args.reset
         structure = input_file_name.split('.')[0]
 
         # Creates object containing all gaussian.inp information
-        input_data[structure] = parsing_gaussian_files.load_input(join(project_directory, input_file_name))
+        input_data[structure] = parsing_gaussian_files.load_input(join(project_input_directory, input_file_name))
         input_data[structure].remove_route_parameter(['opt', 'force', 'nosymm'])
         # input_data[structure].symbol_to_atomic_number(join(program_data_directory, periodic_table_data))
 
         # Creates output directories for each structure if not already present
         structure_output_directory = join(output_directory, structure)
         if create_directory(structure_output_directory):
-            is_new_structure = True
+            start_from_scratch = True
 
         # Checks that an existing structure directory has the correct files to continue running ART
         if not start_from_scratch:
@@ -429,15 +433,15 @@ if __name__ == "__main__":
         # This is only called when the user wants to restart the structure or it was not already set
         if start_from_scratch:
             #TODO make this work in new format
-            # create_ref_config(gaussian_input_params['atom_coordinates'],structure_output_directory)
-            # set_env_config(gaussian_input_params['natoms'])
-            # create_gaussian_file_header(gaussian_input_params, structure_output_directory)
-            # create_file_counter(file_counter_start, structure_output_directory)
+            create_ref_config(input_data[structure].gaussian_input_params['atom_coordinates'],structure_output_directory)
+            set_env_config(input_data[structure].gaussian_input_params['natoms'])
+            create_gaussian_file_header(input_data[structure].gaussian_input_params, structure_output_directory)
+            create_file_counter(file_counter_start, structure_output_directory)
 
             # TODO Temporary method to simply copy scripts to appropriate structure directories
             copy(join(script_directory, gaussian_art_filename), structure_output_directory)
 
-        elif is_new_structure:
+        elif is_new_header:
             # TODO make sure that new structure data can be used on old coordinates by default if not resetting
             # Simply change the scripts without removing refconfig/min/sad files
             pass
