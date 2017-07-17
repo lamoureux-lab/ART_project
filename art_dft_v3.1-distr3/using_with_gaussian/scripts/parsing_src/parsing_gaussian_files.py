@@ -1,5 +1,5 @@
 import re
-from os.path import join
+from os.path import join, dirname
 from shutil import copy
 from os import rename
 
@@ -173,12 +173,9 @@ class load_input:
         :return:
         """
 
-        gaussian_execution_script_global = join(script_directory, gaussian_execution_script)
-        print 'gaussian_execution_script_global' + gaussian_execution_script_global
+        gaussian_execution_script_global = join(dirname(__file__), join(script_directory, gaussian_execution_script))
         copy(gaussian_execution_script_global, structure_output_directory)
         gaussian_execution_script_local = join(structure_output_directory, gaussian_execution_script)
-        print 'gaussian_execution_script_local' + gaussian_execution_script_local
-
 
         params = self.gaussian_input_params
 

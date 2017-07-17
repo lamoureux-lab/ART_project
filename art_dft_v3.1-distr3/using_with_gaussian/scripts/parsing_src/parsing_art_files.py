@@ -1,5 +1,5 @@
 
-from os.path import join
+from os.path import join, dirname
 
 def set_env_config(script_directory, gaussian_art_filename, refconfig_filename, output_directory, art_environment, art_executable_location):
     """
@@ -9,11 +9,10 @@ def set_env_config(script_directory, gaussian_art_filename, refconfig_filename, 
     :return:
     """
 
-
-    with open(join(script_directory, gaussian_art_filename)) as input:
+    gaussian_art_file =  join(dirname(__file__), join(script_directory, gaussian_art_filename))
+    with open(gaussian_art_file) as input:
         updated_text = ''
         for line in input:
-            setting_central_atom = False
             original_line = line
             updated_line = ''
 
@@ -48,9 +47,10 @@ def set_env_config(script_directory, gaussian_art_filename, refconfig_filename, 
                     updated_line = _set_setenv(setenv, new_value)
 
             # Optional sets maximum events that will run in a job
-            setenv, new_value = 'Max_Number_Events', str(art_environment['max_number_of_events'] )
-            if _check_setenv(setenv, line):
-                updated_line = _set_setenv(setenv, new_value)
+            if art_environment['max_number_of_events']:
+                setenv, new_value = 'Max_Number_Events', str(art_environment['max_number_of_events'] )
+                if _check_setenv(setenv, line):
+                    updated_line = _set_setenv(setenv, new_value)
 
             # Optional sets maximum events that will run in a job
             if art_environment['central_atom']  is not None:
@@ -108,7 +108,6 @@ def _check_bash_variable(variable_name, line):
 
 
 def _set_bash_variable(variable_name, new_value):
-    print variable_name + '=' + new_value
     return variable_name + '=\'' + new_value + '\''
 
 def _check_setenv(setenv, line):

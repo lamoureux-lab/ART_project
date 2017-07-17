@@ -6,16 +6,14 @@ import re
 import argparse
 import sys
 from os import listdir, makedirs, getcwd, chdir, rename
-from os.path import isfile, join, exists
+from os.path import isfile, join, exists, dirname, relpath
 from shutil import copy, rmtree
 from subprocess import call
 
-
 #Program directories
-script_directory = 'scripts'
-python_subdirectory  = 'parsing_src'
+script_directory = '../' #Relative script directory to be used by parsing_scr
 program_data_directory = 'program_data'
-project_input_directory = 'work'
+project_input_directory = getcwd()
 project_output_directory = project_input_directory
 default_submission = 'GREX' #GREX or PSI
 
@@ -23,7 +21,12 @@ default_submission = 'GREX' #GREX or PSI
 periodic_table_data = 'periodic_table_data.csv'
 
 #Program files
-art_executable_location = '../../source/artdft'
+
+art_executable_rel_location = '../../source/artdft'
+#Gets the relative path which will be used to call ART. This goes back an additional directory since new structure
+#directories are being made where all scripts for a particular job are stored
+art_executable_location = join('../', relpath(join(dirname(__file__), art_executable_rel_location), getcwd()))
+
 gaussian_execution_script = 'execute_gaussian.sh'
 refconfig_filename = 'refconfig.dat'
 gaussian_art_filename = 'gaussian_art.sh'     #Shell script containing the configuration parameters for the ART application
@@ -31,11 +34,10 @@ grex_submission_script = 'gauss_grex.sub'
 psi_submission_script =  'gauss_psi.sub'
 
 #Loads parsing scripts
-sys.path.insert(0, join(script_directory, python_subdirectory))
-import parsing_arguments
-import parsing_gaussian_files
-import parsing_art_files
-import utility
+import parsing_src.parsing_arguments as parsing_arguments
+import parsing_src.parsing_gaussian_files as parsing_gaussian_files
+import parsing_src.parsing_art_files as parsing_art_files
+import parsing_src.utility as utility
 
 #Default configurations
 file_counter_start = 1000
@@ -75,12 +77,6 @@ def argument_parser():
 
     args = parser.parse_args()
 
-    # art_environment['max_number_of_events'] = args.max_number_of_events
-    # art_environment['central_atom'] = args.central_atom
-    # art_environment['write_xyz'] = args.write_xyz
-    # art_environment['radius_initial_deformation'] = args.radius_initial_deformation
-
-
     return args
 
 
@@ -92,7 +88,8 @@ def set_submission_script(submission_script, structure_output_directory, link0_s
         :return:
         """
     global script_directory
-    submission_script_template = join(script_directory, submission_script)
+    submission_script_template = join(dirname(__file__), submission_script)
+    # submission_script_template = join(dirname(__file__), join(script_directory, submission_script))
     link0_arr = link0_section.splitlines()
 
     with open(submission_script_template) as input:
@@ -207,58 +204,6 @@ def get_gaussian_input_files(input_file_directory, select_input_files):
 #     config.write(atom_coordinates)
 #     config.close()
 
-# def set_env_config(natoms):
-#     """
-#     Sets critical parameters in gaussian_art.sh which contains the general configuration for the ART environment
-#
-#     :param natoms:
-#     :return:
-#     """
-#     global script_directory
-#     global refconfig_filename
-#     global gaussian_art_filename
-#
-#     with open(join(script_directory, gaussian_art_filename)) as input:
-#
-#         updated_text = ''
-#         for line in input:
-#             original_line = line
-#             updated_line = ''
-#
-#             #Remove comments from the strings
-#             line = line.split("#")
-#             comment_set = False
-#             if len(line) > 1:
-#                 comment_set = True
-#
-#             #Checks that GAU is set for energy calculation and sets it if it is not
-#             if line[0].find('setenv ENERGY_CALC') != -1:
-#                 updated_line = 'setenv ENERGY_CALC GAU      '
-#
-#             #Sets the number of atoms
-#             elif line[0].find('setenv NATOMS') != -1:
-#                 updated_line = 'setenv NATOMS     '+ str(natoms) + '         '
-#
-#             #Sets reference configuration file that is updated throughout
-#             elif line[0].find('setenv REFCONFIG') != -1:
-#                 updated_line = 'setenv REFCONFIG        ' + refconfig_filename + '             '
-#
-#             # Puts back configuration comments
-#             if comment_set and updated_line:
-#                 updated_line = updated_line + '#' + line[1]
-#             elif updated_line:
-#                 updated_line = updated_line + '\n'
-#
-#             # updates the configuration file string
-#             if updated_line:
-#                 updated_text = updated_text + updated_line
-#             else:
-#                 updated_text = updated_text + original_line
-#
-#     # overwrites the configuration file with appropriate values from the gaussian input file
-#     config = open(join(script_directory, gaussian_art_filename), 'w+')
-#     config.write(updated_text)
-#     config.close()
 
 
 def create_gaussian_file_header(gaussian_input_params, structure_output_directory):
@@ -474,10 +419,6 @@ if __name__ == "__main__":
                                                               True)
             parsing_art_files.create_file_counter(file_counter_start, structure_output_directory)
 
-            # TODO Temporary method to simply copy scripts to appropriate structure directories
-            # print join(script_directory, gaussian_art_filename)
-            # copy(join(script_directory, gaussian_art_filename), structure_output_directory)
-
         elif is_new_header:
             # TODO make sure that new structure data can be used on old coordinates by default if not resetting
             # Simply change the scripts without removing refconfig/min/sad files
@@ -501,7 +442,7 @@ if __name__ == "__main__":
             print 'Running submission file for: ' + structure
             wd = getcwd()
             chdir(join(wd, structure_output_directory))
-            # call(['qsub', '-N','gau_art_'+ structure, grex_submission_script], shell=False)
+            call(['qsub', '-N','gau_art_'+ structure, grex_submission_script], shell=False)
             chdir(wd)
         else:
             print 'Only GREX submission is currently available'
