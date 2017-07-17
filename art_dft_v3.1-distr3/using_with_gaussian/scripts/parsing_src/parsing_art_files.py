@@ -1,18 +1,13 @@
 
 from os.path import join
 
-def set_env_config(script_directory, gaussian_art_filename, refconfig_filename, output_directory, natoms):
+def set_env_config(script_directory, gaussian_art_filename, refconfig_filename, output_directory, art_environment, art_executable_location):
     """
     Sets critical parameters in gaussian_art.sh which contains the general configuration for the ART environment
 
     :param natoms:
     :return:
     """
-    max_number_of_events = 11
-    central_atom = 30
-    write_xyz = False
-    radius_initial_deformation = None
-    art_executable_location = '../../../source/artdft'
 
 
     with open(join(script_directory, gaussian_art_filename)) as input:
@@ -33,7 +28,7 @@ def set_env_config(script_directory, gaussian_art_filename, refconfig_filename, 
             if _check_setenv(setenv, line):
                 updated_line = _set_setenv(setenv, new_value)
 
-            setenv, new_value = 'NATOMS', str(natoms)
+            setenv, new_value = 'NATOMS', str(art_environment['natom'] )
             if _check_setenv(setenv, line):
                 updated_line = _set_setenv(setenv, new_value)
 
@@ -43,30 +38,30 @@ def set_env_config(script_directory, gaussian_art_filename, refconfig_filename, 
                 updated_line = _set_setenv(setenv, new_value)
 
             #Optional set or unset Write_xyz
-            if write_xyz is not None:
+            if art_environment['write_xyz'] is not None:
                 setenv ='Write_xyz'
-                if write_xyz is True:
+                if art_environment['write_xyz'] is True:
                     new_value = '.true.'
-                elif write_xyz is False:
+                else:
                     new_value = '.false.'
                 if _check_setenv(setenv, line):
                     updated_line = _set_setenv(setenv, new_value)
 
             # Optional sets maximum events that will run in a job
-            setenv, new_value = 'Max_Number_Events', str(max_number_of_events)
+            setenv, new_value = 'Max_Number_Events', str(art_environment['max_number_of_events'] )
             if _check_setenv(setenv, line):
                 updated_line = _set_setenv(setenv, new_value)
 
             # Optional sets maximum events that will run in a job
-            if central_atom is not None:
-                setenv, new_value = 'Central_Atom', str(central_atom)
+            if art_environment['central_atom']  is not None:
+                setenv, new_value = 'Central_Atom', str(art_environment['central_atom'] )
                 if _check_setenv(setenv, line):
                     setting_central_atom = True
                     updated_line = _set_setenv(setenv, new_value)
 
                 # Optional sets radius_initial_deformation if that parameter was added
-                if radius_initial_deformation is not None:
-                    setenv, new_value = 'Radius_Initial_Deformation', str(radius_initial_deformation)
+                if art_environment['radius_initial_deformation'] is not None:
+                    setenv, new_value = 'Radius_Initial_Deformation', str(art_environment['radius_initial_deformation'])
                     if _check_setenv(setenv, line):
                         updated_line = _set_setenv(setenv, new_value)
 
@@ -76,9 +71,9 @@ def set_env_config(script_directory, gaussian_art_filename, refconfig_filename, 
                     updated_line = _set_setenv(setenv, new_value)
 
             #set ART executable location from script
-            var_name, new_value = 'art_location', ''
-            if _check_bash_variable(var_name, line):
-                _set_bash_variable(var_name, new_value)
+            variable_name, new_value = 'art_location', art_executable_location
+            if _check_bash_variable(variable_name, line):
+                updated_line = _set_bash_variable(variable_name, new_value)
 
             updated_text = _update_line(line, original_line, comment_set, updated_line, updated_text)
 
@@ -113,7 +108,8 @@ def _check_bash_variable(variable_name, line):
 
 
 def _set_bash_variable(variable_name, new_value):
-    return variable_name + '=' + new_value
+    print variable_name + '=' + new_value
+    return variable_name + '=\'' + new_value + '\''
 
 def _check_setenv(setenv, line):
 

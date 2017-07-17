@@ -23,6 +23,7 @@ default_submission = 'GREX' #GREX or PSI
 periodic_table_data = 'periodic_table_data.csv'
 
 #Program files
+art_executable_location = '../../source/artdft'
 gaussian_execution_script = 'execute_gaussian.sh'
 refconfig_filename = 'refconfig.dat'
 gaussian_art_filename = 'gaussian_art.sh'     #Shell script containing the configuration parameters for the ART application
@@ -63,7 +64,23 @@ def argument_parser():
     parser.add_argument('-o', '--optimize', action='store_true',
                         help='sets submission job memory and number of processors to what is specified in the file\n '
                              '(note: specifying --memory or --processor_info will take precedence)')
+    parser.add_argument('-e', '--max_number_of_events', type=int,
+                        help='')
+    parser.add_argument('-c', '--central_atom', type=int,
+                        help='')
+    parser.add_argument('-d', '--radius_initial_deformation', type=int,
+                        help='')
+    parser.add_argument('-xyz', '--write_xyz', action='store_true',
+                        help='')
+
     args = parser.parse_args()
+
+    # art_environment['max_number_of_events'] = args.max_number_of_events
+    # art_environment['central_atom'] = args.central_atom
+    # art_environment['write_xyz'] = args.write_xyz
+    # art_environment['radius_initial_deformation'] = args.radius_initial_deformation
+
+
     return args
 
 
@@ -190,58 +207,58 @@ def get_gaussian_input_files(input_file_directory, select_input_files):
 #     config.write(atom_coordinates)
 #     config.close()
 
-def set_env_config(natoms):
-    """
-    Sets critical parameters in gaussian_art.sh which contains the general configuration for the ART environment
-
-    :param natoms:
-    :return:
-    """
-    global script_directory
-    global refconfig_filename
-    global gaussian_art_filename
-
-    with open(join(script_directory, gaussian_art_filename)) as input:
-
-        updated_text = ''
-        for line in input:
-            original_line = line
-            updated_line = ''
-
-            #Remove comments from the strings
-            line = line.split("#")
-            comment_set = False
-            if len(line) > 1:
-                comment_set = True
-
-            #Checks that GAU is set for energy calculation and sets it if it is not
-            if line[0].find('setenv ENERGY_CALC') != -1:
-                updated_line = 'setenv ENERGY_CALC GAU      '
-
-            #Sets the number of atoms
-            elif line[0].find('setenv NATOMS') != -1:
-                updated_line = 'setenv NATOMS     '+ str(natoms) + '         '
-
-            #Sets reference configuration file that is updated throughout
-            elif line[0].find('setenv REFCONFIG') != -1:
-                updated_line = 'setenv REFCONFIG        ' + refconfig_filename + '             '
-
-            # Puts back configuration comments
-            if comment_set and updated_line:
-                updated_line = updated_line + '#' + line[1]
-            elif updated_line:
-                updated_line = updated_line + '\n'
-
-            # updates the configuration file string
-            if updated_line:
-                updated_text = updated_text + updated_line
-            else:
-                updated_text = updated_text + original_line
-
-    # overwrites the configuration file with appropriate values from the gaussian input file
-    config = open(join(script_directory, gaussian_art_filename), 'w+')
-    config.write(updated_text)
-    config.close()
+# def set_env_config(natoms):
+#     """
+#     Sets critical parameters in gaussian_art.sh which contains the general configuration for the ART environment
+#
+#     :param natoms:
+#     :return:
+#     """
+#     global script_directory
+#     global refconfig_filename
+#     global gaussian_art_filename
+#
+#     with open(join(script_directory, gaussian_art_filename)) as input:
+#
+#         updated_text = ''
+#         for line in input:
+#             original_line = line
+#             updated_line = ''
+#
+#             #Remove comments from the strings
+#             line = line.split("#")
+#             comment_set = False
+#             if len(line) > 1:
+#                 comment_set = True
+#
+#             #Checks that GAU is set for energy calculation and sets it if it is not
+#             if line[0].find('setenv ENERGY_CALC') != -1:
+#                 updated_line = 'setenv ENERGY_CALC GAU      '
+#
+#             #Sets the number of atoms
+#             elif line[0].find('setenv NATOMS') != -1:
+#                 updated_line = 'setenv NATOMS     '+ str(natoms) + '         '
+#
+#             #Sets reference configuration file that is updated throughout
+#             elif line[0].find('setenv REFCONFIG') != -1:
+#                 updated_line = 'setenv REFCONFIG        ' + refconfig_filename + '             '
+#
+#             # Puts back configuration comments
+#             if comment_set and updated_line:
+#                 updated_line = updated_line + '#' + line[1]
+#             elif updated_line:
+#                 updated_line = updated_line + '\n'
+#
+#             # updates the configuration file string
+#             if updated_line:
+#                 updated_text = updated_text + updated_line
+#             else:
+#                 updated_text = updated_text + original_line
+#
+#     # overwrites the configuration file with appropriate values from the gaussian input file
+#     config = open(join(script_directory, gaussian_art_filename), 'w+')
+#     config.write(updated_text)
+#     config.close()
 
 
 def create_gaussian_file_header(gaussian_input_params, structure_output_directory):
@@ -431,25 +448,30 @@ if __name__ == "__main__":
             #TODO modify this to start from only modify header when possible (is_new_header)
             start_from_scratch = check_for_missing_files(structure_output_directory, filename_list, message)
 
+        art_environment = {}
+        art_environment['natom'] = (input_data[structure].gaussian_input_params['natoms'])
+        art_environment['max_number_of_events'] = args.max_number_of_events
+        art_environment['central_atom'] = args.central_atom
+        art_environment['write_xyz'] = args.write_xyz
+        art_environment['radius_initial_deformation'] = args.radius_initial_deformation
+
         # This is only called when the user wants to restart the structure or it was not already set
         if start_from_scratch:
             #TODO make this work in new format
-            print 1
             parsing_art_files.create_ref_config(refconfig_filename,
                                                 input_data[structure].gaussian_input_params['atom_coordinates'],
                                                 structure_output_directory)
-            print 2
-            parsing_art_files.set_env_config(script_directory,
-                                             gaussian_art_filename,
-                                             refconfig_filename,
-                                             join(output_directory, structure),
-                                             input_data[structure].gaussian_input_params['natoms'])
-            print 3
+
+
+            parsing_art_files.set_env_config(script_directory, gaussian_art_filename, refconfig_filename,
+                                             join(output_directory, structure), art_environment, art_executable_location)
+
+
+
             input_data[structure].create_gaussian_file_header(script_directory,
                                                               gaussian_execution_script,
                                                               structure_output_directory,
                                                               True)
-            print 4
             parsing_art_files.create_file_counter(file_counter_start, structure_output_directory)
 
             # TODO Temporary method to simply copy scripts to appropriate structure directories
@@ -459,12 +481,11 @@ if __name__ == "__main__":
         elif is_new_header:
             # TODO make sure that new structure data can be used on old coordinates by default if not resetting
             # Simply change the scripts without removing refconfig/min/sad files
-            parsing_art_files.set_env_config(script_directory,
-                                             gaussian_art_filename,
-                                             refconfig_filename,
-                                             output_directory,
-                                             input_data[structure].gaussian_input_params['natoms'])
-            print 3
+            parsing_art_files.set_env_config(script_directory, gaussian_art_filename, refconfig_filename,
+                                             join(output_directory, structure), art_environment,
+                                             art_executable_location)
+
+
             input_data[structure].create_gaussian_file_header(script_directory,
                                                               gaussian_execution_script,
                                                               structure_output_directory,
