@@ -161,34 +161,34 @@ def get_gaussian_input_files(input_file_directory, select_input_files):
 
     return final_file_list
 
-def create_file_counter(file_counter_start, output_directory):
-    """
-    Creates a file counter that is used by the ART application to indicate the min/saddle file event
-    :param file_counter_start:
-    :param output_directory:
-    """
-    file_counter = open(join(output_directory, 'filecounter'), 'w+')
-    file_counter.write('Counter:      ' + str(file_counter_start))
-    file_counter.close()
+# def create_file_counter(file_counter_start, output_directory):
+#     """
+#     Creates a file counter that is used by the ART application to indicate the min/saddle file event
+#     :param file_counter_start:
+#     :param output_directory:
+#     """
+#     file_counter = open(join(output_directory, 'filecounter'), 'w+')
+#     file_counter.write('Counter:      ' + str(file_counter_start))
+#     file_counter.close()
 
-def create_ref_config(atom_coordinates, output_directory):
-    """
-    Sets up refconfig.dat file which will be used as a starting reference by ART for atom coordinates before it is
-    overwritten and updated
-
-    :param refconfig:
-    :param gaussian_input_params:
-    :return:
-    """
-    global refconfig_filename
-
-    config = open(join(output_directory, refconfig_filename), 'w+')     #Overwrites or creates a new file if it doesn't exist
-    config.write('run_id:         1000\n')
-    config.write('total_energy:   0\n')     #Placeholder, as this will be optimized by ART to the correct value
-    #TODO see about removing these as they are not necessary for gaussian
-    config.write('S   100.000000000000        100.000000000000        100.000000000000\n')
-    config.write(atom_coordinates)
-    config.close()
+# def create_ref_config(atom_coordinates, output_directory):
+#     """
+#     Sets up refconfig.dat file which will be used as a starting reference by ART for atom coordinates before it is
+#     overwritten and updated
+#
+#     :param refconfig:
+#     :param gaussian_input_params:
+#     :return:
+#     """
+#     global refconfig_filename
+#
+#     config = open(join(output_directory, refconfig_filename), 'w+')     #Overwrites or creates a new file if it doesn't exist
+#     config.write('run_id:         1000\n')
+#     config.write('total_energy:   0\n')     #Placeholder, as this will be optimized by ART to the correct value
+#     #TODO see about removing these as they are not necessary for gaussian
+#     config.write('S   100.000000000000        100.000000000000        100.000000000000\n')
+#     config.write(atom_coordinates)
+#     config.close()
 
 def set_env_config(natoms):
     """
@@ -361,7 +361,7 @@ def check_file_exists(filename):
         return False
     return True
 
-def check_for_missing_files(file_directory, filename_list):
+def check_for_missing_files(file_directory, filename_list, message):
     '''
     Checks that an existing structure directory has the correct files to continue running ART
     The option will be given to skip directory and submit files for the remaining gaussian.inp
@@ -371,18 +371,16 @@ def check_for_missing_files(file_directory, filename_list):
     :param filename_list:
     :return:
     '''
+    question = message
     reset = False
     file_missing = False
 
-    print filename_list
     for filename in filename_list:
-        print filename
         if not check_file_exists(join(file_directory, filename)):
             file_missing = True
 
     if file_missing:
         print 'A critical file is missing from: ' + structure_output_directory + '\n'
-        question = 'Reset this directory erasing it\'s data (y) or skip structure (n)'
         erase = query_yes_no(question)
         if erase:
             rmtree(structure_output_directory)
@@ -428,23 +426,50 @@ if __name__ == "__main__":
         # Checks that an existing structure directory has the correct files to continue running ART
         if not start_from_scratch:
             filename_list = ['.'+gaussian_execution_script, gaussian_art_filename, refconfig_filename, 'filecounter']
-            start_from_scratch = check_for_missing_files(structure_output_directory, filename_list)
+            message = 'Reset this directory with latest .inp header and configuration settings (y) or skip structure (n) ' \
+                   '\nNote: This will conserve previous coordinates and not erase existing min and sad files. '
+            #TODO modify this to start from only modify header when possible (is_new_header)
+            start_from_scratch = check_for_missing_files(structure_output_directory, filename_list, message)
 
         # This is only called when the user wants to restart the structure or it was not already set
         if start_from_scratch:
             #TODO make this work in new format
-            create_ref_config(input_data[structure].gaussian_input_params['atom_coordinates'],structure_output_directory)
-            set_env_config(input_data[structure].gaussian_input_params['natoms'])
-            create_gaussian_file_header(input_data[structure].gaussian_input_params, structure_output_directory)
-            create_file_counter(file_counter_start, structure_output_directory)
+            print 1
+            parsing_art_files.create_ref_config(refconfig_filename,
+                                                input_data[structure].gaussian_input_params['atom_coordinates'],
+                                                structure_output_directory)
+            print 2
+            parsing_art_files.set_env_config(script_directory,
+                                             gaussian_art_filename,
+                                             refconfig_filename,
+                                             join(output_directory, structure),
+                                             input_data[structure].gaussian_input_params['natoms'])
+            print 3
+            input_data[structure].create_gaussian_file_header(script_directory,
+                                                              gaussian_execution_script,
+                                                              structure_output_directory,
+                                                              True)
+            print 4
+            parsing_art_files.create_file_counter(file_counter_start, structure_output_directory)
 
             # TODO Temporary method to simply copy scripts to appropriate structure directories
-            copy(join(script_directory, gaussian_art_filename), structure_output_directory)
+            # print join(script_directory, gaussian_art_filename)
+            # copy(join(script_directory, gaussian_art_filename), structure_output_directory)
 
         elif is_new_header:
             # TODO make sure that new structure data can be used on old coordinates by default if not resetting
             # Simply change the scripts without removing refconfig/min/sad files
-            pass
+            parsing_art_files.set_env_config(script_directory,
+                                             gaussian_art_filename,
+                                             refconfig_filename,
+                                             output_directory,
+                                             input_data[structure].gaussian_input_params['natoms'])
+            print 3
+            input_data[structure].create_gaussian_file_header(script_directory,
+                                                              gaussian_execution_script,
+                                                              structure_output_directory,
+                                                              True)
+
 
         submission_type = args.submission_type
         if submission_type == 'GREX':

@@ -1,5 +1,7 @@
 import re
 from os.path import join
+from shutil import copy
+from os import rename
 
 class load_input:
     """
@@ -161,3 +163,63 @@ class load_input:
         if flag in link0_line:
             return link0_line.split("=")[1].strip()
         return None
+
+    def create_gaussian_file_header(self, script_directory, gaussian_execution_script, structure_output_directory, add_param_flag = False):
+        """
+        Inserts a gaussian header file into the bash script that will be writing to
+        the art2gaussian.inp file and calling gaussian
+
+        :param gaussian_input_params:
+        :return:
+        """
+
+        gaussian_execution_script_global = join(script_directory, gaussian_execution_script)
+        print 'gaussian_execution_script_global' + gaussian_execution_script_global
+        copy(gaussian_execution_script_global, structure_output_directory)
+        gaussian_execution_script_local = join(structure_output_directory, gaussian_execution_script)
+        print 'gaussian_execution_script_local' + gaussian_execution_script_local
+
+
+        params = self.gaussian_input_params
+
+        # creates a regular expression pattern that will isolate the header insertion point
+        insertion_point = re.compile('#gaussian-header-begin.*?#gaussian-header-end \(DO NOT REMOVE\)', re.DOTALL)
+
+        # open file
+        f = open(gaussian_execution_script_local, 'r')
+        initial_script = f.read()
+        f.close()
+
+        output = open(gaussian_execution_script_local, 'w+')
+
+        # Builds a header for the gaussian.inp file, <OPTION> Flag will be replaced by opt or force
+
+        start_shell_script_marker = '#gaussian-header-begin (DO NOT REMOVE) \n'
+        header = 'header=\'' \
+                 + (params['link0_section']) \
+                 + (params['route_section'].rstrip() + ' <PARAM>' + '\n') + ('\n') \
+                 + (params['title'] + '\n') + ('\n') \
+                 + (str(params['charge']) + ' ' + str(params['multiplicity']) + '\n' + '\'')
+
+        coordinate_line_start = '\n#Coordinate line where data begins\n' \
+                                + 'coorLineNumber=' + str(self._get_coordinate_line_number(header))
+
+        title_line_start = '\n#Title of the gaussian input file\n' \
+                           + 'title=' + '\'' + str(params['title']) + '\''
+
+        end_shell_script_marker = '\n\n#gaussian-header-end (DO NOT REMOVE) '
+
+        output.close()
+
+        # Writes the header as a string variable in the gaussian execution script
+        new_script_lines = start_shell_script_marker + header + coordinate_line_start + title_line_start + end_shell_script_marker
+        script_with_header = insertion_point.sub(new_script_lines, initial_script)
+        f = open(gaussian_execution_script_local, 'w')
+        f.write(script_with_header)
+        f.close()
+
+        # Hides script to reduce clutter
+        rename(gaussian_execution_script_local, join(structure_output_directory, '.' + gaussian_execution_script))
+
+    def _get_coordinate_line_number(self, str):
+        return len(str.split('\n'))
