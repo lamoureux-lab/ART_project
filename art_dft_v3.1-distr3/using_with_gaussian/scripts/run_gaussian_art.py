@@ -45,9 +45,6 @@ file_counter_start = 1000
 #Handles file parameter passing
 def argument_parser():
     parser = argparse.ArgumentParser(description='Gaussian_ART ... ') #TODO add a good application description
-    #TODO take away project directory option and
-    # parser.add_argument('-d', '--project_directory',
-    #                     help='project directory containing gaussian input files', default=default_input_file_directory)
     parser.add_argument('-n', '--new_gaussian_header', action='store_true',
                         help='this will apply new gaussian.inp header data while continuing from previous coordinates '
                              'obtained by ART')
@@ -129,8 +126,10 @@ if __name__ == "__main__":
         structure = input_file_name.split('.')[0]
 
         # Creates object containing all gaussian.inp information
-        input_data[structure] = parsing_gaussian_files.load_input(join(project_input_directory, input_file_name))
+        input_data[structure] = parsing_gaussian_files.gaussian_input(join(project_input_directory, input_file_name))
         input_data[structure].remove_route_parameter(['opt', 'force', 'nosymm'])
+
+        # Makes symbols from a gaussian input file atomic numbers
         # input_data[structure].symbol_to_atomic_number(join(program_data_directory, periodic_table_data))
 
         # Creates output directories for each structure if not already present
@@ -155,7 +154,6 @@ if __name__ == "__main__":
 
         # This is only called when the user wants to restart the structure or it was not already set
         if start_from_scratch:
-            #TODO make this work in new format
 
             atom_coordinates = input_data[structure].gaussian_input_params['atom_coordinates']
             parsing_art_files.create_ref_config(refconfig_filename, atom_coordinates, structure_output_directory)
@@ -164,28 +162,25 @@ if __name__ == "__main__":
             parsing_art_files.set_env_config(script_directory, gaussian_art_filename, refconfig_filename,
                                              output_structure_directory, art_environment, art_executable_location)
 
-            input_data[structure].create_gaussian_file_header(script_directory, gaussian_execution_script,
-                                                              structure_output_directory, add_param_flag=True)
+            input_data[structure].insert_gaussian_file_header_into_execute_gaussian(script_directory, gaussian_execution_script,
+                                                                                    structure_output_directory, add_param_flag=True)
 
             parsing_art_files.create_file_counter(file_counter_start, structure_output_directory)
 
         elif is_new_header:
             # TODO make sure that new structure data can be used on old coordinates by default if not resetting
-            # Simply change the scripts without removing refconfig/min/sad files
+            # TODO Simply change the scripts without removing refconfig/min/sad files
+
+            output_structure_directory = join(output_directory, structure)
             parsing_art_files.set_env_config(script_directory, gaussian_art_filename, refconfig_filename,
-                                             join(output_directory, structure), art_environment,
-                                             art_executable_location)
+                                             output_structure_directory, art_environment, art_executable_location)
 
-
-            input_data[structure].create_gaussian_file_header(script_directory,
-                                                              gaussian_execution_script,
-                                                              structure_output_directory,
-                                                              True)
+            input_data[structure].insert_gaussian_file_header_into_execute_gaussian(script_directory, gaussian_execution_script,
+                                                                                    structure_output_directory, add_param_flag=True)
 
 
         submission_type = args.submission_type
         if submission_type == 'GREX':
-            #TODO fix - link0section will only be loaded on new structures
             link0_section = input_data[structure].gaussian_input_params['link0_section']
             parsing_submission_files.set_submission_script(script_directory, grex_submission_script, structure_output_directory,
                                                            link0_section, optimize = args.optimize, time = args.time,
@@ -193,7 +188,8 @@ if __name__ == "__main__":
             print 'Running submission file for: ' + structure
             wd = getcwd()
             chdir(join(wd, structure_output_directory))
-            # call(['qsub', '-N','gau_art_'+ structure, grex_submission_script], shell=False)
+            #TODO uncomment for tests on GREX
+            call(['qsub', '-N','gau_art_'+ structure, grex_submission_script], shell=False)
             chdir(wd)
         else:
             print 'Only GREX submission is currently available'

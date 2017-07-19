@@ -115,8 +115,6 @@ if __name__ == '__main__':
     for min_file in file_list:
         gaussian_input_params = get_atomic_coordinates(input_data.gaussian_input_params, min_file)
 
-
-        # create_new_gaussian_input(gaussian_input_params, default_min_output_directory, min_file, default_gaussian_ext)
         input_data.write_gaussian_input_file(default_min_output_directory, min_file, default_gaussian_ext)
 
         submission_script = create_submission_file(join(default_min_output_directory, min_file))
