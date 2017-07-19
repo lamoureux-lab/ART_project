@@ -1,19 +1,35 @@
 import argparse
-from os.path import join
-from os import listdir, makedirs, getcwd, chdir, rename
-from os.path import isfile, join, exists
+from os.path import join, abspath, dirname
+from os import listdir, makedirs, getcwd
+from os.path import isfile, join, exists, splitext
 import glob
 from subprocess import call
 import re
+import sys
 
 #Program directories
-script_directory = '../scripts'
-default_input_file_directory = '../work'
+parsing_scripts_directory = 'parsing_src'
+project_input_directory = getcwd()
 default_min_output_directory = 'min_opt'
-default_sad_output_directory = 'sad_opt'
-default_gaussian_ext = '.com'
+# default_sad_output_directory = 'sad_opt'
 
-default_input_file = 'ethane.inp'
+#Loads parsing scripts
+# sys.path.insert(0, join('..', parsing_scripts_directory)+'/')
+sys.path.insert(0, dirname(abspath(__file__)) + "/..")
+import parsing_src.parsing_gaussian_files as parsing_gaussian_files
+import parsing_src.parsing_art_files as parsing_art_files
+import parsing_src.parsing_submission_files as parsing_submission_files
+import parsing_src.utility as utility
+
+# TODO sort out ValueError: Attempted relative import in non-package error with the following to import a less hacky way
+# from ..parsing_src import parsing_gaussian_files
+# from ..parsing_src import parsing_art_files
+# from ..parsing_src import parsing_submission_files
+# from ..parsing_src import utility
+
+default_gaussian_ext = '.inp'
+
+default_input_file = '../ethane.inp'
 
 
 #Handles file parameter passing
@@ -65,8 +81,6 @@ g09 ''' + filename + '''.com''')
     return submission_script
 
 
-
-
 def check_min_or_sad(logfile):
     with open(logfile)as f:
         if logfile.startswith('min'):
@@ -82,76 +96,6 @@ def check_min_or_sad(logfile):
                 if check < 0:
                     print("Optimization failed")
 
-
-def load_gaussian_input(input_file, gaussian_input_params):
-    """
-    Loads the values gaussian parameters into a dictionary object
-    :param gaussian_input_params
-    :return:
-    """
-    params = gaussian_input_params
-    section_number = 1
-
-    with open(input_file) as input:
-
-        #The periodic_table_dict will be loaded once if conversion is needed from atomic symbol to number
-        periodic_table_dict = None
-
-        for line in input:
-                # This will load the relevant information from a gaussian input file expecting:
-                # 1. A number of % lines (or maybe none) representing the link 0 section
-                # 2. A number of # line describing the job representing the route section
-                # 3. Blank line, title line, blank line
-                # 4. Charge + Spin multiplicity line (two integers)
-                # 5. Atom coordinates
-
-                # Remove all comments from the gaussian input file
-                comment_set = False
-                line = line.split("!")
-                if len(line) > 1:
-                    comment_set = True
-                line = line[0]
-                if comment_set:
-                    line = line + '\n'
-
-                #Check for an empty line to increment section
-                if line.strip() == '':
-                    if not comment_set:
-                        section_number += 1
-                    continue
-
-                #Link0 and route section
-                if section_number == 1:
-                    #For case issues
-                    line = line.lower()
-                    #Link0
-                    if line.find('%') != -1:
-                        params['link0_section'] = params['link0_section'] + line + " "
-                    #Route section
-                    elif line.find('#') != -1:
-                        # Removes opt and force, which will be put back in by the ART code at different stages
-
-                        # Removes route parameters with and without options
-                        # line = option_removal_helper('opt', line)
-                        # line = option_removal_helper('force', line)
-                        # line = option_removal_helper('nosymm', line)
-
-                        if line.strip() != '#':
-                            params['route_section'] = params['route_section'] + line
-
-                #Title section
-                elif section_number == 2:
-                    params['title'] = line.strip()
-
-                #Molecule specification section
-                if section_number == 3:
-                    string_integers = line.split()
-                    params['charge'] = int(string_integers[0])
-                    params['multiplicity'] = int(string_integers[1])
-                    section_number += 1
-                    break
-
-        return params
 
 def create_new_gaussian_input(gaussian_input_params, new_directory, file_name, gaussian_ext):
 
@@ -170,36 +114,28 @@ def create_new_gaussian_input(gaussian_input_params, new_directory, file_name, g
         output.write(header)
         output.write(coordinates)
 
-def create_output_directory(directory):
-        """
-        Creates a new directory if it does not already exist
-        :param directory:
-        :return:
-        """
-        if not exists(directory):
-            makedirs(directory)
-            return True
-        return False
 
 if __name__ == '__main__':
-    #Load gaussian header file informationinto dictionary
-    gaussian_input_params = {'link0_section': '', 'route_section': '',
-                             'title': '', 'natoms': 0, 'charge': None, 'multiplicity': None, 'atom_coordinates': ''}
-    gaussian_input_params = load_gaussian_input(join(default_input_file_directory,default_input_file), gaussian_input_params)
 
+    # Creates object containing all gaussian.inp information
+    input_data = parsing_gaussian_files.gaussian_input(join(project_input_directory, default_input_file))
 
     #Create min and sad output directories
-    create_output_directory(default_min_output_directory)
-    create_output_directory(default_sad_output_directory)
-
+    utility.create_directory(default_min_output_directory)
+    # utility.create_directory(default_sad_output_directory)
 
     #for min file in directory :
-    file_list = glob.glob('min1*')
+    filetype = 'min1'
+    # Excludes .xyz files from cluster parsing
+    file_list = [fn for fn in glob.glob(filetype + '*')
+             if not splitext(fn)[1] == '.xyz']
+
     for min_file in file_list:
-        gaussian_input_params = get_atomic_coordinates(gaussian_input_params, min_file)
+        gaussian_input_params = get_atomic_coordinates(input_data.gaussian_input_params, min_file)
         create_new_gaussian_input(gaussian_input_params, default_min_output_directory, min_file, default_gaussian_ext)
         submission_script = create_submission_file(join(default_min_output_directory, min_file))
-        call(['qsub', '-N', 'gau_opt_' + min_file, submission_script], shell=False)
+        #TODO uncomment qsub when running real tests
+        # call(['qsub', '-N', 'gau_opt_' + min_file, submission_script], shell=False)
 
     # file_list = glob.glob('sad1*')
     # for sad_file in file_list:
@@ -209,5 +145,5 @@ if __name__ == '__main__':
     #     submission_script = create_submission_file(join(default_sad_output_directory, sad_file))
     #     call(['qsub', '-N', 'gau_opt_' + sad_file, submission_script], shell=False)
 
-    create_new_gaussian_input(gaussian_input_params, default_sad_output_directory, sad_file, default_gaussian_ext)
+    # create_new_gaussian_input(input_data.gaussian_input_params, default_sad_output_directory, sad_file, default_gaussian_ext)
 
