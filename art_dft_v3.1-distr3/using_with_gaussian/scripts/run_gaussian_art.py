@@ -34,7 +34,6 @@ grex_submission_script = 'gauss_grex.sub'
 psi_submission_script =  'gauss_psi.sub'
 
 #Loads parsing scripts
-import parsing_src.parsing_arguments as parsing_arguments
 import parsing_src.parsing_gaussian_files as parsing_gaussian_files
 import parsing_src.parsing_art_files as parsing_art_files
 import parsing_src.utility as utility
@@ -403,20 +402,17 @@ if __name__ == "__main__":
         # This is only called when the user wants to restart the structure or it was not already set
         if start_from_scratch:
             #TODO make this work in new format
-            parsing_art_files.create_ref_config(refconfig_filename,
-                                                input_data[structure].gaussian_input_params['atom_coordinates'],
-                                                structure_output_directory)
 
+            atom_coordinates = input_data[structure].gaussian_input_params['atom_coordinates']
+            parsing_art_files.create_ref_config(refconfig_filename, atom_coordinates, structure_output_directory)
 
+            output_structure_directory = join(output_directory, structure)
             parsing_art_files.set_env_config(script_directory, gaussian_art_filename, refconfig_filename,
-                                             join(output_directory, structure), art_environment, art_executable_location)
+                                             output_structure_directory, art_environment, art_executable_location)
 
+            input_data[structure].create_gaussian_file_header(script_directory, gaussian_execution_script,
+                                                              structure_output_directory, add_param_flag=True)
 
-
-            input_data[structure].create_gaussian_file_header(script_directory,
-                                                              gaussian_execution_script,
-                                                              structure_output_directory,
-                                                              True)
             parsing_art_files.create_file_counter(file_counter_start, structure_output_directory)
 
         elif is_new_header:
@@ -442,7 +438,7 @@ if __name__ == "__main__":
             print 'Running submission file for: ' + structure
             wd = getcwd()
             chdir(join(wd, structure_output_directory))
-            call(['qsub', '-N','gau_art_'+ structure, grex_submission_script], shell=False)
+            # call(['qsub', '-N','gau_art_'+ structure, grex_submission_script], shell=False)
             chdir(wd)
         else:
             print 'Only GREX submission is currently available'

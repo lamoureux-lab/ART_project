@@ -52,7 +52,7 @@ class load_input:
                         line = line.lower()
                         #Link0
                         if line.find('%') != -1:
-                            params['link0_section'] = params['link0_section'] + line + " "
+                            params['link0_section'] = params['link0_section'] + line 
                         #Route section
                         elif line.find('#') != -1:
                             params['route_section'] = params['route_section'] + line
@@ -114,7 +114,7 @@ class load_input:
     def remove_route_parameter(self, parameter_list):
         # Removes options such as opt and force, which will be put back in by the ART code at different stages
 
-        route_section = self.gaussian_input_params['route_section']
+        route_section = self.gaussian_input_params['route_section'].split('\n')
         self.gaussian_input_params['route_section'] = ''
 
         for line in route_section:
@@ -189,14 +189,9 @@ class load_input:
 
         output = open(gaussian_execution_script_local, 'w+')
 
-        # Builds a header for the gaussian.inp file, <OPTION> Flag will be replaced by opt or force
-
         start_shell_script_marker = '#gaussian-header-begin (DO NOT REMOVE) \n'
-        header = 'header=\'' \
-                 + (params['link0_section']) \
-                 + (params['route_section'].rstrip() + ' <PARAM>' + '\n') + ('\n') \
-                 + (params['title'] + '\n') + ('\n') \
-                 + (str(params['charge']) + ' ' + str(params['multiplicity']) + '\n' + '\'')
+
+        header = self._build_header(params, add_param_flag)
 
         coordinate_line_start = '\n#Coordinate line where data begins\n' \
                                 + 'coorLineNumber=' + str(self._get_coordinate_line_number(header))
@@ -217,6 +212,22 @@ class load_input:
 
         # Hides script to reduce clutter
         rename(gaussian_execution_script_local, join(structure_output_directory, '.' + gaussian_execution_script))
+
+    def _build_header(self, params, add_param_flag):
+        print params
+        header = 'header=\'' \
+                 + (params['link0_section'])
+
+        if add_param_flag:
+            # Builds a header for the gaussian.inp file, <PARAM> Flag will be replaced by opt or force
+            header = header + (params['route_section'].rstrip() + ' <PARAM>' + '\n') + '\n'
+        else:
+            header = header + (params['route_section'].rstrip()) + '\n' \
+
+        header = header + (params['title'] + '\n') + '\n' \
+                 + (str(params['charge']) + ' ' + str(params['multiplicity']) + '\n' + '\'')
+
+        return header
 
     def _get_coordinate_line_number(self, str):
         return len(str.split('\n'))
