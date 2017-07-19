@@ -181,6 +181,7 @@ if __name__ == "__main__":
 
         submission_type = args.submission_type
         if submission_type == 'GREX':
+            #TODO handle the case where no structure directory is found/not running submission for a particular structure
             link0_section = input_data[structure].gaussian_input_params['link0_section']
             parsing_submission_files.set_submission_script(script_directory, grex_submission_script, structure_output_directory,
                                                            link0_section, optimize = args.optimize, time = args.time,
@@ -189,7 +190,7 @@ if __name__ == "__main__":
             wd = getcwd()
             chdir(join(wd, structure_output_directory))
             #TODO uncomment for tests on GREX
-            call(['qsub', '-N','gau_art_'+ structure, grex_submission_script], shell=False)
+            # call(['qsub', '-N','gau_art_'+ structure, grex_submission_script], shell=False)
             chdir(wd)
         else:
             print 'Only GREX submission is currently available'
