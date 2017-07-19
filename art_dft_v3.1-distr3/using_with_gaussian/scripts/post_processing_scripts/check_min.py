@@ -22,8 +22,8 @@ default_input_file = 'ethane.inp'
 parser = argparse.ArgumentParser(description = 'Create an input and submission file')
 parser.add_argument('-min_opt','--min_optimization',
                     help = 'Route section optimization setting for min files (note - previous optimization will be removed from original.inp')
-parser.add_argument('-sad_opt','--sad_optimization',
-                    help = 'Route section optimization setting for sad files (note - previous optimization will be removed from original.inp')
+# parser.add_argument('-sad_opt','--sad_optimization',
+#                     help = 'Route section optimization setting for sad files (note - previous optimization will be removed from original.inp')
 parser.add_argument('-f', '--input_files', nargs='*',
                     help='specific input files to submit from project directory')
 parser.add_argument('-i','--gaussian_input', help='Gaussian input file to extract the method and basis set from')
@@ -201,13 +201,13 @@ if __name__ == '__main__':
         submission_script = create_submission_file(join(default_min_output_directory, min_file))
         call(['qsub', '-N', 'gau_opt_' + min_file, submission_script], shell=False)
 
-    file_list = glob.glob('sad1*')
-    for sad_file in file_list:
-        gaussian_input_params = get_atomic_coordinates(gaussian_input_params, sad_file)
-        submission_script = (gaussian_input_params, default_sad_output_directory, sad_file,
-                                      default_gaussian_ext)
-        submission_script = create_submission_file(join(default_sad_output_directory, sad_file))
-        call(['qsub', '-N', 'gau_opt_' + sad_file, submission_script], shell=False)
+    # file_list = glob.glob('sad1*')
+    # for sad_file in file_list:
+    #     gaussian_input_params = get_atomic_coordinates(gaussian_input_params, sad_file)
+    #     submission_script = (gaussian_input_params, default_sad_output_directory, sad_file,
+    #                                   default_gaussian_ext)
+    #     submission_script = create_submission_file(join(default_sad_output_directory, sad_file))
+    #     call(['qsub', '-N', 'gau_opt_' + sad_file, submission_script], shell=False)
 
     create_new_gaussian_input(gaussian_input_params, default_sad_output_directory, sad_file, default_gaussian_ext)
 
