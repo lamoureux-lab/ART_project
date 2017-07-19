@@ -2,7 +2,7 @@
 
 #Sets the environment variables for the molecules in question
 
-setenv ENERGY_CALC GAU      # Choose: DFT, SWP (Stillinger-Weber) or GAU
+setenv ENERGY_CALC DFT      # Choose: DFT, SWP (Stillinger-Weber) or GAU
 setenv Temperature 0.4      # Temperature in kcal/mol, if negative always reject the event bharat 0.4 >> 0.1
 setenv EVENT_TYPE  NEW      # Either 'NEW', 'REFINE_SADDLE' when further converging a saddle point
                             # Or "REFINE_AND_RELAX", to refine at the saddle and check the final minimum
@@ -13,11 +13,11 @@ setenv NATOMS     8         # Number of atoms in the problem
 
 setenv Prefactor_Push_Over_Saddle 0.3 # The prefactor for pushing over the saddle point, fraction of distance from initial minimum to saddle point 0.15 (default) 0.3 (siesta)
 
-# Name of the atomic types - used for writing out xmol-type file
-setenv type1      C
-setenv type2      O    
-setenv type3      N
-setenv type4      H     
+# Name of the atomic types - used for writing out xmol-type file (Deprecated)
+#setenv type1      C
+#setenv type2      O
+#setenv type3      N
+#setenv type4      H
  
 
 ######  ART ##############################################################################################
@@ -69,6 +69,8 @@ setenv RESTART          restart.dat               # current data.sh for restarti
 
 ############### Run the simulation #######################################################################
 
-#ensure that Gaussian is loaded (will be the most current version)
-../../../source/artdft
+#ensure that Gaussian is loaded prior to file execution (the location is set dynamically by run_gaussian_art.py
+art_location='../../../source/artdft'
+csh $art_location
+
 

@@ -3,7 +3,13 @@
 import glob
 import numpy as np
 
-files = glob.glob("min1*")
+import os.path
+
+filetype = 'min1'
+#Excludes .xyz files from cluster parsing
+files = [fn for fn in glob.glob(filetype + '*')
+         if not os.path.splitext(fn)[1] == '.xyz']
+
 dict = {} #Initialize a Dictionary
 for min in files:
     coords = []
