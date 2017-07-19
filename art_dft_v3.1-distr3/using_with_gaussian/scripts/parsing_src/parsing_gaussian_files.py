@@ -52,7 +52,7 @@ class load_input:
                         line = line.lower()
                         #Link0
                         if line.find('%') != -1:
-                            params['link0_section'] = params['link0_section'] + line 
+                            params['link0_section'] = params['link0_section'] + line
                         #Route section
                         elif line.find('#') != -1:
                             params['route_section'] = params['route_section'] + line
@@ -214,7 +214,6 @@ class load_input:
         rename(gaussian_execution_script_local, join(structure_output_directory, '.' + gaussian_execution_script))
 
     def _build_header(self, params, add_param_flag):
-        print params
         header = 'header=\'' \
                  + (params['link0_section'])
 
