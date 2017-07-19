@@ -117,8 +117,7 @@ if __name__ == '__main__':
 
 
         # create_new_gaussian_input(gaussian_input_params, default_min_output_directory, min_file, default_gaussian_ext)
-        input_data.write_header(default_min_output_directory, min_file, default_gaussian_ext)
-        input_data.write_coordinates(default_min_output_directory, min_file, default_gaussian_ext)
+        input_data.write_gaussian_input_file(default_min_output_directory, min_file, default_gaussian_ext)
 
         submission_script = create_submission_file(join(default_min_output_directory, min_file))
         #TODO uncomment qsub when running real tests

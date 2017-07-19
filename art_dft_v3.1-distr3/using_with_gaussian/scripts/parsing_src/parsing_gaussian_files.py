@@ -185,6 +185,10 @@ class gaussian_input:
                  + (str(params['charge']) + ' ' + str(params['multiplicity']) + '\n')
         return header
 
+    def write_gaussian_input_file(self, directory, file_name, gaussian_ext, add_param_flag=False):
+        self.write_header(directory, file_name, gaussian_ext, add_param_flag = add_param_flag)
+        self.write_coordinates(directory, file_name, gaussian_ext)
+
     def write_header(self, directory, file_name, gaussian_ext, add_param_flag=False):
         header = self._rebuild_header(add_param_flag)
         with open(join(directory, file_name + gaussian_ext), 'w') as output:
