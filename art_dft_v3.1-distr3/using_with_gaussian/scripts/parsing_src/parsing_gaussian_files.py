@@ -3,7 +3,7 @@ from os.path import join, dirname
 from shutil import copy
 from os import rename
 
-class load_input:
+class gaussian_input:
     """
     Loads the values gaussian parameters into a dictionary object
     :param gaussian_input_params
@@ -164,7 +164,40 @@ class load_input:
             return link0_line.split("=")[1].strip()
         return None
 
-    def create_gaussian_file_header(self, script_directory, gaussian_execution_script, structure_output_directory, add_param_flag = False):
+
+# class gaussian_file_output():
+#
+#     def __init__(self, gaussian_input_params, add_param_flag = False):
+#         self.header = self._build_header(add_param_flag = False)
+#         self.gaussian_input_params = gaussian_input_params
+
+    def _rebuild_header(self, add_param_flag):
+        params = self.gaussian_input_params
+        header = (params['link0_section'])
+
+        if add_param_flag:
+            # Builds a header for the gaussian.inp file, <PARAM> Flag will be replaced by opt or force
+            header = header + (params['route_section'].rstrip() + ' <PARAM>' + '\n') + '\n'
+        else:
+            header = header + (params['route_section'].rstrip()) + '\n' + '\n'
+
+        header = header + (params['title'] + '\n') + '\n' \
+                 + (str(params['charge']) + ' ' + str(params['multiplicity']) + '\n')
+        return header
+
+    def write_header(self, directory, file_name, gaussian_ext, add_param_flag=False):
+        header = self._rebuild_header(add_param_flag)
+        with open(join(directory, file_name + gaussian_ext), 'w') as output:
+            output.write(header)
+
+    def write_coordinates(self, directory, file_name, gaussian_ext):
+        with open(join(directory, file_name + gaussian_ext), 'a') as output:
+            output.write(self.gaussian_input_params['atom_coordinates'])
+
+    def _get_coordinate_line_number(self, str):
+        return len(str.split('\n'))
+
+    def insert_gaussian_file_header_into_execute_gaussian(self, script_directory, gaussian_execution_script, structure_output_directory, add_param_flag = False):
         """
         Inserts a gaussian header file into the bash script that will be writing to
         the art2gaussian.inp file and calling gaussian
@@ -191,7 +224,7 @@ class load_input:
 
         start_shell_script_marker = '#gaussian-header-begin (DO NOT REMOVE) \n'
 
-        header = self._build_header(params, add_param_flag)
+        header = 'header=\'' + self._rebuild_header(add_param_flag) + '\''
 
         coordinate_line_start = '\n#Coordinate line where data begins\n' \
                                 + 'coorLineNumber=' + str(self._get_coordinate_line_number(header))
@@ -213,20 +246,4 @@ class load_input:
         # Hides script to reduce clutter
         rename(gaussian_execution_script_local, join(structure_output_directory, '.' + gaussian_execution_script))
 
-    def _build_header(self, params, add_param_flag):
-        header = 'header=\'' \
-                 + (params['link0_section'])
 
-        if add_param_flag:
-            # Builds a header for the gaussian.inp file, <PARAM> Flag will be replaced by opt or force
-            header = header + (params['route_section'].rstrip() + ' <PARAM>' + '\n') + '\n'
-        else:
-            header = header + (params['route_section'].rstrip()) + '\n' \
-
-        header = header + (params['title'] + '\n') + '\n' \
-                 + (str(params['charge']) + ' ' + str(params['multiplicity']) + '\n' + '\'')
-
-        return header
-
-    def _get_coordinate_line_number(self, str):
-        return len(str.split('\n'))

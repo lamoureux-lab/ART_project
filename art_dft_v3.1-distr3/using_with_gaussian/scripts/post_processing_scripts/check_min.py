@@ -97,24 +97,6 @@ def check_min_or_sad(logfile):
                     print("Optimization failed")
 
 
-def create_new_gaussian_input(gaussian_input_params, new_directory, file_name, gaussian_ext):
-
-    params = gaussian_input_params
-
-    header = (params['link0_section']) \
-             + (params['route_section'].rstrip()) + ('\n') \
-             + (params['title'] + '\n') + ('\n') \
-             + (str(params['charge']) + ' ' + str(params['multiplicity']) + '\n')
-
-    coordinates = params['atom_coordinates']
-
-    gaussian_input_params
-
-    with open(join(new_directory, file_name + gaussian_ext), 'w') as output:
-        output.write(header)
-        output.write(coordinates)
-
-
 if __name__ == '__main__':
 
     # Creates object containing all gaussian.inp information
@@ -132,18 +114,14 @@ if __name__ == '__main__':
 
     for min_file in file_list:
         gaussian_input_params = get_atomic_coordinates(input_data.gaussian_input_params, min_file)
-        create_new_gaussian_input(gaussian_input_params, default_min_output_directory, min_file, default_gaussian_ext)
+
+
+        # create_new_gaussian_input(gaussian_input_params, default_min_output_directory, min_file, default_gaussian_ext)
+        input_data.write_header(default_min_output_directory, min_file, default_gaussian_ext)
+        input_data.write_coordinates(default_min_output_directory, min_file, default_gaussian_ext)
+
         submission_script = create_submission_file(join(default_min_output_directory, min_file))
         #TODO uncomment qsub when running real tests
         # call(['qsub', '-N', 'gau_opt_' + min_file, submission_script], shell=False)
 
-    # file_list = glob.glob('sad1*')
-    # for sad_file in file_list:
-    #     gaussian_input_params = get_atomic_coordinates(gaussian_input_params, sad_file)
-    #     submission_script = (gaussian_input_params, default_sad_output_directory, sad_file,
-    #                                   default_gaussian_ext)
-    #     submission_script = create_submission_file(join(default_sad_output_directory, sad_file))
-    #     call(['qsub', '-N', 'gau_opt_' + sad_file, submission_script], shell=False)
-
-    # create_new_gaussian_input(input_data.gaussian_input_params, default_sad_output_directory, sad_file, default_gaussian_ext)
 
