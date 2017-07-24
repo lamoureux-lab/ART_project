@@ -36,7 +36,7 @@ def get_art_files(filetype):
 
 def calculate_cluster_map(file_list):
     dict = {}  # Initialize a Dictionary
-    for min in files:
+    for min in file_list:
         coords = []
         with open(min) as f:
             for i in range(0, 3):

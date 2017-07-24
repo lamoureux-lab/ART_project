@@ -5,6 +5,7 @@ from os.path import isfile, join, exists, splitext
 import glob
 from subprocess import call
 import re
+import random
 import sys
 
 #Program directories
@@ -21,15 +22,9 @@ import parsing_src.parsing_art_files as parsing_art_files
 import parsing_src.parsing_submission_files as parsing_submission_files
 import parsing_src.utility as utility
 
-# TODO sort out ValueError: Attempted relative import in non-package error with the following to import a less hacky way
-# from ..parsing_src import parsing_gaussian_files
-# from ..parsing_src import parsing_art_files
-# from ..parsing_src import parsing_submission_files
-# from ..parsing_src import utility
-
 default_gaussian_ext = '.inp'
 
-default_input_file = '../ethane.inp'
+# default_input_file = '../ethane.inp'
 
 
 #Handles file parameter passing
@@ -41,10 +36,13 @@ parser.add_argument('-min_opt','--min_optimization',
 # parser.add_argument('-sad_opt','--sad_optimization',
 #                     help = 'Route section optimization setting for sad files (note - previous optimization will be removed from original.inp')
 parser.add_argument('-f', '--input_files', nargs='*',
-                    help='specific input files to submit from project directory')
+                    help='specific input files to submit from project directory (e.g., min1000')
 parser.add_argument('-i','--gaussian_input', help='Gaussian input file to extract the method and basis set from')
 parser.add_argument('-out','--output_file',
                     help = 'Name of the output file')
+parser.add_argument('-c','--check_one_per_cluster', action='store_true',
+                    help = 'Option to automatically check one file per cluster')
+
 args = parser.parse_args()
 
 def get_atomic_coordinates(gaussian_input_params, ART_output_file):
@@ -76,43 +74,64 @@ echo "Starting run at: `date`"
             
 # Set up the Gaussian environment using the module command: 
 module load gaussian \n # Run Submission 
-g09 ''' + filename + '''.com''')
+g09 ''' + filename + '''.inp > output.log 
+python check_freq.py <''' + filename + 'log' + '> ' + filename + '_results.txt' '\n')
 
     return submission_script
 
 
-def check_min_or_sad(logfile):
-    with open(logfile)as f:
-        if logfile.startswith('min'):
-            frequency = []
-            for line in f:
-                if line.startswith(" Frequencies"):
-                    frequency.append(line)
-                    print(line)
+def get_directories(starts_with):
+    return glob.glob(starts_with + '*')
 
-            for line in frequency:
-                freq = line.split()
-                check = float(freq[2])
-                if check < 0:
-                    print("Optimization failed")
+def get_files(directory):
+    return listdir(join(getcwd(), directory))
+
+def get_representative(file_list):
+    # return file_list[0]
+    return file_list[random.randint(1, len(file_list))-1]
+
+# def create_clusters(file_starts_with):
+#     files = cluster.get_art_files(file_starts_with)
+#     map_to_cluster = cluster.calculate_cluster_map(files)
+#     cluster.organizing_clustered_files(map_to_cluster)
+
+def get_representatives_from_clusters(files_starts_with):
+    import cluster
+    # create_clusters(files_starts_with)
+
+    starts_with = 'cluster_'
+    cluster_list = get_directories(starts_with)
+
+    file_dict = {}
+    representative_files = []
+    for cluster in cluster_list:
+        file_dict[cluster] = get_files(cluster)
+        representative_files.append(get_representative(file_dict[cluster]))
+    return representative_files
 
 
 if __name__ == '__main__':
 
+    files_starts_with = 'min1'
+
+    # if args.check_one_per_cluster:
+    # specified_ args.gaussian_input
+
+    #Gets one representative from each cluster
+    if args.check_one_per_cluster:
+        representative_files = get_representatives_from_clusters(files_starts_with)
+        files_to_test = representative_files
+    if args.input_files:
+        files_to_test = args.input_files
+
     # Creates object containing all gaussian.inp information
-    input_data = parsing_gaussian_files.gaussian_input(join(project_input_directory, default_input_file))
+    input_data = parsing_gaussian_files.gaussian_input(join(project_input_directory, args.gaussian_input))
 
     #Create min and sad output directories
     utility.create_directory(default_min_output_directory)
     # utility.create_directory(default_sad_output_directory)
 
-    #for min file in directory :
-    filetype = 'min1'
-    # Excludes .xyz files from cluster parsing
-    file_list = [fn for fn in glob.glob(filetype + '*')
-             if not splitext(fn)[1] == '.xyz']
-
-    for min_file in file_list:
+    for min_file in files_to_test:
         gaussian_input_params = get_atomic_coordinates(input_data.gaussian_input_params, min_file)
 
         input_data.write_gaussian_input_file(default_min_output_directory, min_file, default_gaussian_ext)
