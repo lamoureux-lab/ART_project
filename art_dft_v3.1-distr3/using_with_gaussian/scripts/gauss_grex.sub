@@ -12,8 +12,8 @@
 
 # Cluster submission details
 #PBS -S /bin/bash
-#PBS -l mem=8000MB
-#PBS -l nodes=1:ppn=8
+#PBS -l mem=000MB
+#PBS -l nodes=1:ppn=12
 #PBS -l walltime=010:00:00
 
 # Adjust the mem and ppn above to match the requirements of your job
@@ -27,6 +27,9 @@ echo "Starting run at: `date`"
 # Set up the Gaussian environment using the module command:
 module load gaussian
 
-# Run g09
-#g09 pipes debug log information to output.log
-csh gaussian_art.sh > output.log
+
+# g09 pipes debug log information to output.log
+# DO NOT REMOVE LAST LINE as this will be modified dynamically for different jobs by check_min_sad.py
+
+execution_script='gaussian_art.sh'
+csh $execution_script > output.log

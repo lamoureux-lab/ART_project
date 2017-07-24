@@ -83,16 +83,22 @@ def get_gaussian_input_files(input_file_directory, select_input_files):
     #Load all files in that directory
     files_in_directory = [f for f in listdir(input_file_directory) if isfile(join(input_file_directory, f))]
 
+    gaussian_files_in_directory = []
+    for filename in files_in_directory:
+        extension_list = ['.com', '.inp', '.input', '.gjf']
+        if [x for x in extension_list if filename.endswith(x)]:
+            gaussian_files_in_directory.append(filename)
+
     #Adds only those files selected by the user
     final_file_list = []
     if (select_input_files):
         for file_name in select_input_files:
-            if file_name in files_in_directory:
+            if file_name in gaussian_files_in_directory:
                 final_file_list.append(file_name)
             else:
                 print 'File not found: ' + file_name
     else:
-        final_file_list = files_in_directory
+        final_file_list = gaussian_files_in_directory
 
     print('Preparing the following gaussian input file(s) for submission: ' )
     for file in final_file_list:
