@@ -1,7 +1,7 @@
 import argparse
-from os.path import join, abspath, dirname
+from os.path import join, abspath, dirname, split
 from os import listdir, makedirs, getcwd
-from os.path import isfile, join, exists, splitext
+from os.path import isfile, join, exists, splitext, relpath
 import glob
 from subprocess import call
 import re
@@ -97,8 +97,6 @@ def get_representative(file_list):
 
 def get_representatives_from_clusters(files_starts_with):
     import cluster
-    # create_clusters(files_starts_with)
-
     starts_with = 'cluster_'
     cluster_list = get_directories(starts_with)
 
@@ -109,13 +107,24 @@ def get_representatives_from_clusters(files_starts_with):
         representative_files.append(get_representative(file_dict[cluster]))
     return representative_files
 
+def missing_arguments(args):
+    if not args.check_one_per_cluster and not args.input_files:
+        return True
+    return False
 
 if __name__ == '__main__':
 
     files_starts_with = 'min1'
 
-    # if args.check_one_per_cluster:
-    # specified_ args.gaussian_input
+    if missing_arguments(args):
+        print('Missing arguments: Ensure that -f <filename1> <...> is used to specify files to check')
+        exit()
+
+    #Looks for gaussian_file_location based on directory name if it was not provided as an arg
+    if not args.gaussian_input:
+        folder_path = dirname(getcwd())
+        path, folder_name = split(getcwd())
+        gaussian_file_location = join(getcwd(), join('..', folder_name + '.inp'))
 
     #Gets one representative from each cluster
     if args.check_one_per_cluster:
@@ -125,7 +134,12 @@ if __name__ == '__main__':
         files_to_test = args.input_files
 
     # Creates object containing all gaussian.inp information
-    input_data = parsing_gaussian_files.gaussian_input(join(project_input_directory, args.gaussian_input))
+
+    if args.gaussian_input:
+        gaussian_file_location = join(project_input_directory, args.gaussian_input)
+
+
+    input_data = parsing_gaussian_files.gaussian_input(gaussian_file_location)
 
     #Create min and sad output directories
     utility.create_directory(default_min_output_directory)
