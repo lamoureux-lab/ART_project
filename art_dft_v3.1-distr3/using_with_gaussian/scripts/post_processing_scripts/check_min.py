@@ -4,7 +4,6 @@ from os import listdir, makedirs, getcwd
 from os.path import isfile, join, exists, splitext, relpath
 import glob
 from subprocess import call
-import re
 import random
 import sys
 
@@ -22,9 +21,9 @@ import parsing_src.parsing_art_files as parsing_art_files
 import parsing_src.parsing_submission_files as parsing_submission_files
 import parsing_src.utility as utility
 
+
 default_gaussian_ext = '.inp'
 
-# default_input_file = '../ethane.inp'
 
 
 #Handles file parameter passing
@@ -75,7 +74,7 @@ echo "Starting run at: `date`"
 # Set up the Gaussian environment using the module command: 
 module load gaussian \n # Run Submission 
 g09 ''' + filename + '''.inp > output.log 
-python check_freq.py < ''' + filename + '.log' + ' > ' + filename + '_results.txt' '\n')
+''' + 'python ' + join(dirname(relpath(__file__)), 'check_freq.py') +' < ' + filename + '.log' + ' > ' + filename + '_results.txt' '\n')
 
     return submission_script
 
