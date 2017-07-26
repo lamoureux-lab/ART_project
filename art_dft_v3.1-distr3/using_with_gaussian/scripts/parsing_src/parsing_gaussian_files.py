@@ -197,6 +197,7 @@ class gaussian_input:
     def write_coordinates(self, directory, file_name, gaussian_ext):
         with open(join(directory, file_name + gaussian_ext), 'a') as output:
             output.write(self.gaussian_input_params['atom_coordinates'])
+            output.write('\n\n')
 
     def _get_coordinate_line_number(self, str):
         return len(str.split('\n'))
