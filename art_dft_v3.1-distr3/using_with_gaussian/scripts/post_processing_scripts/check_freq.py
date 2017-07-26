@@ -9,8 +9,8 @@ for line in frequency:
     freq = line.split()
     check = float(freq[2])
     if check < 0:
-    	break
     	print("Optimization failed")
+    	break
 
 if check > 0:
 	print ("Optimization Successful")
