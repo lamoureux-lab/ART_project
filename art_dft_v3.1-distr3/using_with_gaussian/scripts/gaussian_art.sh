@@ -70,7 +70,7 @@ setenv RESTART          restart.dat               # current data.sh for restarti
 ############### Run the simulation #######################################################################
 
 #ensure that Gaussian is loaded prior to file execution (the location is set dynamically by run_gaussian_art.py
-art_location='../../../source/artdft'
-csh $art_location
+set art_location = "../../../source/artdft"
+$art_location
 
 

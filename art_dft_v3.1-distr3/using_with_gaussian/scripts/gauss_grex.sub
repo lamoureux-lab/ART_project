@@ -12,7 +12,7 @@
 
 # Cluster submission details
 #PBS -S /bin/bash
-#PBS -l mem=000MB
+#PBS -l mem=8000MB
 #PBS -l nodes=1:ppn=12
 #PBS -l walltime=010:00:00
 

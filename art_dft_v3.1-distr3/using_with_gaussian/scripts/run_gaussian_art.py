@@ -196,7 +196,7 @@ if __name__ == "__main__":
             wd = getcwd()
             chdir(join(wd, structure_output_directory))
             #TODO uncomment for tests on GREX
-            # call(['qsub', '-N','gau_art_'+ structure, grex_submission_script], shell=False)
+            call(['qsub', '-N','gau_art_'+ structure, grex_submission_script], shell=False)
             chdir(wd)
         else:
             print 'Only GREX submission is currently available'

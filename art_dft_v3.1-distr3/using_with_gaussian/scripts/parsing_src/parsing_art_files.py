@@ -71,7 +71,7 @@ def set_env_config(script_directory, gaussian_art_filename, refconfig_filename, 
                     updated_line = _set_setenv(setenv, new_value)
 
             #set ART executable location from script
-            variable_name, new_value = 'art_location', art_executable_location
+            variable_name, new_value = 'set art_location', art_executable_location
             if _check_bash_variable(variable_name, line):
                 updated_line = _set_bash_variable(variable_name, new_value)
 
