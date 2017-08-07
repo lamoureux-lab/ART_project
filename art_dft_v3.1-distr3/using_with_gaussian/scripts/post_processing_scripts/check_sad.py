@@ -6,12 +6,12 @@ import glob
 from subprocess import call
 import random
 import sys
+import re
 
 #Program directories
 parsing_scripts_directory = 'parsing_src'
 project_input_directory = getcwd()
-default_min_output_directory = 'min_opt'
-# default_sad_output_directory = 'sad_opt'
+default_sad_output_directory = 'sad_opt'
 
 #Loads parsing scripts
 # sys.path.insert(0, join('..', parsing_scripts_directory)+'/')
@@ -30,12 +30,10 @@ default_gaussian_ext = '.inp'
 # #TODO add a good application description
 
 parser = argparse.ArgumentParser(description = 'Create an input and submission file')
-parser.add_argument('-min_opt','--min_optimization',
+parser.add_argument('-sad_opt','--sad_optimization',
                     help = 'Route section optimization setting for min files (note - previous optimization will be removed from original.inp')
-# parser.add_argument('-sad_opt','--sad_optimization',
-#                     help = 'Route section optimization setting for sad files (note - previous optimization will be removed from original.inp')
-parser.add_argument('-f', '--input_files', nargs='*',
-                    help='specific input files to submit from project directory (e.g., min1000')
+parser.add_argument('-s', '--sad_files', nargs='*',
+                    help='specific input files to submit from project directory (e.g., sad1001')
 parser.add_argument('-i','--gaussian_input', help='Gaussian input file to extract the method and basis set from')
 parser.add_argument('-out','--output_file',
                     help = 'Name of the output file')
@@ -74,7 +72,7 @@ echo "Starting run at: `date`"
 # Set up the Gaussian environment using the module command: 
 module load gaussian \n # Run Submission 
 g09 ''' + filename + '.inp > ' + filename + '.log\n'
- + 'python ' + join(dirname(relpath(__file__)), 'check_min_freq.py') +' < ' + filename + '.log' + ' > ' + filename + '_results.txt' '\n')
+ + 'python ' + join(dirname(relpath(__file__)), 'check_sad_freq.py') +' < ' + filename + '.log' + ' > ' + filename + '_results.txt' '\n')
 
     return submission_script
 
@@ -106,23 +104,39 @@ def get_representatives_from_clusters(files_starts_with):
         representative_files.append(get_representative(file_dict[cluster]))
     return representative_files
 
-def missing_arguments(args):
+def missing_saddle_arguments(args):
     if not args.check_one_per_cluster and not args.input_files:
         return True
     return False
 
+def get_file_number(filename):
+    return re.split('(\d+)', filename)[1]
+
+def get_min_sad_coordinates(filename):
+
+    saddle_file = args.saddle_file
+    file_counter = int(get_file_number(saddle_file))
+    initial_min = 'min' + str(file_counter - 1)
+    final_min = 'min' + str(file_counter)
+
+    sad_coord = parsing_art_files.get_atom_coordinates(saddle_file)
+    initial_min_coord = parsing_art_files.get_atomic_coordinates(initial_min)
+    final_min_coord = parsing_art_files.get_atomic_coordinates(final_min)
+    return sad_coord + '\n' + initial_min_coord + '\n' + final_min_coord
+
 if __name__ == '__main__':
 
-    files_starts_with = 'min1'
+    files_starts_with = 'sad1'
 
-    if missing_arguments(args):
-        print('Missing arguments: Ensure that -f <filename1> <...> is used to specify files to check')
+    if missing_saddle_arguments(args):
+        print('Missing arguments: Ensure that -s <sad_file> is used to specify file to check')
         exit()
 
     #Looks for gaussian_file_location based on directory name if it was not provided as an arg
     if not args.gaussian_input:
         folder_path = dirname(getcwd())
         path, folder_name = split(getcwd())
+        #TODO check next line
         gaussian_file_location = join(getcwd(), join('..', folder_name + '.inp'))
 
     #Gets one representative from each cluster
@@ -141,16 +155,18 @@ if __name__ == '__main__':
     input_data = parsing_gaussian_files.gaussian_input(gaussian_file_location)
 
     #Create min and sad output directories
-    utility.create_directory(default_min_output_directory)
+    utility.create_directory(default_sad_output_directory)
     # utility.create_directory(default_sad_output_directory)
 
-    for min_file in files_to_test:
-        gaussian_input_params = get_atomic_coordinates(input_data.gaussian_input_params, min_file)
+    for sad_file in files_to_test:
 
-        input_data.write_gaussian_input_file(default_min_output_directory, min_file, default_gaussian_ext)
+        #Overwrites the gaussian input file coordinates with those from the min-sad-min files
+        input_data.gaussian_input_params['atom_coordinates'] = get_min_sad_coordinates(sad_file)
 
-        submission_script = create_submission_file(join(default_min_output_directory, min_file))
+        input_data.write_gaussian_input_file(default_sad_output_directory, sad_file, default_gaussian_ext)
+
+        submission_script = create_submission_file(join(default_sad_output_directory, sad_file))
         #TODO uncomment qsub when running real tests
-        # call(['qsub', '-N', 'gau_opt_' + min_file, submission_script], shell=False)
+        # call(['qsub', '-N', 'gau_opt_' + sad_file, submission_script], shell=False)
 
 

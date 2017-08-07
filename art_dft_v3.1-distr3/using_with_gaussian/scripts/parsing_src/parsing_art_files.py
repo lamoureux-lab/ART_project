@@ -153,3 +153,19 @@ def create_ref_config(refconfig_filename, atom_coordinates, output_directory):
     config.write('S   100.000000000000        100.000000000000        100.000000000000\n')
     config.write(atom_coordinates)
     config.close()
+
+def get_atom_coordinates(ref_config_file):
+    """
+    Skips the first 3 lines to get only the coordinates from a ref_config type file
+    :return: String of coordinates
+    """
+
+    with open(ref_config_file) as f:
+        for i in range(0, 3):
+            f.readline()
+            atomic_coordinates = ''
+        for line in f:
+            atomic_coordinates = atomic_coordinates + line
+        return atomic_coordinates
+
+    return False
