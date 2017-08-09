@@ -154,7 +154,7 @@ def create_ref_config(refconfig_filename, atom_coordinates, output_directory):
     config.write(atom_coordinates)
     config.close()
 
-def get_atom_coordinates(ref_config_file):
+def get_atomic_coordinates(ref_config_file):
     """
     Skips the first 3 lines to get only the coordinates from a ref_config type file
     :return: String of coordinates

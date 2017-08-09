@@ -112,14 +112,13 @@ def missing_saddle_arguments(args):
 def get_file_number(filename):
     return re.split('(\d+)', filename)[1]
 
-def get_min_sad_coordinates(filename):
+def get_min_sad_coordinates(saddle_file):
 
-    saddle_file = args.sad_files
     file_counter = int(get_file_number(saddle_file))
     initial_min = 'min' + str(file_counter - 1)
     final_min = 'min' + str(file_counter)
 
-    sad_coord = parsing_art_files.get_atom_coordinates(saddle_file)
+    sad_coord = parsing_art_files.get_atomic_coordinates(saddle_file)
     initial_min_coord = parsing_art_files.get_atomic_coordinates(initial_min)
     final_min_coord = parsing_art_files.get_atomic_coordinates(final_min)
     return sad_coord + '\n' + initial_min_coord + '\n' + final_min_coord
