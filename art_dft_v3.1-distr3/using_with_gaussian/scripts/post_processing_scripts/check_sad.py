@@ -105,7 +105,7 @@ def get_representatives_from_clusters(files_starts_with):
     return representative_files
 
 def missing_saddle_arguments(args):
-    if not args.check_one_per_cluster and not args.input_files:
+    if not args.check_one_per_cluster and not args.sad_files:
         return True
     return False
 
@@ -114,7 +114,7 @@ def get_file_number(filename):
 
 def get_min_sad_coordinates(filename):
 
-    saddle_file = args.saddle_file
+    saddle_file = args.sad_files
     file_counter = int(get_file_number(saddle_file))
     initial_min = 'min' + str(file_counter - 1)
     final_min = 'min' + str(file_counter)
@@ -143,8 +143,8 @@ if __name__ == '__main__':
     if args.check_one_per_cluster:
         representative_files = get_representatives_from_clusters(files_starts_with)
         files_to_test = representative_files
-    if args.input_files:
-        files_to_test = args.input_files
+    if args.sad_files:
+        files_to_test = args.sad_files
 
     # Creates object containing all gaussian.inp information
 
