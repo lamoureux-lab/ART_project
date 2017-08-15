@@ -151,7 +151,7 @@ if __name__ == '__main__':
         gaussian_file_location = join(project_input_directory, args.gaussian_input)
 
 
-    input_data = parsing_gaussian_files.gaussian_input(gaussian_file_location)
+    input_data = parsing_gaussian_files.GaussianInput(gaussian_file_location)
 
     #Create min and sad output directories
     utility.create_directory(default_sad_output_directory)
