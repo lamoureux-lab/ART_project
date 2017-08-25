@@ -132,7 +132,7 @@ if __name__ == "__main__":
         structure = input_file_name.split('.')[0]
 
         # Creates object containing all gaussian.inp information
-        input_data[structure] = parsing_gaussian_files.gaussian_input(join(project_input_directory, input_file_name))
+        input_data[structure] = parsing_gaussian_files.GaussianInput(join(project_input_directory, input_file_name))
         input_data[structure].remove_route_parameter(['opt', 'force', 'nosymm'])
 
         # Makes symbols from a gaussian input file atomic numbers
@@ -195,7 +195,7 @@ if __name__ == "__main__":
             print 'Running submission file for: ' + structure
             wd = getcwd()
             chdir(join(wd, structure_output_directory))
-            #TODO uncomment for tests on GREX
+            #uncomment for tests on GREX
             call(['qsub', '-N','gau_art_'+ structure, grex_submission_script], shell=False)
             chdir(wd)
         else:

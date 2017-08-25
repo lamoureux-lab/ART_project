@@ -3,7 +3,7 @@ from os.path import join, dirname
 from shutil import copy
 from os import rename
 
-class gaussian_input:
+class GaussianInput:
     """
     Loads the values gaussian parameters into a dictionary object
     :param gaussian_input_params
