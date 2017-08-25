@@ -15,7 +15,8 @@ for line in frequency:
 
 if j == 0:
 	print ("Failure: No frequency information found!")
-elif i == 1:
-	print ("Optimization Successful")
-else:
-	print("Optimization failed")
+elif j > 0:
+    if i == 1:
+	   print ("Optimization Successful")
+    else:
+	   print("Optimization failed")
