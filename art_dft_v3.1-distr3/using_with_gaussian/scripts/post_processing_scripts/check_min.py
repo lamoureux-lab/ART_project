@@ -39,6 +39,10 @@ parser.add_argument('-f', '--input_files', nargs='*',
 parser.add_argument('-i','--gaussian_input', help='Gaussian input file to extract the method and basis set from')
 parser.add_argument('-out','--output_file',
                     help = 'Name of the output file')
+parser.add_argument('-n','--job_name',
+                    help = 'Name of the job')
+parser.add_argument('-w','--wall_time',
+                    help = 'Wall time in hh:mm:ss')
 parser.add_argument('-c','--check_one_per_cluster', action='store_true',
                     help = 'Option to automatically check one file per cluster')
 
@@ -61,8 +65,8 @@ def create_submission_file(filename):
 #PBS -S /bin/bash 
 #PBS -l nodes=1:ppn=4 
 #PBS -l mem=1800MB 
-#PBS -l walltime=5:00:00 
-#PBS -N Ethane_Opt 
+#PBS -l walltime=''' + wall_time + '''
+#PBS -N''' + job_name + ''' 
             
 # Adjust the mem and ppn above to match the requirements of your job 
 # Sample Gaussian job script 
