@@ -68,18 +68,30 @@ g09 ''' + filename + '.inp > ' + filename + '.log\n'
 
 def get_gaussian_header(input_file):
     i = 0
+    j = 0
     with open(input_file) as f:
         gaussian_header = ''
         for line in f:
+            if line.startswith('%'):
+                j = j + 1
+            elif line.startswith('#'):
+                j = j + 1
             gaussian_header = gaussian_header + line
             i = i + 1
-            if i > 5:
+            if i > j + 3: #Because space-title-space-charge_multiplicity
                 break
         return gaussian_header
 
 def get_charge_multiplicity(input_file):
+    j = 0
     with open(input_file) as f:
-        for i in range(0,5):
+        for line in f:
+            if line.startswith('%'):
+                j = j + 1
+            elif line.startswith('#'):
+                j = j + 1
+            k = j + 3
+        for i in range(0,k):
             _ = f.readline()
         charge_multiplicity = f.readline()
         return charge_multiplicity
@@ -97,7 +109,7 @@ def get_min_sad_coordinates(saddle_file):
     sad_coord = get_atomic_coordinates(saddle_file)
     initial_min_coord = get_atomic_coordinates(initial_min)
     final_min_coord = get_atomic_coordinates(final_min)
-    return initial_min_coord + '\n' + 'Title Card Required' + '\n\n' +  charge_multiplicity + sad_coord + '\n' + 'Title Card Required' + '\n\n' + charge_multiplicity + final_min_coord + '\n' + '\n'
+    return initial_min_coord + '\n' + 'Title Card Required' + '\n\n' + charge_multiplicity + final_min_coord + '\n' + 'Title Card Required' + '\n\n' + charge_multiplicity + sad_coord + '\n' + '\n'
 
 def create_gaussian_input_file(saddle_file):
     gaussian_input_file = saddle_file + '.inp'
