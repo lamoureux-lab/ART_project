@@ -49,8 +49,8 @@ def create_submission_file(filename):
 #PBS -S /bin/bash 
 #PBS -l nodes=1:ppn=4 
 #PBS -l mem=1800MB 
-#PBS -l walltime=''' + wall_time + '''
-#PBS -N''' + job_name + '''
+#PBS -l walltime=''' + wt + '''
+#PBS -N''' + jn + '''
             
 # Adjust the mem and ppn above to match the requirements of your job 
 # Sample Gaussian job script 
@@ -127,7 +127,8 @@ def create_directory(directory):
 
 files_to_test = args.sad_files
 ART_input_file = args.art_input
-
+wt = args.wall_time
+jn = args.job_name
 
 if __name__ == '__main__':
 
