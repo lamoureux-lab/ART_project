@@ -50,7 +50,7 @@ def create_submission_file(filename):
 #PBS -l nodes=1:ppn=4 
 #PBS -l mem=1800MB 
 #PBS -l walltime=''' + wt + '''
-#PBS -N''' + jn + '''
+#PBS -N ''' + jn + '''
             
 # Adjust the mem and ppn above to match the requirements of your job 
 # Sample Gaussian job script 
@@ -66,32 +66,31 @@ g09 ''' + filename + '.inp > ' + filename + '.log\n'
 
     return submission_script
 
-def get_gaussian_header(input_file):
-    i = 0
+def get_number_of_header_lines(input_file):
     j = 0
     with open(input_file) as f:
-        gaussian_header = ''
         for line in f:
             if line.startswith('%'):
                 j = j + 1
             elif line.startswith('#'):
                 j = j + 1
+        k = j + 3
+        return k
+
+def get_gaussian_header(input_file):
+    i = 0
+    with open(input_file) as f:
+        gaussian_header = ''
+        for line in f:
             gaussian_header = gaussian_header + line
             i = i + 1
-            if i > j + 3: #Because space-title-space-charge_multiplicity
+            if i > numb_of_head:
                 break
         return gaussian_header
 
 def get_charge_multiplicity(input_file):
-    j = 0
     with open(input_file) as f:
-        for line in f:
-            if line.startswith('%'):
-                j = j + 1
-            elif line.startswith('#'):
-                j = j + 1
-            k = j + 3
-        for i in range(0,k):
+        for i in range(0,numb_of_head):
             _ = f.readline()
         charge_multiplicity = f.readline()
         return charge_multiplicity
@@ -129,6 +128,7 @@ files_to_test = args.sad_files
 ART_input_file = args.art_input
 wt = args.wall_time
 jn = args.job_name
+numb_of_head = get_number_of_header_lines(ART_input_file)
 
 if __name__ == '__main__':
 
