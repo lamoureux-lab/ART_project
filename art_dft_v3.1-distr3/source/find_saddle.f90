@@ -161,7 +161,8 @@ subroutine global_move( )
   atom_displaced = 0 
   natom_displaced = 0 
   dr = 0.0d0 
-
+  
+  !If there is no vector to try (logic for checking whether there is a vector to try): 
   ! Generate a random displacement.
   do i = 1, natoms, 1
      if ( constr(i) == 0 ) then
@@ -178,6 +179,8 @@ subroutine global_move( )
         atom_displaced(i) = 1
      end if
   end do
+  !Else, if there is a vector to try:
+  !Logic for reading the vector from the file
 
   call center_and_norm ( INITSTEPSIZE )
 
