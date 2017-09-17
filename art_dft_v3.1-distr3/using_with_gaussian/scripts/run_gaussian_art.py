@@ -133,7 +133,7 @@ if __name__ == "__main__":
 
         # Creates object containing all gaussian.inp information
         input_data[structure] = parsing_gaussian_files.GaussianInput(join(project_input_directory, input_file_name))
-        input_data[structure].remove_route_parameter(['opt', 'force', 'nosymm'])
+        input_data[structure].remove_route_parameter(['opt', 'force', 'nosymm', 'freq'])
 
         # Makes symbols from a gaussian input file atomic numbers
         # input_data[structure].symbol_to_atomic_number(join(program_data_directory, periodic_table_data))
