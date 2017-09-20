@@ -11,32 +11,16 @@ import sys
 parsing_scripts_directory = 'parsing_src'
 project_input_directory = getcwd()
 default_min_output_directory = 'min_opt'
-# default_sad_output_directory = 'sad_opt'
-
-#Loads parsing scripts
-# sys.path.insert(0, join('..', parsing_scripts_directory)+'/')
-sys.path.insert(0, dirname(abspath(__file__)) + "/..")
-import parsing_src.parsing_gaussian_files as parsing_gaussian_files
-import parsing_src.parsing_art_files as parsing_art_files
-import parsing_src.parsing_submission_files as parsing_submission_files
-import parsing_src.utility as utility
-
-
 default_gaussian_ext = '.inp'
 
 
 
-#Handles file parameter passing
-# #TODO add a good application description
-
 parser = argparse.ArgumentParser(description = 'Create an input and submission file')
 parser.add_argument('-min_opt','--min_optimization',
                     help = 'Route section optimization setting for min files (note - previous optimization will be removed from original.inp')
-# parser.add_argument('-sad_opt','--sad_optimization',
-#                     help = 'Route section optimization setting for sad files (note - previous optimization will be removed from original.inp')
-parser.add_argument('-f', '--input_files', nargs='*',
+parser.add_argument('-m', '--min_files', nargs='*',
                     help='specific input files to submit from project directory (e.g., min1000')
-parser.add_argument('-i','--gaussian_input', help='Gaussian input file to extract the method and basis set from')
+parser.add_argument('-i','--art_input', help='ART input file to extract the method and basis set from')
 parser.add_argument('-out','--output_file',
                     help = 'Name of the output file')
 parser.add_argument('-n','--job_name',
@@ -46,16 +30,18 @@ parser.add_argument('-w','--wall_time',
 parser.add_argument('-c','--check_one_per_cluster', action='store_true',
                     help = 'Option to automatically check one file per cluster')
 
+
 args = parser.parse_args()
 
-def get_atomic_coordinates(gaussian_input_params, ART_output_file):
-    with open(ART_output_file) as f:
-        gaussian_input_params['atom_coordinates'] = ''
-        for i in range(0,3):
-            _= f.readline()
+
+def get_atomic_coordinates(ART_output_file):
+    with open (ART_output_file) as f:
+        atomic_coords = ''
+        for i in range (0,3):
+            _ = f.readline()
         for line in f:
-            gaussian_input_params['atom_coordinates'] = gaussian_input_params['atom_coordinates'] + line
-        return gaussian_input_params
+            atomic_coords = atomic_coords + line
+        return atomic_coords
 
 def create_submission_file(filename):
     submission_script = filename + '.sub'
@@ -65,8 +51,8 @@ def create_submission_file(filename):
 #PBS -S /bin/bash 
 #PBS -l nodes=1:ppn=4 
 #PBS -l mem=1800MB 
-#PBS -l walltime=''' + wall_time + '''
-#PBS -N''' + job_name + ''' 
+#PBS -l walltime=''' + wt + '''
+#PBS -N ''' + jn + '''
             
 # Adjust the mem and ppn above to match the requirements of your job 
 # Sample Gaussian job script 
@@ -82,78 +68,72 @@ g09 ''' + filename + '.inp > ' + filename + '.log\n'
 
     return submission_script
 
+def get_number_of_header_lines(input_file):
+    j = 0
+    with open(input_file) as f:
+        for line in f:
+            if line.startswith('%'):
+                j = j + 1
+            elif line.startswith('#'):
+                j = j + 1
+        k = j + 3
+        return k
 
-def get_directories(starts_with):
-    return glob.glob(starts_with + '*')
+def get_gaussian_header(input_file):
+    i = 0
+    with open(input_file) as f:
+        gaussian_header = ''
+        for line in f:
+            gaussian_header = gaussian_header + line
+            i = i + 1
+            if i > numb_of_head:
+                break
+        return gaussian_header
 
-def get_files(directory):
-    return listdir(join(getcwd(), directory))
+def get_charge_multiplicity(input_file):
+    with open(input_file) as f:
+        for i in range(0,numb_of_head):
+            _ = f.readline()
+        charge_multiplicity = f.readline()
+        return charge_multiplicity
 
-def get_representative(file_list):
-    # return file_list[0]
-    return file_list[random.randint(1, len(file_list))-1]
 
-# def create_clusters(file_starts_with):
-#     files = cluster.get_art_files(file_starts_with)
-#     map_to_cluster = cluster.calculate_cluster_map(files)
-#     cluster.organizing_clustered_files(map_to_cluster)
+def get_min_coordinates(min_file):
 
-def get_representatives_from_clusters(files_starts_with):
-    import cluster
-    starts_with = 'cluster_'
-    cluster_list = get_directories(starts_with)
+    min_coord = get_atomic_coordinates(min_file)
+    return min_coord 
 
-    file_dict = {}
-    representative_files = []
-    for cluster in cluster_list:
-        file_dict[cluster] = get_files(cluster)
-        representative_files.append(get_representative(file_dict[cluster]))
-    return representative_files
+def create_gaussian_input_file(min_file):
+    gaussian_input_file = min_file + '.inp'
+    with open(gaussian_input_file, 'w') as f:
+        f.write(gaussian_header + coords)
 
-def missing_arguments(args):
-    if not args.check_one_per_cluster and not args.input_files:
+    return gaussian_input_file
+
+def create_directory(directory):
+    if not exists(directory):
+        makedirs(directory)
         return True
     return False
 
+
+files_to_test = args.min_files
+ART_input_file = args.art_input
+wt = args.wall_time
+jn = args.job_name
+numb_of_head = get_number_of_header_lines(ART_input_file)
+
 if __name__ == '__main__':
 
-    files_starts_with = 'min1'
-
-    if missing_arguments(args):
-        print('Missing arguments: Ensure that -f <filename1> <...> is used to specify files to check')
-        exit()
-
-    #Looks for gaussian_file_location based on directory name if it was not provided as an arg
-    if not args.gaussian_input:
-        folder_path = dirname(getcwd())
-        path, folder_name = split(getcwd())
-        gaussian_file_location = join(getcwd(), join('..', folder_name + '.inp'))
-
-    #Gets one representative from each cluster
-    if args.check_one_per_cluster:
-        representative_files = get_representatives_from_clusters(files_starts_with)
-        files_to_test = representative_files
-    if args.input_files:
-        files_to_test = args.input_files
-
-    # Creates object containing all gaussian.inp information
-
-    if args.gaussian_input:
-        gaussian_file_location = join(project_input_directory, args.gaussian_input)
-
-    input_data = parsing_gaussian_files.GaussianInput(gaussian_file_location)
-
-    #Create min and sad output directories
-    utility.create_directory(default_min_output_directory)
-    # utility.create_directory(default_sad_output_directory)
+    gaussian_header = get_gaussian_header(ART_input_file)
+    charge_multiplicity = get_charge_multiplicity(ART_input_file)
+    create_directory(default_min_output_directory)
 
     for min_file in files_to_test:
-        gaussian_input_params = get_atomic_coordinates(input_data.gaussian_input_params, min_file)
-
-        input_data.write_gaussian_input_file(default_min_output_directory, min_file, default_gaussian_ext)
-
         submission_script = create_submission_file(join(default_min_output_directory, min_file))
-        #TODO uncomment qsub when running real tests
-        # call(['qsub', '-N', 'gau_opt_' + min_file, submission_script], shell=False)
+        coords = get_min_coordinates(min_file)
+        create_gaussian_input_file(join(default_min_output_directory, min_file))
+        #call(['qsub', '-N', 'gau_opt_' + min_file, submission_script], shell=False)
+
 
 
