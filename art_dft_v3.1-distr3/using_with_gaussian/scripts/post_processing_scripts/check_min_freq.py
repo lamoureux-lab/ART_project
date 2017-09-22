@@ -32,8 +32,6 @@ for line in sys.stdin:
         if pattern.match(line):
             init_text += line
 
-print('INIT_TEXT')
-print(init_text)
 s = init_text.split('\n')
 init_coordinates = []
 for line in s:
@@ -45,15 +43,11 @@ for line in s:
     z_init = float(coord[5])
     init_coordinates.append((x_init,y_init,z_init))
 
-print(init_coordinates)
-print(len(init_coordinates))
-print(opt_text)
-
 opt_text = re.sub(r"^ ", "", opt_text, flags=re.MULTILINE)
 opt_text = re.sub(r"\n", "", opt_text, flags=re.MULTILINE)
-print(opt_text)
+
 coord_vector = opt_text.split('\\\\')[3].split('\\')
-print(coord_vector)
+
 opt_coordinates = []
 for i in range(1,len(coord_vector)):
     coord_opt = coord_vector[i].split(',')
@@ -62,25 +56,28 @@ for i in range(1,len(coord_vector)):
     z_opt = float(coord_opt[3])
     opt_coordinates.append((x_opt,y_opt,z_opt))
 
-print(opt_coordinates)
-
 for line in frequency:
     freq = line.split()
     check = float(freq[2])
     if check < 0:
-    	print("Optimization failed")
+    	print("Optimization failed \n")
     	break
 
 if j == 0:
-	print("Failure: No frequency information found!")
+	print("Failure: No frequency information found! \n")
 elif j > 0:
 	if check > 0:
-		print ("Optimization Successful")
+		print ("Optimization Successful \n")
 
+print('Initial Coordinates: \n')
+print(init_coordinates) 
+print('\n')
+
+print('Optimized Coordinates: \n')
+print(opt_coordinates) 
+print('\n')
 
 my_dict = {'init' : init_coordinates, 'optimized' : opt_coordinates}
-print(my_dict.keys())
-print(len(my_dict['init']))
 
 cluster = {}
 map_to_cluster = {}
@@ -104,11 +101,13 @@ for key in sorted(my_dict.keys()):
             cluster[key] = mat
         map_to_cluster[key] = k_to_map
 
+print("Clusters: \n")
 print(map_to_cluster)
+print('\n')
 
 if(different_from_all):
-    print('Error! ART and Gaussian coordinates are NOT similar')
+    print('Error! ART and Gaussian coordinates are NOT similar \n')
 else:
-    print('Success! ART and Gaussian coordinates are similar')
+    print('Success! ART and Gaussian coordinates are similar \n')
 
  
