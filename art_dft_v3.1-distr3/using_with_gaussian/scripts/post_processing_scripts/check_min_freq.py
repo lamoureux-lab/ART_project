@@ -1,5 +1,6 @@
 import sys
 import re
+import numpy as np
 
 reading_init = False
 reading_init_count = 0
@@ -26,7 +27,6 @@ for line in sys.stdin:
     if '\\@' in line:
         reading_opt = False
 
-#   pattern = re.compile('^\s+\d+\s+\d+\s+\d+\s+\w+\s+\w+\s+\w+$', flags=re.MULTILINE)
     pattern = re.compile('^\s+\d+\s+\d+\s+\d+\s+\S+\s+\S+\s+\S+$', flags=re.MULTILINE)
     if reading_init and (reading_init_count == 1):
         if pattern.match(line):
@@ -34,18 +34,35 @@ for line in sys.stdin:
 
 print('INIT_TEXT')
 print(init_text)
-### TODO: Transform init_text into coords_init (same format as coords)
+s = init_text.split('\n')
+init_coordinates = []
+for line in s:
+    if line == '':
+        break
+    coord = line.split()
+    x_init = float(coord[3])
+    y_init = float(coord[4])
+    z_init = float(coord[5])
+    init_coordinates.append((x_init,y_init,z_init))
+
+print(init_coordinates)
+print(len(init_coordinates))
+print(opt_text)
 
 opt_text = re.sub(r"^ ", "", opt_text, flags=re.MULTILINE)
 opt_text = re.sub(r"\n", "", opt_text, flags=re.MULTILINE)
+print(opt_text)
 coord_vector = opt_text.split('\\\\')[3].split('\\')
-coords = []
+print(coord_vector)
+opt_coordinates = []
 for i in range(1,len(coord_vector)):
-    coords.append(coord_vector[i].split(',')[1:])
-print(coords)
+    coord_opt = coord_vector[i].split(',')
+    x_opt = float(coord_opt[1])
+    y_opt = float(coord_opt[2])
+    z_opt = float(coord_opt[3])
+    opt_coordinates.append((x_opt,y_opt,z_opt))
 
-### Compare coords and coords_init (with distance matrices)
-### Return error if they are too different
+print(opt_coordinates)
 
 for line in frequency:
     freq = line.split()
@@ -59,3 +76,39 @@ if j == 0:
 elif j > 0:
 	if check > 0:
 		print ("Optimization Successful")
+
+
+my_dict = {'init' : init_coordinates, 'optimized' : opt_coordinates}
+print(my_dict.keys())
+print(len(my_dict['init']))
+
+cluster = {}
+map_to_cluster = {}
+for key in sorted(my_dict.keys()):
+    mat = np.zeros((len(my_dict[key]), len(my_dict[key])))
+    for n, (x0, y0, z0) in enumerate(my_dict[key]):
+        for m, (x1, y1, z1) in enumerate(my_dict[key]):
+
+            dist = np.linalg.norm(np.array([x0, y0, z0]) - np.array([x1, y1, z1]))
+            mat[n, m] = dist
+
+        different_from_all = True
+        k_to_map = key
+
+        for k in sorted(cluster.keys()):
+            if (np.allclose(mat, cluster[k], atol=1e-2)):
+                different_from_all = False
+                k_to_map = k
+                break
+        if(different_from_all):
+            cluster[key] = mat
+        map_to_cluster[key] = k_to_map
+
+print(map_to_cluster)
+
+if(different_from_all):
+    print('Error! ART and GREX coordinates are NOT similar')
+else:
+    print('Success! ART and GREX coordinates are similar')
+
+ 
