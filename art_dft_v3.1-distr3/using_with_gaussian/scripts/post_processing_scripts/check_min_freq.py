@@ -107,8 +107,8 @@ for key in sorted(my_dict.keys()):
 print(map_to_cluster)
 
 if(different_from_all):
-    print('Error! ART and GREX coordinates are NOT similar')
+    print('Error! ART and Gaussian coordinates are NOT similar')
 else:
-    print('Success! ART and GREX coordinates are similar')
+    print('Success! ART and Gaussian coordinates are similar')
 
  
