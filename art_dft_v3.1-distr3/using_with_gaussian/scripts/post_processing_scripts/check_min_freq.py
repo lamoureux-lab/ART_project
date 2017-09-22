@@ -77,7 +77,7 @@ print('Optimized Coordinates: \n')
 print(opt_coordinates) 
 print('\n')
 
-my_dict = {'init' : init_coordinates, 'optimized' : opt_coordinates}
+my_dict = {'initial' : init_coordinates, 'optimized' : opt_coordinates}
 
 cluster = {}
 map_to_cluster = {}
