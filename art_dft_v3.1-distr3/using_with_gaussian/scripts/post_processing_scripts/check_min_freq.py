@@ -92,14 +92,14 @@ for key in sorted(my_dict.keys()):
         different_from_all = True
         k_to_map = key
 
-        for k in sorted(cluster.keys()):
-            if (np.allclose(mat, cluster[k], atol=1e-2)):
-                different_from_all = False
-                k_to_map = k
-                break
-        if(different_from_all):
-            cluster[key] = mat
-        map_to_cluster[key] = k_to_map
+    for k in sorted(cluster.keys()):
+        if (np.allclose(mat, cluster[k], atol=100)):
+            different_from_all = False
+            k_to_map = k
+            break
+    if(different_from_all):
+        cluster[key] = mat
+    map_to_cluster[key] = k_to_map
 
 print("Clusters: \n")
 print(map_to_cluster)
@@ -109,5 +109,6 @@ if(different_from_all):
     print('Error! ART and Gaussian coordinates are NOT similar \n')
 else:
     print('Success! ART and Gaussian coordinates are similar \n')
+
 
  
