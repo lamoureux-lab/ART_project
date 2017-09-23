@@ -10,7 +10,7 @@ opt_text = ''
 frequency = []
 j = 0
 for line in sys.stdin:
-    if line.startswith(' 1\\1\\GINC-N069\\FOpt'):
+    if line.startswith(' 1\\1\\GINC'):
         reading_opt = True
     elif line.startswith('                          Input orientation:'):
         reading_init = True
