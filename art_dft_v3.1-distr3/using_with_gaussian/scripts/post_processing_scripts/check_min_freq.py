@@ -93,7 +93,7 @@ for key in sorted(my_dict.keys()):
         k_to_map = key
 
     for k in sorted(cluster.keys()):
-        if (np.allclose(mat, cluster[k], atol=100)):
+        if (np.allclose(mat, cluster[k], atol=1e-2)):
             different_from_all = False
             k_to_map = k
             break
