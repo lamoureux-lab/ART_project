@@ -54,7 +54,7 @@ def create_submission_file(filename):
 #PBS -l nodes=1:ppn=4 
 #PBS -l mem=1800MB 
 #PBS -l walltime=''' + wt + '''
-#PBS -N prop-opt ''' + jn + '''
+#PBS -N ''' + jn + '''
             
 # Adjust the mem and ppn above to match the requirements of your job 
 # Sample Gaussian job script 
@@ -141,6 +141,6 @@ if __name__ == '__main__':
         submission_script = create_submission_file(join(default_min_output_directory, min_file))
         coords = get_min_coordinates(min_file)
         create_gaussian_input_file(join(default_min_output_directory, min_file))
-        #call(['qsub', '-N', 'gau_opt_' + min_file, submission_script], shell=False)
+        #call(['qsub', '-N' + jn + '_' + min_file, submission_script], shell=False)
 
 
