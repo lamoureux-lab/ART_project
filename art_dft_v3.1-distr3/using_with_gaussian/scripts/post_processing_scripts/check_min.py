@@ -66,7 +66,8 @@ echo "Starting run at: `date`"
 # Set up the Gaussian environment using the module command: 
 module load gaussian \n # Run Submission 
 g09 ''' + filename + '.inp > ' + filename + '.log\n'
- + 'python ' + join(dirname(relpath(__file__)), 'check_min_freq.py') +' < ' + filename + '.log' + ' > ' + filename + '_results.txt' '\n')
+'module load python\n\n'
++ 'python ' + join(dirname(relpath(__file__)), 'check_min_freq.py') +' < ' + filename + '.log' + ' > ' + filename + '_results.txt' '\n\n')
 
     return submission_script
 
