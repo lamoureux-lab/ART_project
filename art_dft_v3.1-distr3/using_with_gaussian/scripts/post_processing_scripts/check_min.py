@@ -25,10 +25,14 @@ parser.add_argument('-m', '--min_files', nargs='*',
 parser.add_argument('-i','--art_input', help='ART input file to extract the method and basis set from')
 parser.add_argument('-out','--output_file',
                     help = 'Name of the output file')
-parser.add_argument('-n','--job_name',
+parser.add_argument('-j','--job_name', default = 'min_opt',
                     help = 'Name of the job')
-parser.add_argument('-w','--wall_time',
+parser.add_argument('-w','--wall_time', default = '1:00:00',
                     help = 'Wall time in hh:mm:ss')
+parser.add_argument('-mem','--memory', default = '2000MB',
+                    help = 'Memory in MB eg. 2000MB')
+parser.add_argument('-np','--nodes_proc', default = 'nodes=1:ppn=4',
+                    help = 'number of nodes and processors, eg. nodes=1:ppn=4')
 parser.add_argument('-c','--check_one_per_cluster', action='store_true',
                     help = 'Option to automatically check one file per cluster')
 
@@ -51,8 +55,8 @@ def create_submission_file(filename):
         n.write('''
 #!/bin/bash
 #PBS -S /bin/bash 
-#PBS -l nodes=1:ppn=4 
-#PBS -l mem=1800MB 
+#PBS -l ''' + np + ''' 
+#PBS -l mem=''' + me + ''' 
 #PBS -l walltime=''' + wt + '''
 #PBS -N ''' + jn + '''
             
@@ -131,6 +135,8 @@ ART_input_file = args.art_input
 numb_of_head = get_number_of_header_lines(ART_input_file)
 wt = args.wall_time
 jn = args.job_name
+np = args.nodes_proc
+me = args.memory
 
 if __name__ == '__main__':
 
