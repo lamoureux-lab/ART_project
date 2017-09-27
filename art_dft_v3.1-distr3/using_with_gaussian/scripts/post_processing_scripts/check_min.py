@@ -6,6 +6,8 @@ import glob
 from subprocess import call
 import random
 import sys
+import cluster_old
+
 
 #Program directories
 parsing_scripts_directory = 'parsing_src'
@@ -64,7 +66,8 @@ echo "Starting run at: `date`"
 # Set up the Gaussian environment using the module command: 
 module load gaussian \n # Run Submission 
 g09 ''' + filename + '.inp > ' + filename + '.log\n'
- + 'python ' + join(dirname(relpath(__file__)), 'check_min_freq.py') +' < ' + filename + '.log' + ' > ' + filename + '_results.txt' '\n')
+'module load python\n\n'
++ 'python ' + join(dirname(relpath(__file__)), 'check_min_freq.py') +' < ' + filename + '.log' + ' > ' + filename + '_results.txt' '\n\n')
 
     return submission_script
 
@@ -106,7 +109,7 @@ def get_min_coordinates(min_file):
 def create_gaussian_input_file(min_file):
     gaussian_input_file = min_file + '.inp'
     with open(gaussian_input_file, 'w') as f:
-        f.write(gaussian_header + coords)
+        f.write(gaussian_header + coords + '\n\n')
 
     return gaussian_input_file
 
@@ -118,10 +121,16 @@ def create_directory(directory):
 
 
 files_to_test = args.min_files
+
+if args.check_one_per_cluster:
+	files_to_test = []
+	for key in cluster_old.make_json_list().iterkeys():
+   		files_to_test.append(key)
+
 ART_input_file = args.art_input
+numb_of_head = get_number_of_header_lines(ART_input_file)
 wt = args.wall_time
 jn = args.job_name
-numb_of_head = get_number_of_header_lines(ART_input_file)
 
 if __name__ == '__main__':
 
@@ -133,7 +142,6 @@ if __name__ == '__main__':
         submission_script = create_submission_file(join(default_min_output_directory, min_file))
         coords = get_min_coordinates(min_file)
         create_gaussian_input_file(join(default_min_output_directory, min_file))
-        #call(['qsub', '-N', 'gau_opt_' + min_file, submission_script], shell=False)
-
+        #call(['qsub', '-N' + jn + '_' + min_file, submission_script], shell=False)
 
 
