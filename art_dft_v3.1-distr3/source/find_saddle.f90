@@ -150,10 +150,16 @@ subroutine global_move( )
   real(kind=8) :: dr2
   real(kind=8) :: ran3
   real(kind=8), dimension(:), pointer :: dx, dy, dz
+  character(len = 128)                            :: vector_file
+  logical :: found 
 
   allocate(dr(3*natoms))
   allocate(atom_displaced(natoms))
                                       ! We assign a few pointers. 
+
+  found    = .false.
+  vector_file = 'displacement_vector.py'
+
   dx => dr(1:NATOMS)
   dy => dr(NATOMS+1:2*NATOMS)
   dz => dr(2*NATOMS+1:3*NATOMS)
@@ -162,25 +168,29 @@ subroutine global_move( )
   natom_displaced = 0 
   dr = 0.0d0 
   
-  !If there is no vector to try (logic for checking whether there is a vector to try): 
-  ! Generate a random displacement.
-  do i = 1, natoms, 1
-     if ( constr(i) == 0 ) then
-        do
-           dx(i) = 0.5d0 - ran3()
-           dy(i) = 0.5d0 - ran3()
-           dz(i) = 0.5d0 - ran3()
-                                    
-           ! Ensures that the random displacement is isotropic
-           dr2 = dx(i)**2 + dy(i)**2 + dz(i)**2
-           if ( dr2 < 0.25d0 ) exit 
-        end do
-        natom_displaced = natom_displaced + 1
-        atom_displaced(i) = 1
-     end if
-  end do
-  !Else, if there is a vector to try:
-  !Logic for reading the vector from the file
+  !If there is no vector to try 
+  !Generate a random displacement.
+  inquire( file = vector_file, exist = found )
+  if ( .not. found ) then
+    do i = 1, natoms, 1
+       if ( constr(i) == 0 ) then
+          do
+             dx(i) = 0.5d0 - ran3()
+             dy(i) = 0.5d0 - ran3()
+             dz(i) = 0.5d0 - ran3()
+                                      
+             ! Ensures that the random displacement is isotropic
+             dr2 = dx(i)**2 + dy(i)**2 + dz(i)**2
+             if ( dr2 < 0.25d0 ) exit 
+          end do
+          natom_displaced = natom_displaced + 1
+          atom_displaced(i) = 1
+       end if
+    end do
+  else 
+    write(*,*) ' ERROR: File is empty. '
+  end if 
+
 
   call center_and_norm ( INITSTEPSIZE )
 
