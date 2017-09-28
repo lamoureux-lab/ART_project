@@ -92,7 +92,7 @@ def get_gaussian_header(input_file):
         for line in f:
 	    if line.startswith('#'):
 		if ' opt ' in line:
-			line = line.replace(' opt ', ' opt=QST3 ')
+			line = line.replace(' opt ', ' opt=(QST3, maxcycles=400) ')
             gaussian_header = gaussian_header + line
             i = i + 1
             if i > numb_of_head:
