@@ -33,6 +33,8 @@ parser.add_argument('-mem','--memory', default = '2000MB',
                     help = 'Memory in MB eg. 2000MB')
 parser.add_argument('-np','--nodes_proc', default = 'nodes=1:ppn=4',
                     help = 'number of nodes and processors, eg. nodes=1:ppn=4')
+parser.add_argument('-tol','--dist_tol', type = float, default = 0.01,
+                    help = 'Distance tolerance value eg. 0.01')
 parser.add_argument('-c','--check_one_per_cluster', action='store_true',
                     help = 'Option to automatically check one file per cluster')
 
@@ -127,9 +129,14 @@ def create_directory(directory):
 files_to_test = args.min_files
 
 if args.check_one_per_cluster:
+	tolerance = args.dist_tol
+	files = cluster_old.get_art_files('min1')
+    	map1 = cluster_old.calculate_cluster_map(files, tolerance)
+    	file_dict = cluster_old.make_json_list(map1)
+	
 	files_to_test = []
-	for key in cluster_old.make_json_list().iterkeys():
-   		files_to_test.append(key)
+    	for key in file_dict.iterkeys():
+        	files_to_test.append(key)
 
 ART_input_file = args.art_input
 numb_of_head = get_number_of_header_lines(ART_input_file)
@@ -148,6 +155,6 @@ if __name__ == '__main__':
         submission_script = create_submission_file(join(default_min_output_directory, min_file))
         coords = get_min_coordinates(min_file)
         create_gaussian_input_file(join(default_min_output_directory, min_file))
-        #call(['qsub', '-N' + jn + '_' + min_file, submission_script], shell=False)
+        call(['qsub', '-N' + jn + '_' + min_file, submission_script], shell=False)
 
 

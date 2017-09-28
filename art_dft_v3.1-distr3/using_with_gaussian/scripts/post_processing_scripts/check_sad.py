@@ -22,7 +22,7 @@ parser.add_argument('-s', '--sad_files', nargs='*',
 parser.add_argument('-i','--art_input', help='ART input file to extract the method and basis set from')
 parser.add_argument('-out','--output_file',
                     help = 'Name of the output file')
-parser.add_argument('-j','--job_name', default = 'sad_opt'
+parser.add_argument('-j','--job_name', default = 'sad_opt',
                     help = 'Name of the job')
 parser.add_argument('-w','--wall_time', default = '1:00:00',
                     help = 'Wall time in hh:mm:ss')
@@ -30,6 +30,8 @@ parser.add_argument('-mem','--memory', default = '2000MB',
                     help = 'Memory in MB eg. 2000MB')
 parser.add_argument('-np','--nodes_proc', default = 'nodes=1:ppn=4',
                     help = 'number of nodes and processors, eg. nodes=1:ppn=4')
+parser.add_argument('-tol','--dist_tol', type = float, default = 0.01,
+                    help = 'Distance tolerance value eg. 0.01')
 parser.add_argument('-c','--check_one_per_cluster', action='store_true',
                     help = 'Option to automatically check one file per cluster')
 
@@ -133,8 +135,13 @@ def create_directory(directory):
 files_to_test = args.sad_files
 
 if args.check_one_per_cluster:
+    tolerance = args.dist_tol
+    files = cluster_old.get_art_files('sad1')
+    map1 = cluster_old.calculate_cluster_map(files, tolerance)
+    file_dict = cluster_old.make_json_list(map1)
+
     files_to_test = []
-    for key in cluster_old.make_json_list().iterkeys():
+    for key in file_dict.iterkeys():
         files_to_test.append(key)
 
 ART_input_file = args.art_input
@@ -154,7 +161,7 @@ if __name__ == '__main__':
         submission_script = create_submission_file(join(default_sad_output_directory, sad_file))
         coords = get_min_sad_coordinates(sad_file)
         create_gaussian_input_file(join(default_sad_output_directory, sad_file))
-        #call(['qsub', '-N' + jn + '_' + sad_file, submission_script], shell=False)
+        call(['qsub', '-N' + jn + '_' + sad_file, submission_script], shell=False)
     
 
     
