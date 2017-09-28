@@ -32,6 +32,19 @@ for line in sys.stdin:
         if pattern.match(line):
             init_text += line
 
+for line in frequency:
+    freq = line.split()
+    check = float(freq[2])
+    if check < 0:
+        print("Optimization failed \n")
+        break
+
+if j == 0:
+    print("Failure: No frequency information found! \n")
+elif j > 0:
+    if check > 0:
+        print ("Optimization Successful \n")
+
 s = init_text.split('\n')
 init_coordinates = []
 for line in s:
@@ -55,19 +68,6 @@ for i in range(1,len(coord_vector)):
     y_opt = float(coord_opt[2])
     z_opt = float(coord_opt[3])
     opt_coordinates.append((x_opt,y_opt,z_opt))
-
-for line in frequency:
-    freq = line.split()
-    check = float(freq[2])
-    if check < 0:
-    	print("Optimization failed \n")
-    	break
-
-if j == 0:
-	print("Failure: No frequency information found! \n")
-elif j > 0:
-	if check > 0:
-		print ("Optimization Successful \n")
 
 print('Initial Coordinates: \n')
 print(init_coordinates) 

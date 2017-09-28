@@ -33,6 +33,20 @@ for line in sys.stdin:
         if pattern.match(line):
             init_text += line
 
+for line in frequency:
+    freq = line.split()
+    check = float(freq[2])
+    if check < 0:
+        i = i + 1
+
+if j == 0:
+    print ("Failure: No frequency information found!")
+elif j > 0:
+    if i == 1:
+       print ("Optimization Successful")
+    else:
+       print("Optimization failed")
+
 s = init_text.split('\n')
 init_coordinates = []
 for line in s:
@@ -56,20 +70,6 @@ for i in range(1,len(coord_vector)):
     y_opt = float(coord_opt[2])
     z_opt = float(coord_opt[3])
     opt_coordinates.append((x_opt,y_opt,z_opt))
-
-for line in frequency:
-    freq = line.split()
-    check = float(freq[2])
-    if check < 0:
-    	i = i + 1
-
-if j == 0:
-	print ("Failure: No frequency information found!")
-elif j > 0:
-    if i == 1:
-	   print ("Optimization Successful")
-    else:
-	   print("Optimization failed")
 
 print('Initial Coordinates: \n')
 print(init_coordinates) 
@@ -95,7 +95,7 @@ for key in sorted(my_dict.keys()):
         k_to_map = key
 
     for k in sorted(cluster.keys()):
-        if (np.allclose(mat, cluster[k], atol=1e-2)):
+        if (np.allclose(mat, cluster[k], atol=0.01)):
             different_from_all = False
             k_to_map = k
             break
