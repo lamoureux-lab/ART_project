@@ -12,7 +12,6 @@ import cluster_old
 #Program directories
 parsing_scripts_directory = 'parsing_src'
 project_input_directory = getcwd()
-default_min_output_directory = 'min_opt'
 default_gaussian_ext = '.inp'
 
 
@@ -153,7 +152,6 @@ if __name__ == '__main__':
 
     gaussian_header = get_gaussian_header(ART_input_file)
     charge_multiplicity = get_charge_multiplicity(ART_input_file)
-    create_directory(default_min_output_directory)
 
     for min_file in files_to_test:
         submission_script = create_submission_file(min_file)
