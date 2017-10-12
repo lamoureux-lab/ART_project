@@ -1,6 +1,14 @@
 import sys
 import re
 import numpy as np
+import argparse
+print("Optimization Results \n \n")
+
+parser = argparse.ArgumentParser(description = 'Add distance tolerance')
+parser.add_argument('-tol2','--dist_tol2', type = float, default = 0.1,
+                    help = 'Distance tolerance value eg. 0.01')
+args = parser.parse_args()
+
 
 reading_init = False
 reading_init_count = 0
@@ -93,7 +101,7 @@ for key in sorted(my_dict.keys()):
         k_to_map = key
 
     for k in sorted(cluster.keys()):
-        if (np.allclose(mat, cluster[k], atol=1e-2)):
+        if (np.allclose(mat, cluster[k], atol=float(args.dist_tol2))):
             different_from_all = False
             k_to_map = k
             break
