@@ -3,8 +3,11 @@ import re
 import numpy as np
 import argparse
 
+
+parser = argparse.ArgumentParser(description = 'Add distance tolerance')
 parser.add_argument('-tol2','--dist_tol', type = float, default = 0.1,
                      help = 'Distance tolerance value eg. 0.01')
+args = parser.parse_args()
 
 print("Optimization Results\n\n")
 reading_init = False
