@@ -30,7 +30,7 @@ parser.add_argument('-mem','--memory', default = '2000MB',
                     help = 'Memory in MB eg. 2000MB')
 parser.add_argument('-np','--nodes_proc', default = 'nodes=1:ppn=4',
                     help = 'number of nodes and processors, eg. nodes=1:ppn=4')
-parser.add_argument('-tol','--dist_tol', type = float, default = 0.01,
+parser.add_argument('-tol','--dist_tol', type = float, default = 0.1,
                     help = 'Distance tolerance value eg. 0.01')
 parser.add_argument('-c','--check_one_per_cluster', action='store_true',
                     help = 'Option to automatically check one file per cluster')
@@ -108,14 +108,19 @@ def get_charge_multiplicity(input_file):
 
 
 def get_file_number(filename):
-    return re.split('(\d+)', filename)[1]
+    m = re.match("\S*sad(\d+)$", filename)
+    return m.group(1)
+
+def get_file_root(filename):
+    m = re.match("(\S*)sad\d+$", filename)
+    return m.group(1)
 
 def get_min_sad_coordinates(saddle_file):
 
     file_counter = int(get_file_number(saddle_file))
-    initial_min = 'min' + str(file_counter - 1)
-    final_min = 'min' + str(file_counter)
-
+    file_root = get_file_root(saddle_file)
+    initial_min = file_root + 'min' + str(file_counter - 1)
+    final_min = file_root + 'min' + str(file_counter)
     sad_coord = get_atomic_coordinates(saddle_file)
     initial_min_coord = get_atomic_coordinates(initial_min)
     final_min_coord = get_atomic_coordinates(final_min)
@@ -139,8 +144,7 @@ files_to_test = args.sad_files
 
 if args.check_one_per_cluster:
     tolerance = args.dist_tol
-    files = cluster_old.get_art_files('sad1')
-    map1 = cluster_old.calculate_cluster_map(files, tolerance)
+    map1 = cluster_old.calculate_cluster_map(files_to_test, tolerance)
     file_dict = cluster_old.make_json_list(map1)
 
     files_to_test = []
@@ -161,15 +165,8 @@ if __name__ == '__main__':
     create_directory(default_sad_output_directory)
 
     for sad_file in files_to_test:
-        submission_script = create_submission_file(join(default_sad_output_directory, sad_file))
+        submission_script = create_submission_file(sad_file)
         coords = get_min_sad_coordinates(sad_file)
-        create_gaussian_input_file(join(default_sad_output_directory, sad_file))
+        create_gaussian_input_file(sad_file)
         call(['qsub', '-N' + jn + '_' + sad_file, submission_script], shell=False)
-    
-
-    
-
-
-
-
 
