@@ -30,7 +30,9 @@ parser.add_argument('-mem','--memory', default = '2000MB',
                     help = 'Memory in MB eg. 2000MB')
 parser.add_argument('-np','--nodes_proc', default = 'nodes=1:ppn=4',
                     help = 'number of nodes and processors, eg. nodes=1:ppn=4')
-parser.add_argument('-tol','--dist_tol', type = float, default = 0.1,
+parser.add_argument('-tol1','--dist_tol1', type = float, default = 0.1,
+                    help = 'Distance tolerance value eg. 0.01')
+parser.add_argument('-tol2','--dist_tol2', type = float, default = 0.01,
                     help = 'Distance tolerance value eg. 0.01')
 parser.add_argument('-c','--check_one_per_cluster', action='store_true',
                     help = 'Option to automatically check one file per cluster')
@@ -70,7 +72,7 @@ echo "Starting run at: `date`"
 module load gaussian \n # Run Submission 
 g09 ''' + filename + '.inp > ' + filename + '.log\n'
 'module load python\n\n'
- + 'python ' + join(dirname(relpath(__file__)), 'check_sad_freq.py') +' < ' + filename + '.log' + ' > ' + filename + '_results.txt' '\n')
+ + 'python ' + join(dirname(relpath(__file__)), 'check_sad_freq.py') + ' -tol2 ' + str(args.dist_tol2) + ' < ' + filename + '.log' + ' > ' + filename + '_results.txt' '\n')
 
     return submission_script
 
@@ -143,7 +145,7 @@ def create_directory(directory):
 files_to_test = args.sad_files
 
 if args.check_one_per_cluster:
-    tolerance = args.dist_tol
+    tolerance = args.dist_tol1
     map1 = cluster_old.calculate_cluster_map(files_to_test, tolerance)
     file_dict = cluster_old.make_json_list(map1)
 
