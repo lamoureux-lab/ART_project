@@ -1,7 +1,12 @@
 import sys
 import re
 import numpy as np
+import argparse
 
+parser.add_argument('-tol2','--dist_tol', type = float, default = 0.1,
+                     help = 'Distance tolerance value eg. 0.01')
+
+print("Optimization Results\n\n")
 reading_init = False
 reading_init_count = 0
 init_text = ''
@@ -40,12 +45,12 @@ for line in frequency:
         i = i + 1
 
 if j == 0:
-    print ("Failure: No frequency information found!")
+    print ("Failure: No frequency information found!\n\n")
 elif j > 0:
     if i == 1:
-       print ("Optimization Successful")
+       print ("Optimization Successful\n\n")
     else:
-       print("Optimization failed")
+       print("Optimization failed\n\n")
 
 s = init_text.split('\n')
 init_coordinates = []
@@ -95,7 +100,7 @@ for key in sorted(my_dict.keys()):
         k_to_map = key
 
     for k in sorted(cluster.keys()):
-        if (np.allclose(mat, cluster[k], atol=0.01)):
+        if (np.allclose(mat, cluster[k], atol=float(args.dist_tol)):
             different_from_all = False
             k_to_map = k
             break
