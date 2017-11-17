@@ -74,7 +74,7 @@ echo "Starting run at: `date`"
 module load gaussian \n # Run Submission 
 g09 ''' + filename + '.inp > ' + filename + '.log\n'
 'module load python\n\n'
-+ 'python ' + join(dirname(relpath(__file__)), 'check_min_freq.py') + ' -tol2 ' + str(args.dist_tol2) + ' < ' + filename + '.log' + ' > ' + filename + '_results.txt' '\n\n')
++ 'python ' + join(dirname(relpath(__file__)), 'check_min_freq.py ') + '-tol2 ' + str(args.dist_tol2) + ' < ' + filename + '.log' + ' > ' + filename + '_results.txt' '\n\n')
 
     return submission_script
 
@@ -95,8 +95,10 @@ def get_gaussian_header(input_file):
         gaussian_header = ''
         for line in f:
 	    if line.startswith('#'):
-		if ' opt ' in line:
-			line = line.replace(' opt ', ' opt=(maxcycles=400) ')
+		if ' opt ' in line and ' freq ' not in line:
+                        line = line.replace(' opt ', ' opt=(QST3, maxcycles=400) freq ')
+                elif ' opt ' in line and ' freq ' in line:
+                        line = line.replace(' opt freq ', ' opt=(QST3, maxcycles=400) freq ')
             gaussian_header = gaussian_header + line
             i = i + 1
             if i > numb_of_head:
@@ -130,11 +132,24 @@ if args.check_one_per_cluster:
 	tolerance = args.dist_tol
     	map1 = cluster_old.calculate_cluster_map(files_to_test, tolerance)
     	file_dict = cluster_old.make_json_list(map1)
+	print(file_dict)
 	
 	files_to_test = []
     	for key in file_dict.iterkeys():
         	files_to_test.append(key)
 
+	rep_name = ''    #name of representative file (representative of the cluster)
+	member_name = '' #name of member file
+	for key, value in file_dict.iteritems():
+		rep_name = key + '_results.txt'
+		for i in range(len(value)):
+			if not value[i] == key:
+				member_name = value[i] + '_results.txt'
+				with open(rep_name, 'r') as rep:
+					for line in rep:
+						if ('Success!' in line) or ('Error!' in line):
+							with open(member_name, 'w+') as m:
+								m.write(line + '\n' + 'Belongs to ' + key) 
 ART_input_file = args.art_input
 numb_of_head = get_number_of_header_lines(ART_input_file)
 wt = args.wall_time
@@ -151,5 +166,5 @@ if __name__ == '__main__':
         submission_script = create_submission_file(min_file)
         coords = get_min_coordinates(min_file)
         create_gaussian_input_file(min_file)
-        call(['qsub', '-N' + jn + '_' + min_file, submission_script], shell=False)
+        #call(['qsub', '-N' + jn + '_' + min_file, submission_script], shell=False)
 
