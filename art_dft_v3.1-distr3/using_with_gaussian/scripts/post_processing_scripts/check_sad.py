@@ -93,8 +93,10 @@ def get_gaussian_header(input_file):
         gaussian_header = ''
         for line in f:
 	    if line.startswith('#'):
-		if ' opt ' in line:
-			line = line.replace(' opt ', ' opt=(QST3, maxcycles=400) ')
+		if ' opt ' in line and ' freq ' not in line:
+			line = line.replace(' opt ', ' opt=(QST3, maxcycles=400) freq ')
+		elif ' opt ' in line and ' freq ' in line:
+			line = line.replace(' opt freq ', ' opt=(QST3, maxcycles=400) freq ')
             gaussian_header = gaussian_header + line
             i = i + 1
             if i > numb_of_head:
@@ -153,6 +155,19 @@ if args.check_one_per_cluster:
     for key in file_dict.iterkeys():
         files_to_test.append(key)
 
+	rep_name = ''    #name of representative file (representative of the cluster)
+	member_name = '' #name of member file
+	for key, value in file_dict.iteritems():
+		rep_name = key + '_results.txt'
+		for i in range(len(value)):
+			if not value[i] == key:
+				member_name = value[i] + '_results.txt'
+				with open(rep_name, 'r') as rep:
+					for line in rep:
+						if ('Success!' in line) or ('Error!' in line):
+							with open(member_name, 'w+') as m:
+								m.write(line + '\n' + 'Belongs to ' + key)
+
 ART_input_file = args.art_input
 wt = args.wall_time
 jn = args.job_name
@@ -170,5 +185,5 @@ if __name__ == '__main__':
         submission_script = create_submission_file(sad_file)
         coords = get_min_sad_coordinates(sad_file)
         create_gaussian_input_file(sad_file)
-        call(['qsub', '-N' + jn + '_' + sad_file, submission_script], shell=False)
+       # call(['qsub', '-N' + jn + '_' + sad_file, submission_script], shell=False)
 
