@@ -38,7 +38,7 @@ def coords_before_K0():
                 coords = False
             if coords:
                 new_line = new_line + line
-            if "K=   0" in line:
+            if "K converged" in line:
                 break
         return new_line
 
@@ -112,8 +112,8 @@ def add_atomic_numbers(pre_final_coords):
 
 if __name__ == "__main__":
         initial_activation = coords_before_K0()
-	activation = grep_activation_relaxation("K=","L=")
-	relaxation = grep_activation_relaxation("L=","K=")
+	activation = grep_activation_relaxation("SADDLE","K converged")
+	relaxation = grep_activation_relaxation("K converged","SADDLE")
 
         init = remove_junk_lines(initial_activation, 'activation')
         act =  remove_junk_lines(activation, 'activation')
