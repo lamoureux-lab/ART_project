@@ -99,6 +99,49 @@ fi
 ##*******************************************************************************
 
 
+#*******************************************************************************
+#*******************************************************************************
+gaussianart='gaussianart.log'
+
+# Generates a file containing all values to be read by ART (for testing)
+
+
+#Number of atoms
+printf  "natoms:\n" >$gaussianart
+printf  "$natoms\n" >>$gaussianart
+
+# Coordinates
+printf  "outcoor:\n" >>$gaussianart
+positionLineNumber=$(sed -n '/Input orientation/=' gaussian.log | tail -1)
+
+for ((i=1; i<=$natoms; i++)); do
+	TEMP=$(awk 'FNR=='$positionLineNumber+4+$i' {print $0}' gaussian.log)
+	TEMP=$(echo $TEMP | sed 's/[\S]+//')
+	echo "$TEMP" | cut -d ' ' -f4- >>$gaussianart
+done
+
+# Energy
+printf  "energy:\n" >>$gaussianart
+grep 'E(' "$gaussian_output" | tail -1 | awk '{printf "%.10f\n", $5*27.2113838668}' >>$gaussianart
+
+# Forces
+forceLineNumber=$(sed -n '/Forces (Hartrees/=' gaussian.log | tail -1)
+# Prepares force information when available
+if [ "$forceLineNumber" != "" ]
+then
+    printf  "forces:\n" >>$gaussianart
+    for ((j=1; j<=$natoms; j++)); do
+        TEMP=$(awk 'FNR=='$forceLineNumber+2+$j' {print $0}' gaussian.log)
+        TEMP=$(echo $TEMP | sed 's/[\S]+//')
+        echo "$TEMP" | cut -d ' ' -f3- >>$gaussianart
+    done
+fi
+
+
+#*******************************************************************************
+
+
+
 #Deprecated
 
 # for b3lyp
