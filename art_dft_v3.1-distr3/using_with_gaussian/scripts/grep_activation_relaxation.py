@@ -1,11 +1,3 @@
-class myDict(dict):       # Defined a class to append elements to the dictionary in the 'sorting' function, see "def sorting" below
-    def __init__(self):
-        self = dict()
-
-    def add(self, key, value):
-        self[key] = value 
-
-
 def grep_activation_relaxation(preferred_event, non_preferred_event):
 	with open("output.log") as f:
 		occurence = False
@@ -62,14 +54,14 @@ def remove_junk_lines(event_type, event_name):
 	
 def sorting(coords):
     new_value = ''
-    myd = myDict()
+    mydict = {}
     for line in coords.splitlines():
         element = line.split()
         element[0] = int(element[0])
-        myd.add(element[0],line)
-    for key, value in sorted(myd.iteritems()):
-        value = value + '\n'
-        new_value = new_value + value
+        mydict[element[0]] = line
+    for key in sorted(mydict.keys()):
+        mydict[key] = mydict[key] + '\n'
+        new_value = new_value + mydict[key]
     return new_value
 
 
