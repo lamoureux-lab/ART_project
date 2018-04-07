@@ -1,11 +1,3 @@
-class myDict(dict):       # Defined a class to append elements to the dictionary in the 'sorting' function, see "def sorting" below
-    def __init__(self):
-        self = dict()
-
-    def add(self, key, value):
-        self[key] = value 
-
-
 def grep_activation_relaxation(preferred_event, non_preferred_event):
 	with open("output.log") as f:
 		occurence = False
@@ -38,7 +30,7 @@ def coords_before_K0():
                 coords = False
             if coords:
                 new_line = new_line + line
-            if "K=   0" in line:
+            if "K converged" in line:
                 break
         return new_line
 
@@ -62,14 +54,14 @@ def remove_junk_lines(event_type, event_name):
 	
 def sorting(coords):
     new_value = ''
-    myd = myDict()
+    mydict = {}
     for line in coords.splitlines():
         element = line.split()
         element[0] = int(element[0])
-        myd.add(element[0],line)
-    for key, value in sorted(myd.iteritems()):
-        value = value + '\n'
-        new_value = new_value + value
+        mydict[element[0]] = line
+    for key in sorted(mydict.keys()):
+        mydict[key] = mydict[key] + '\n'
+        new_value = new_value + mydict[key]
     return new_value
 
 
@@ -112,8 +104,8 @@ def add_atomic_numbers(pre_final_coords):
 
 if __name__ == "__main__":
         initial_activation = coords_before_K0()
-	activation = grep_activation_relaxation("K=","L=")
-	relaxation = grep_activation_relaxation("L=","K=")
+	activation = grep_activation_relaxation("SADDLE","K converged")
+	relaxation = grep_activation_relaxation("K converged","SADDLE")
 
         init = remove_junk_lines(initial_activation, 'activation')
         act =  remove_junk_lines(activation, 'activation')
