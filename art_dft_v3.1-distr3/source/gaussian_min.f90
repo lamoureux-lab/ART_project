@@ -70,7 +70,7 @@ subroutine min_converge_gau(success)
 
     !Gets the final energy
     if ( line  == "energy:" ) then
-      read(FGAUSS,*) energy
+      read(FGAUSS,*) total_energy
       read_energy_done = .true.    
     endif
     if(read_energy_done) exit
