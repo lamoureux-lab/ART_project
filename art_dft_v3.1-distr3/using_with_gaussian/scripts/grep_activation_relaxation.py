@@ -1,7 +1,7 @@
 '''Script to extract the activation and lanczos steps from the ART output.log file.
    Running this will provide the user with a clear picture of how many activation 
    steps it took before the algorithm changed to Lanczos and how many Lanczos steps 
-   it took before the configuratuon converged to a saddle point and whether or not it
+   it took before the configuration converged to a saddle point and whether or not it
    converged.
 '''
 
@@ -145,6 +145,7 @@ def add_atomic_numbers(pre_final_coords, atomic_list, nat):
     new_line = ''
     for line in pre_final_coords.splitlines():
         if 'activation' in line or 'lanczos' in line or 'saddle_converged' in line or 'saddle_failed' in line:
+            line = line.strip()
             line = line.replace('activation', nat + '\n' + 'activation')
             line = line.replace('lanczos', nat + '\n' + 'lanczos')
             line = line.replace('saddle_converged', nat + '\n' + 'saddle_converged')
