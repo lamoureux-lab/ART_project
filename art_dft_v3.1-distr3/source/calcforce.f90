@@ -37,7 +37,10 @@ subroutine calcforce(nat, posa, boxl, forca, energy, evalf_number, conv )
 write(*,*)
 write(*,*) 'nat: ',  nat
 write(*,*) 'typat: ', typat
-write(*,*) 'posa: ', NEW_LINE('A'), posa
+write(*,*)'posa:'
+do i=1,nat
+        write(*,*) posa(i), posa(i+nat), posa(i+2*nat)
+end do
 !write(*,*) 'boxl: ', boxl
 write(*,*) 'forces: ', NEW_LINE('A'), forca
 write(*,*) 'energy: ', energy
