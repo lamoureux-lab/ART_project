@@ -6,7 +6,7 @@ print("Optimization Results \n \n")
 
 parser = argparse.ArgumentParser(description = 'Add distance tolerance')
 parser.add_argument('-tol2','--dist_tol2', type = float, default = 0.1,
-                    help = 'Distance tolerance value eg. 0.01')
+        help = 'Distance tolerance value eg. 0.01')
 args = parser.parse_args()
 
 
@@ -20,13 +20,13 @@ j = 0
 for line in sys.stdin:
     if line.startswith(' 1\\1\\GINC'):
         reading_opt = True
-    elif line.startswith('                          Input orientation:'):
+    elif 'Input orientation:' in line:
         reading_init = True
         reading_init_count += 1
-    elif line.startswith('                    Distance matrix (angstroms):'):
+    elif 'Distance matrix (angstroms):' in line:
         reading_init = False
     elif line.startswith(" Frequencies"):
-    	j = j + 1
+        j = j + 1
         frequency.append(line)
         print(line)
 
@@ -119,4 +119,4 @@ else:
     print('Success! ART and Gaussian coordinates are similar \n')
 
 
- 
+
