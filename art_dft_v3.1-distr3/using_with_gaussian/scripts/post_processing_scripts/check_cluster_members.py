@@ -1,5 +1,6 @@
 import argparse
 import cluster
+from os.path import isfile
 
 
 parser = argparse.ArgumentParser(description = 'check member files of each cluster')
@@ -24,5 +25,6 @@ for key, value in file_dict.items():
             with open(rep_name, 'r') as rep:
                 for line in rep:
                     if ('Success!' in line) or ('Error!' in line):
-                        with open(member_name, 'w+') as m:
-                            m.write(line + '\n' + 'Belongs to ' + key) 
+                        if not isfile(member_name):
+                            with open(member_name, 'w+') as m:
+                                m.write(line + '\n' + 'Belongs to ' + key) 
