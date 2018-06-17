@@ -564,6 +564,16 @@ subroutine read_parameters( )
   else
      read(temporary,*) write_xyz
   endif
+  
+
+  !!__________________
+  ! Writes min. and sad. configurations in .xyz format.
+  call getenv('Strategy_of_Search', SEARCH_STRATEGY)
+  if (SEARCH_STRATEGY .eq. '') then
+     SEARCH_STRATEGY = '0'
+  else
+     read(SEARCH_STRATEGY,*) SEARCH_STRATEGY
+  endif
 
   !!__________________
   ! Reference configuration for refine saddle. Without ext.
@@ -731,7 +741,7 @@ subroutine read_parameters( )
 
   ! And we allocate the vectors
   allocate(typat(natoms))
-  allocate(constr(natoms))
+ ! allocate(constr(natoms))
   allocate(force(vecsize))
   allocate(pos(vecsize))
   allocate(posref(vecsize))
@@ -746,6 +756,8 @@ subroutine read_parameters( )
   initial_direction(:) = 0.0d0
   old_projection(:) = 0.0d0
   projection(:) = 0.0d0
+  !DEBUG Bhupinder-- Initialize the constr variable (more specifically array) as well!
+ ! constr(:) = 0
 
   x => pos(1:NATOMS)
   y => pos(NATOMS+1:2*NATOMS)
@@ -792,7 +804,9 @@ subroutine write_parameters( )
   call date_and_time(values=values)
 
   if ( .not. setup_initial ) then
+     !DEBUG Bhupinder -- Setting idum to a fixed value, so that ART shoots in the same direction every time     
      idum = -1 * mod( (1000 * values(7) + values(8))+iproc, 1024)
+     !idum = -398
   else
      idum = 0
   end if

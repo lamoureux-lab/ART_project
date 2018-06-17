@@ -52,12 +52,14 @@ module defs
   integer, parameter :: XYZ         = 13  
   integer, parameter :: CRESTART    = 14
   integer, parameter :: ASCII       = 15
+  integer, parameter :: VLOG       = 17
+
 
   ! Name of the file storing the current configurations
   character(len=20) :: conf_initial, conf_saddle, conf_final
   
   character(len=3),  dimension(:), allocatable          :: typat    ! Atomic type
-  integer,           dimension(:), allocatable          :: constr   ! Constraint over atoms
+ ! integer,           dimension(:), allocatable          :: constr   ! Constraint over atoms
   real(kind=8),      dimension(:), allocatable, target  :: force    ! Working forces on the atoms
   real(kind=8),      dimension(:), allocatable, target  :: pos      ! Working positions of the atoms
   real(kind=8),      dimension(:), allocatable, target  :: posref   ! Reference position
@@ -156,6 +158,7 @@ module defs
   !__________________
   
   character(len=20) :: LOGFILE
+  character(len=20), parameter :: VECLOG = "../vec.log"
   character(len=20) :: EVENTSLIST
   character(len=20) :: REFCONFIG
   character(len=11) :: RESTARTFILE

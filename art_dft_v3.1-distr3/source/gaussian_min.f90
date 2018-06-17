@@ -26,8 +26,12 @@ subroutine min_converge_gau(success)
 
   ! Prepares gaussian input file coordinates
   write(FGAUSS,"(a, f14.8, f14.8, f14.8)")  (typat(i),  x(i), y(i), z(i), i=1, NATOMS )
+ 
 
   write(FGAUSS,*)
+  !DEBUG starts Bhupinder
+  write(*,*) 'DEBUG!!! At this point, the input coordinates for Gaussian are written in the art2gaussian file'
+  !DEBUG ends Bhupinder
   close(FGAUSS)
 
   !converting the number of atoms to a string value
@@ -56,6 +60,9 @@ subroutine min_converge_gau(success)
         read (FGAUSS,*) x(i), y(i), z(i)
         write (*,*) "pos_min", x(i),y(i),z(i)
       end do
+      !DEBUG starts Bhupinder
+      write(*,*) 'DEBUG!!! Coordinates read correctly from the gaussian2art file'
+      !DEBUG ends Bhupinder
       read_coordinates_done = .true.
     endif
     if(read_coordinates_done ) exit
@@ -71,6 +78,9 @@ subroutine min_converge_gau(success)
     !Gets the final energy
     if ( line  == "energy:" ) then
       read(FGAUSS,*) total_energy
+      !DEBUG starts Bhupinder
+      write(*,*) 'DEBUG!!! energy read properly from the gaussian2art file'
+      !DEBUG ends Bhupinder
       read_energy_done = .true.    
     endif
     if(read_energy_done) exit
@@ -78,8 +88,11 @@ subroutine min_converge_gau(success)
   close(FGAUSS)
 
   open(unit=FLOG,file=LOGFILE,status='unknown',action='write',position='append',iostat=ierror)
-  write(flog,*) 'End minimization'
-  close(flog)
+  write(FLOG,*) 'End minimization'
+  close(FLOG)
+  !DEBUG starts Bhupinder
+  write(*,*) 'DEBUG!!! Minimization ended'
+  !DEBUG ends Bhupinder
 
   success = .true.
   return

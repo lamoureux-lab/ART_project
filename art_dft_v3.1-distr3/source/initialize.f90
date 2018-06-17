@@ -101,6 +101,11 @@ subroutine initialize()
 
   call initialize_potential()         ! Initialize Potential (CORE) 
 
+
+  !DEBUG starts Bhupinder
+  write(*,*) 'DEBUG!!! At this point, the coordinates are rescaled by the initialize_potential subroutine'
+  !DEBUG ends Bhupinder
+
   ! for output files
   call convert_to_chain( refcounter, 4, scounter )
   fname = FINAL // scounter

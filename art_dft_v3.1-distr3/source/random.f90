@@ -80,5 +80,7 @@ real(kind=8) function ran3()
   ma(inext) = mj
 
   ran3 = mj * fac
+  !DEBUG Bhupinder -- Printing the random variable
+  !write(*,*)"This is the random variable ", ran3
 
 END FUNCTION ran3

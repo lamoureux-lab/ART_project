@@ -74,6 +74,9 @@ subroutine saddle_converge( ret, saddle_energy )
          write(*,*) 'BART: Restart  in harmonic well '
          write(*,*) 'BART: kter : ', kter_init
          write(*,*) 'BART: pos: ', pos(1), pos(2), pos(3)
+         !DEBUG starts Bhupinder
+         write(*,*) 'DEBUG!!! These "pos: values" are written by the saddle_converge subroutine'
+         !DEBUG ends Bhupinder
       end if
    else
       kter_init = 0                    ! init value of kter loop.
@@ -488,6 +491,9 @@ subroutine end_report ( success, ret, saddle_energy )
    case default  
       converg = 'FAILED'
       success = .false.
+      if (iproc == 0) call store_failed()
+      !DEBUG
+     ! write(*,*) "This is where store_failed was called"
    end select
 
    delta_e = saddle_energy - ref_energy
@@ -515,8 +521,13 @@ subroutine end_report ( success, ret, saddle_energy )
          write(FLOG,'(1X,A34,(1p,e17.10,0p))') &
             &   ' - Total energy Saddle (eV)     : ', saddle_energy
          write(FLOG,*) ' '
+      close(FLOG)
+         
+      open(VLOG, file = VECLOG, status = 'unknown', action='write', position='append')
+      write(VLOG,*) "SADDLE= ", converg
+      close(VLOG)
       end if
-      close(FLOG) 
+      !! Write min coordinates, direction (dx,dy,dz), saddle point coordinates, and succes/failure report
    end if
 
 END SUBROUTINE end_report 

@@ -52,7 +52,7 @@ subroutine restart_states( istatus, ieventcurrent, iterations, iatp )
   read(FRESTART,*) ( xref(i), yref(i), zref(i), i = 1, NATOMS )
   read(FRESTART,*) ( x(i), y(i), z(i), i = 1, NATOMS )
   read(FRESTART,*) ( dx(i), dy(i), dz(i), i = 1, NATOMS )
-  read(FRESTART,*) ( constr(i), i = 1, NATOMS )
+  !read(FRESTART,*) ( constr(i), i = 1, NATOMS )
 
   if ( istatus == 2 .or. istatus == 4 ) then 
      do j = 1, DIIS_MEMORY 
@@ -128,7 +128,7 @@ subroutine save_state( istatus, iter, direction )
   write(FRESTART,'(2x,3f20.8)') ( xref(i), yref(i), zref(i), i = 1, NATOMS )
   write(FRESTART,'(2x,3f20.8)') ( x(i), y(i), z(i), i = 1, NATOMS )
   write(FRESTART,'(2x,3f20.8)') ( dx(i), dy(i), dz(i), i = 1, NATOMS )
-  write(FRESTART,'(2x,10i6)') ( constr(i), i = 1, NATOMS )
+  !write(FRESTART,'(2x,10i6)') ( constr(i), i = 1, NATOMS )
   close(FRESTART)
 
 END SUBROUTINE save_state
@@ -172,7 +172,7 @@ subroutine save_state2( istatus, iter, direction, maxter, pf, px, pn, &
   write(FRESTART,'(2x,3f20.8)') ( xref(i), yref(i), zref(i), i = 1, NATOMS )
   write(FRESTART,'(2x,3f20.8)') ( x(i), y(i), z(i), i = 1, NATOMS )
   write(FRESTART,'(2x,3f20.8)') ( dx(i), dy(i), dz(i), i = 1, NATOMS )
-  write(FRESTART,'(2x,10i6)') ( constr(i), i = 1, NATOMS )
+ ! write(FRESTART,'(2x,10i6)') ( constr(i), i = 1, NATOMS )
  
   do j = 1, DIIS_MEMORY 
      dx => pf(j,1:NATOMS)

@@ -486,6 +486,7 @@ subroutine perp_fire(success,max_iter)
 
    ! Optimization for Gaussian
    if (energy_type == "GAU") then
+      write(*,*) "Test1: GAU is properly set" 
       dtmax=0.3d0
    else
       dtmax=0.15d0

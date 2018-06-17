@@ -144,21 +144,27 @@ subroutine store( fname )
   end do
   close(FCONF)
 
+  open(unit=VLOG, file = VECLOG, status = 'unknown', action='write', position='append')
+  write(VLOG,*) fname
+  do i=1,NATOMS
+        write(VLOG,'(1x,a,3(2x,f16.8))') typat(i), x(i), y(i), z(i)
+  end do
+  close(VLOG)
   ! Added by Fedwa El-Mellouhi July 2002, writes the configuration in .xyz format. 
   ! Modified by E. Machado-charry for v_sim and BigDFT.
   if ( write_xyz ) then
 
      ! If there is a constraint over a given atom, is written in the geometry file.
      do i = 1, NATOMS
-        if      ( constr(i)== 0) then
+       ! if      ( constr(i)== 0) then
            frzchain(i)='    '
-        else if (constr(i) == 1) then
-           frzchain(i)='   f'
-        else if (constr(i) == 2) then
-           frzchain(i)='  fy'
-        else if (constr(i) == 3) then
-           frzchain(i)=' fxz'
-        end if
+       ! else if (constr(i) == 1) then
+        !   frzchain(i)='   f'
+       ! else if (constr(i) == 2) then
+        !   frzchain(i)='  fy'
+       ! else if (constr(i) == 3) then
+        !   frzchain(i)=' fxz'
+       ! end if
      end do
 
      fnamexyz = trim(fname) // extension
@@ -176,10 +182,28 @@ subroutine store( fname )
         write(XYZ,'(1x,A2,3(2x,f16.8),2x,a4)')   Atom(i), x(i), y(i), z(i), frzchain(i)
      end do
      close(XYZ)
-end if
+  end if
 
 END SUBROUTINE store
 
+subroutine store_failed ()
+
+  use defs
+  implicit none
+
+  !Arguments
+  !character(len=7 ), intent(in) :: fname
+
+ ! Local variables
+  integer :: i
+  open(VLOG, file = VECLOG, status = 'unknown', action='write', position='append')
+  write(VLOG,*) "FAILED SADDLE: "
+  do i=1,NATOMS
+        write(VLOG,'(1x,a,3(2x,f16.8))') typat(i), x(i), y(i), z(i)
+  end do
+  close(VLOG)
+
+end subroutine store_failed
 
 !> ART save_intermediate
 !!    It saves the configuration at every step in xyz format.
@@ -217,15 +241,15 @@ subroutine save_intermediate( stage )
 
      ! If there is a constraint over a given atom, is written in the geometry file.
      do i = 1, NATOMS
-        if      ( constr(i)== 0) then
+       ! if      ( constr(i)== 0) then
            frzchain(i)='    '
-        else if (constr(i) == 1) then
-           frzchain(i)='   f'
-        else if (constr(i) == 2) then
-           frzchain(i)='  fy'
-        else if (constr(i) == 3) then
-           frzchain(i)=' fxz'
-        end if
+       ! else if (constr(i) == 1) then
+       !    frzchain(i)='   f'
+      !  else if (constr(i) == 2) then
+       !    frzchain(i)='  fy'
+      !  else if (constr(i) == 3) then
+       !    frzchain(i)=' fxz'
+      !  end if
      end do
 
      open(unit=XYZ,file=fname,status='unknown',action='write',iostat=ierror)

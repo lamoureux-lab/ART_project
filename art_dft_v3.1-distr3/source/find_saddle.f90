@@ -18,6 +18,7 @@ module saddles
   integer :: MAXIPERP, MAXKPERP
   integer, dimension(:), allocatable  :: atom_displaced  ! Id of local atoms displaced
   real(kind=8), dimension(:), allocatable, target :: dr
+  real(kind=8), dimension(:), allocatable, target :: dr_tried
 
   real(kind=8) :: INITSTEPSIZE 
   real(kind=8) :: LOCAL_CUTOFF
@@ -27,6 +28,9 @@ module saddles
   real(kind=8) :: EXITTHRESH
 
   character(len=20) :: TYPE_EVENTS
+
+  character(len=40) :: SEARCH_STRATEGY 
+
 
   real(kind=8) :: delta_e  ! current_energy - ref_energy
   integer :: m_perp   ! Accepted perpendicular iterations.
@@ -148,51 +152,139 @@ subroutine global_move( )
   !Local variables
   integer :: i
   real(kind=8) :: dr2
+  real(kind=8) :: cos_theta
   real(kind=8) :: ran3
+  real(kind=8), dimension(:), allocatable :: norm_dr, norm_dr_tried
   real(kind=8), dimension(:), pointer :: dx, dy, dz
-  character(len = 128)                            :: vector_file
-  logical :: found 
+  real(kind=8), dimension(:), pointer :: dx_tried, dy_tried, dz_tried
+  character(len=20) :: keyword
 
-  allocate(dr(3*natoms))
+
+  allocate(dr(3*natoms)) 
+  allocate(dr_tried(3*natoms))
+  allocate(norm_dr(3*natoms)) 
+  allocate(norm_dr_tried(3*natoms))
   allocate(atom_displaced(natoms))
                                       ! We assign a few pointers. 
 
-  found    = .false.
-  vector_file = 'displacement_vector.py'
 
   dx => dr(1:NATOMS)
   dy => dr(NATOMS+1:2*NATOMS)
   dz => dr(2*NATOMS+1:3*NATOMS)
 
+   
+  dx_tried => dr_tried(1:NATOMS)
+  dy_tried => dr_tried(NATOMS+1:2*NATOMS)
+  dz_tried => dr_tried(2*NATOMS+1:3*NATOMS)
+
   atom_displaced = 0 
   natom_displaced = 0 
-  dr = 0.0d0 
-  
-  !If there is no vector to try 
-  !Generate a random displacement.
-  inquire( file = vector_file, exist = found )
-  if ( .not. found ) then
-    do i = 1, natoms, 1
-       if ( constr(i) == 0 ) then
-          do
-             dx(i) = 0.5d0 - ran3()
-             dy(i) = 0.5d0 - ran3()
-             dz(i) = 0.5d0 - ran3()
-                                      
-             ! Ensures that the random displacement is isotropic
-             dr2 = dx(i)**2 + dy(i)**2 + dz(i)**2
-             if ( dr2 < 0.25d0 ) exit 
-          end do
-          natom_displaced = natom_displaced + 1
-          atom_displaced(i) = 1
-       end if
-    end do
-  else 
-    write(*,*) ' ERROR: File is empty. '
-  end if 
+  dr = 0.0d0
 
+!  !Generate a random displacement.
+
+selectcase ( search_strategy )
+
+   case ('0')
+        open(VLOG,file=VECLOG,action='write', position = 'append', status = 'unknown')
+        write(VLOG,*) "Displacement vector" 
+        do i = 1, natoms, 1
+        ! if ( constr(i) == 0 ) then
+            do
+               dx(i) = 0.5d0 - ran3()
+               dy(i) = 0.5d0 - ran3()
+               dz(i) = 0.5d0 - ran3()                             
+               ! Ensures that the random displacement is isotropic
+               dr2 = dx(i)**2 + dy(i)**2 + dz(i)**2
+               if ( dr2 < 0.25d0 ) exit 
+            end do
+            natom_displaced = natom_displaced + 1
+            atom_displaced(i) = 1
+        ! end if
+            write(VLOG,'(1x,a,3(2x,f16.8))') typat(i), dx(i), dy(i), dz(i) 
+        end do
+        close(VLOG)
+
+   case ('1') ! "follow" strategy
+      open(VLOG, file=VECLOG, action='read', status = 'old')
+
+      do
+        read(VLOG,*) keyword
+        if (keyword .eq. 'Displacement') then
+                do i = 1, NATOMS
+                read(VLOG,*) typat(i), dx(i), dy(i), dz(i)
+                enddo
+        endif
+        if (keyword .eq. "SADDLE=") exit
+      enddo 
+
+      close(VLOG)
+
+      open(VLOG, file = VECLOG, action='write', position = 'append', status= 'unknown')
+      write(VLOG,*)"Displacement vector"
+
+      do i=1,NATOMS
+      write(VLOG,'(1X,a,3(2x,f16.8))') typat(i), dx(i), dy(i), dz(i)
+      enddo
+
+      close(VLOG)
+
+   case ('2') ! "avoid" strategy
+        open(VLOG, file=VECLOG, action='read', status = 'old')
+        do
+           do i = 1, natoms, 1
+            do
+               dx(i) = 0.5d0 - ran3()
+               dy(i) = 0.5d0 - ran3()
+               dz(i) = 0.5d0 - ran3()                             
+               dr2 = dx(i)**2 + dy(i)**2 + dz(i)**2
+               if ( dr2 < 0.25d0 ) exit 
+            end do
+            natom_displaced = natom_displaced + 1
+            atom_displaced(i) = 1
+           
+           end do
+
+
+         
+           read(VLOG,*) keyword
+           if (keyword .eq. 'Displacement') then
+           do i = 1, NATOMS
+           read(VLOG,*) typat(i), dx_tried(i), dy_tried(i), dz_tried(i)
+           enddo
+           endif
+
+           norm_dr = dr/sqrt(dot_product(dr,dr))
+           norm_dr_tried = dr_tried/sqrt(dot_product(dr_tried, dr_tried))
+
+           cos_theta = dot_product(norm_dr, norm_dr_tried)
+
+
+           if (cos_theta .lt. 0.8) exit
+           
+           write(*,*) "This is the angle between the two vectors", cos_theta
+
+        enddo 
+
+        close(VLOG)
+
+       
+        open(VLOG, file=VECLOG, action='write', position = 'append', status = 'unknown')
+      
+        write(VLOG,*) "Displacement vector"
+
+        do i =1,NATOMS
+
+        write(VLOG,'(1X,a,3(2x,f16.8))') typat(i), dx(i), dy(i), dz(i)
+        
+        enddo
+
+        close(VLOG)
+
+endselect
 
   call center_and_norm ( INITSTEPSIZE )
+
 
 END SUBROUTINE global_move
 
@@ -221,15 +313,18 @@ subroutine local_move( )
   if ( preferred_atom < 0 ) then
      ! Only between totally free atoms 
      do 
-        that = int( NATOMS * ran3() + 1 ) 
-        if ( constr(that) == 0 ) exit 
+     that = int( NATOMS * ran3() + 1 ) 
+       ! if ( constr(that) == 0 ) exit 
      end do
   else 
      that = preferred_atom
-     if ( constr(that) .ne. 0 ) then  ! die !
-        write(*,*) ' ERROR: choosen atom is blocked in the geometry file '
-        call end_art()                          
-     end if 
+     !do i = 1,NATOMS
+      !  write(*,*) 'CONSTR: ', i, constr(i)
+     !end do
+     !if ( constr(that) .ne. 0 ) then  ! die !
+      !  write(*,*) ' ERROR: choosen atom is blocked in the geometry file '
+       ! call end_art()                          
+     !end if 
   end if
 
   ! for dual_search:
@@ -279,7 +374,7 @@ subroutine local_move( )
   yi = y(that)
   zi = z(that)
   do j = 1, NATOMS
-     if ( constr(j) == 0 ) then
+    ! if ( constr(j) == 0 ) then
         xij = x(j) - xi - boxl(1) * nint((x(j)-xi) * invbox(1))
         yij = y(j) - yi - boxl(2) * nint((y(j)-yi) * invbox(2))
         zij = z(j) - zi - boxl(3) * nint((z(j)-zi) * invbox(3))
@@ -299,7 +394,7 @@ subroutine local_move( )
            natom_displaced = natom_displaced + 1
            atom_displaced(j) = 1
         end if
-     end if
+   !  end if
   end do
 
   call center_and_norm ( INITSTEPSIZE )
@@ -396,7 +491,7 @@ subroutine list_of_atoms ( )
   
   ! Now we apply a random displacement 
   do j = 1, NATOMS
-     if ( constr(j) == 0 ) then
+   !  if ( constr(j) == 0 ) then
         do i = 1, sizelist 
            if ( j == list_atoms(i) ) then
               do
@@ -413,7 +508,7 @@ subroutine list_of_atoms ( )
               exit
            end if
         end do
-     end if
+   !  end if
   end do
   
   deallocate(list_atoms)
@@ -505,7 +600,7 @@ subroutine list_and_local ()
   do 
      this = int( sizelist * ran3() + 1 ) 
      that = list_atoms(this)
-     if ( constr(that) == 0 ) exit 
+    ! if ( constr(that) == 0 ) exit 
   end do
 
 
@@ -555,7 +650,7 @@ subroutine list_and_local ()
   yi = y(that)
   zi = z(that)
   do j = 1, NATOMS
-     if ( constr(j) == 0 ) then
+   !  if ( constr(j) == 0 ) then
         xij = x(j) - xi - boxl(1) * nint((x(j)-xi) * invbox(1))
         yij = y(j) - yi - boxl(2) * nint((y(j)-yi) * invbox(2))
         zij = z(j) - zi - boxl(3) * nint((z(j)-zi) * invbox(3))
@@ -574,7 +669,7 @@ subroutine list_and_local ()
            natom_displaced = natom_displaced + 1
            atom_displaced(j) = 1
         end if
-     end if
+    ! end if
   end do
 
   call center_and_norm ( INITSTEPSIZE )
@@ -609,7 +704,7 @@ subroutine symmetry_break( )
 
   ! Generate a random displacement. 
   do i = 1, NATOMS
-     if ( constr(i) == 0 ) then 
+    ! if ( constr(i) == 0 ) then 
         do
            dx(i) = 0.5d0 - ran3()
            dy(i) = 0.5d0 - ran3()
@@ -621,7 +716,7 @@ subroutine symmetry_break( )
         end do
         natom_displaced = natom_displaced + 1
         atom_displaced(i) = 1
-     end if
+   !  end if
   end do
 
   call center_and_norm ( sym_break_dist )
@@ -682,14 +777,20 @@ subroutine center_and_norm ( step )
   nat = 3*NATOMS
 
   ! Update the position using this random displacement
-  pos = pos + dr  
+  pos = pos + dr
+  ! DEBUG Bhupinder
+  write(*,*) 'Updated position using random displacement' , pos  
   
   ! Now, we normalize dr to get the initial_direction (note that this
   ! had to be done after the transfer into box units.
   initial_direction = dr 
+  write(*,*) 'This is dr:'
+  write(*,*) dr
   norm = dot_product( initial_direction, initial_direction ) 
   norm = 1.0d0 / sqrt(norm)
   initial_direction  = initial_direction * norm
+  write(*,*)'Initial direction is:'
+  write(*,*) initial_direction
 
   write(*,*) 'BART: Number of displaced atoms initially: ',natom_displaced
 
@@ -808,8 +909,8 @@ subroutine coord_based_move( )
 
   ! Only between totally free atoms 
   do 
-     that = int( NATOMS * ran3() + 1 ) 
-     if ( in_list(that) ==1 .and. constr(that) == 0 ) then
+  that = int( NATOMS * ran3() + 1 ) 
+     if ( in_list(that) ==1) then ! .and. constr(that) == 0 ) then
         if ( typat(that) == type_sel .and. type_sel/= '' ) then
            exit 
         else if ( type_sel == '' ) then 
@@ -858,7 +959,7 @@ subroutine coord_based_move( )
   yi = y(that)
   zi = z(that)
   do j = 1, NATOMS
-     if ( constr(j) == 0 ) then
+   !  if ( constr(j) == 0 ) then
         xij = x(j) - xi - boxl(1) * nint((x(j)-xi) * invbox(1))
         yij = y(j) - yi - boxl(2) * nint((y(j)-yi) * invbox(2))
         zij = z(j) - zi - boxl(3) * nint((z(j)-zi) * invbox(3))
@@ -877,7 +978,7 @@ subroutine coord_based_move( )
            natom_displaced = natom_displaced + 1
            atom_displaced(j) = 1
         end if
-     end if
+    ! end if
   end do
 
   call center_and_norm ( INITSTEPSIZE )
@@ -946,11 +1047,11 @@ subroutine guess_direction ( )
 
   ! a small noise helps if we fail in the attempt
   do i = 1, NATOMS
-     if ( constr(i) == 0 ) then
+    ! if ( constr(i) == 0 ) then
         dx(i) = xb(i) - xa(i) - boxl(1) * nint((xb(i)-xa(i)) * invbox(1)) + guess_noise*(0.5d0-ran3()) 
         dy(i) = yb(i) - ya(i) - boxl(2) * nint((yb(i)-ya(i)) * invbox(2)) + guess_noise*(0.5d0-ran3())
         dz(i) = zb(i) - za(i) - boxl(3) * nint((zb(i)-za(i)) * invbox(3)) + guess_noise*(0.5d0-ran3())
-     end if
+   !  end if
   end do
  
   norm = dot_product( dr, dr ) 

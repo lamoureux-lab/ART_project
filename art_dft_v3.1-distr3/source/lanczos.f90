@@ -109,7 +109,7 @@ subroutine lanczos( maxvec, new_projection, produit )
      dy = 0.0d0
      dz = 0.0d0
      do i = 1, natoms, 1
-        if ( constr(i) == 0 ) then
+       ! if ( constr(i) == 0 ) then
            do
               dx(i) = 0.5d0 - ran3()
               dy(i) = 0.5d0 - ran3()
@@ -118,7 +118,7 @@ subroutine lanczos( maxvec, new_projection, produit )
               dr2 = dx(i)**2 + dy(i)**2 + dz(i)**2
               if ( dr2 < 0.25d0 ) exit 
            end do
-        end if
+       ! end if
      end do
 
      call center( z0, VECSIZE )    ! Center of mass at zero.
@@ -304,7 +304,7 @@ END SUBROUTINE lanczos
 !! It places the center of mass of a 3D vector at (0,0,0). 
 subroutine center( vector, vecsize )
 
-  use defs, only : natoms, constr
+  use defs, only : natoms!, constr
   implicit none
 
   !Arguments
@@ -319,8 +319,10 @@ subroutine center( vector, vecsize )
   !_______________________
 
   ! degrees of freedom 
-  mask = constr .eq. 0 
-  natoms_f = count(mask)
+  ! DEBUG Bhupinder --> Since mask is dependent on constr, I have commented it out
+ ! mask = constr .eq. 0 
+ !DEBUG Bhupinder --> number of free atoms, natoms_f has been set to natoms
+  natoms_f = natoms !count(mask)
 
   ! We first set-up pointers for the x, y, z components 
   x => vector(1:natoms)

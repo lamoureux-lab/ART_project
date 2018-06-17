@@ -86,13 +86,19 @@ subroutine calcforce_gau(nat,typa,posa,boxl,forca,energy)
         endif
 
         !Gets the Gaussian output coordinates
+        write(*,*)"These are the coordinates read from gaussian2art: "
         if ( line  == "outcoor:" ) then
            do i = 1, NATOMS
              ! read(FGAUSS,"(f15.6,f13.6,f11.6)") xS(i),yS(i),zS(i)
               read(FGAUSS,*) xS(i),yS(i),zS(i)
+              write(*,*) xS(i),yS(i),zS(i)
+
            end do
            read_coordinates_done = .true.
         endif
+        
+       
+
 
         !Gets the final energy
         if ( line  == "energy:" ) then
@@ -126,6 +132,9 @@ subroutine calcforce_gau(nat,typa,posa,boxl,forca,energy)
   write (*,*)
   write (*,*)
   write (*,*) 'Running with gaussian_force: '
+ !DEBUG starts Bhupinder
+ ! write(*,*)  xS(i),yS(i),zS(i)
+ !DEBUG ends Bhupinder
 
   call center(forca,VECSIZE)
 end subroutine
