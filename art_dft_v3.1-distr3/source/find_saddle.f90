@@ -230,6 +230,7 @@ selectcase ( search_strategy )
       close(VLOG)
 
    case ('2') ! "avoid" strategy
+
         open(VLOG, file=VECLOG, action='read', status = 'old')
         do
            do i = 1, natoms, 1
@@ -248,24 +249,27 @@ selectcase ( search_strategy )
 
          
            read(VLOG,*) keyword
+
            if (keyword .eq. 'Displacement') then
+
            do i = 1, NATOMS
            read(VLOG,*) typat(i), dx_tried(i), dy_tried(i), dz_tried(i)
            enddo
-           endif
 
            norm_dr = dr/sqrt(dot_product(dr,dr))
            norm_dr_tried = dr_tried/sqrt(dot_product(dr_tried, dr_tried))
-
            cos_theta = dot_product(norm_dr, norm_dr_tried)
 
+           if (cos_theta .gt. 0.8) continue 
 
-           if (cos_theta .lt. 0.8) exit
-           
            write(*,*) "This is the angle between the two vectors", cos_theta
 
-        enddo 
+           endif
+           
+           if (keyword .eq. "SADDLE=") exit
 
+           enddo
+        
         close(VLOG)
 
        
