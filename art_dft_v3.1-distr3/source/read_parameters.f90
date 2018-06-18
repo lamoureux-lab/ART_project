@@ -567,12 +567,27 @@ subroutine read_parameters( )
   
 
   !!__________________
-  ! Writes min. and sad. configurations in .xyz format.
+  ! Choose the strategy of search.
   call getenv('Strategy_of_Search', SEARCH_STRATEGY)
-  if (SEARCH_STRATEGY .eq. '') then
-     SEARCH_STRATEGY = '0'
-  else
-     read(SEARCH_STRATEGY,*) SEARCH_STRATEGY
+  if (SEARCH_STRATEGY .eq. '') then  
+        SEARCH_STRATEGY = '0'
+  endif
+  if ((SEARCH_STRATEGY .ne. '') .and. (SEARCH_STRATEGY .ne. '0') .and. (SEARCH_STRATEGY .ne. '1') .and. (SEARCH_STRATEGY .ne. '2')) then
+          write(*,*) "Strategy_of_Search only takes either of the following options: 0, 1, 2. You provided: ", SEARCH_STRATEGY
+  endif
+
+  !!__________________
+  ! Name the shared history file 
+  call getenv('Shared_History_Filename', VECLOG)
+  if (VECLOG .eq. '') then
+     VECLOG = '../shared_history/run_history.log'
+  endif
+
+  !!__________________
+  ! Name the shared history file to be read from
+  call getenv('Shared_History_To_Read', VECREAD)
+  if (VECREAD .eq. '') then
+     VECREAD = '../shared_history/run_history.log'
   endif
 
   !!__________________
@@ -805,8 +820,8 @@ subroutine write_parameters( )
 
   if ( .not. setup_initial ) then
      !DEBUG Bhupinder -- Setting idum to a fixed value, so that ART shoots in the same direction every time     
-     idum = -1 * mod( (1000 * values(7) + values(8))+iproc, 1024)
-     !idum = -398
+     !idum = -1 * mod( (1000 * values(7) + values(8))+iproc, 1024)
+     idum = -606
   else
      idum = 0
   end if

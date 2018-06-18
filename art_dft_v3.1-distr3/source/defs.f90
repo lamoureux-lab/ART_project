@@ -53,6 +53,7 @@ module defs
   integer, parameter :: CRESTART    = 14
   integer, parameter :: ASCII       = 15
   integer, parameter :: VLOG       = 17
+  integer, parameter :: VREAD       = 18
 
 
   ! Name of the file storing the current configurations
@@ -158,8 +159,10 @@ module defs
   !__________________
   
   character(len=20) :: LOGFILE
-  character(len=20), parameter :: VECLOG = "../vec.log"
+ ! character(len=20), parameter :: VECLOG = "../vec.log"
   character(len=20) :: EVENTSLIST
+  character(len=200) :: VECLOG
+  character(len=200) :: VECREAD
   character(len=20) :: REFCONFIG
   character(len=11) :: RESTARTFILE
   character(len=3)  :: FINAL                ! is the prefix for minima files

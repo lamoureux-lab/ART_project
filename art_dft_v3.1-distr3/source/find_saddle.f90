@@ -19,6 +19,7 @@ module saddles
   integer, dimension(:), allocatable  :: atom_displaced  ! Id of local atoms displaced
   real(kind=8), dimension(:), allocatable, target :: dr
   real(kind=8), dimension(:), allocatable, target :: dr_tried
+  real(kind=8), dimension(:), allocatable :: norm_dr, norm_dr_tried
 
   real(kind=8) :: INITSTEPSIZE 
   real(kind=8) :: LOCAL_CUTOFF
@@ -154,10 +155,10 @@ subroutine global_move( )
   real(kind=8) :: dr2
   real(kind=8) :: cos_theta
   real(kind=8) :: ran3
-  real(kind=8), dimension(:), allocatable :: norm_dr, norm_dr_tried
   real(kind=8), dimension(:), pointer :: dx, dy, dz
   real(kind=8), dimension(:), pointer :: dx_tried, dy_tried, dz_tried
   character(len=20) :: keyword
+  logical :: file_exists
 
 
   allocate(dr(3*natoms)) 
@@ -186,7 +187,12 @@ subroutine global_move( )
 selectcase ( search_strategy )
 
    case ('0')
-        open(VLOG,file=VECLOG,action='write', position = 'append', status = 'unknown')
+        inquire(file = VECLOG, exist = file_exists)
+        if(file_exists) then
+                open(VLOG,file=VECLOG, action='write', position = 'append', status = 'unknown')
+        else
+                open(VLOG,file=VECLOG, action='write', status = 'unknown')
+        endif
         write(VLOG,*) "Displacement vector" 
         do i = 1, natoms, 1
         ! if ( constr(i) == 0 ) then
@@ -206,7 +212,7 @@ selectcase ( search_strategy )
         close(VLOG)
 
    case ('1') ! "follow" strategy
-      open(VLOG, file=VECLOG, action='read', status = 'old')
+      open(VREAD, file=VECREAD, action='read', status = 'old')
 
       do
         read(VLOG,*) keyword
@@ -220,7 +226,12 @@ selectcase ( search_strategy )
 
       close(VLOG)
 
-      open(VLOG, file = VECLOG, action='write', position = 'append', status= 'unknown')
+      inquire(file = VECLOG, exist = file_exists)
+      if(file_exists) then
+                open(VLOG,file=VECLOG, action='write', position = 'append', status = 'unknown')
+      else
+                open(VLOG,file=VECLOG, action='write', status = 'unknown')
+      endif
       write(VLOG,*)"Displacement vector"
 
       do i=1,NATOMS
@@ -230,7 +241,8 @@ selectcase ( search_strategy )
       close(VLOG)
 
    case ('2') ! "avoid" strategy
-        open(VLOG, file=VECLOG, action='read', status = 'old')
+
+        open(VREAD, file=VECREAD, action='read', status = 'old')
         do
            do i = 1, natoms, 1
             do
@@ -244,33 +256,38 @@ selectcase ( search_strategy )
             atom_displaced(i) = 1
            
            end do
-
-
          
            read(VLOG,*) keyword
+
            if (keyword .eq. 'Displacement') then
+
            do i = 1, NATOMS
            read(VLOG,*) typat(i), dx_tried(i), dy_tried(i), dz_tried(i)
            enddo
-           endif
 
            norm_dr = dr/sqrt(dot_product(dr,dr))
            norm_dr_tried = dr_tried/sqrt(dot_product(dr_tried, dr_tried))
-
            cos_theta = dot_product(norm_dr, norm_dr_tried)
 
+           if (cos_theta .gt. 0.8) continue 
 
-           if (cos_theta .lt. 0.8) exit
-           
            write(*,*) "This is the angle between the two vectors", cos_theta
 
-        enddo 
+           endif
+           
+           if (keyword .eq. "SADDLE=") exit
 
+           enddo
+        
         close(VLOG)
 
        
-        open(VLOG, file=VECLOG, action='write', position = 'append', status = 'unknown')
-      
+        inquire(file = VECLOG, exist = file_exists)
+        if(file_exists) then
+                open(VLOG,file=VECLOG, action='write', position = 'append', status = 'unknown')
+        else
+                open(VLOG,file=VECLOG, action='write', status = 'unknown')
+        endif
         write(VLOG,*) "Displacement vector"
 
         do i =1,NATOMS
@@ -796,6 +813,9 @@ subroutine center_and_norm ( step )
 
   deallocate(atom_displaced)
   deallocate(dr)
+  deallocate(dr_tried)
+  deallocate(norm_dr)
+  deallocate(norm_dr_tried)
 
 END SUBROUTINE center_and_norm 
 
@@ -1067,6 +1087,9 @@ subroutine guess_direction ( )
   pos = pos + INITSTEPSIZE*initial_direction
 
   deallocate(dr)
+  deallocate(dr_tried)
+  deallocate(norm_dr)
+  deallocate(norm_dr_tried)
   deallocate(posa)
   deallocate(posb)
   write(*,*) 'BART: Number of displaced atoms initially: ', natoms 
