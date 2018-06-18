@@ -242,7 +242,9 @@ selectcase ( search_strategy )
 
    case ('2') ! "avoid" strategy
 
-        open(VREAD, file=VECREAD, action='read', status = 'old')
+
+        open(VREAD, file=VECREAD, action='read', status = 'old') 
+
         do
            do i = 1, natoms, 1
             do
