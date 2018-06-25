@@ -15,16 +15,13 @@ subroutine calcforce_gau(nat,typa,posa,boxl,forca,energy)
   integer :: end_of_file = -1
   integer, parameter :: FGAUSS = 21
   real*8, parameter :: ZERO = 0.0d0
-  character(len=20) :: GAUSS   = '.art2gaussian'
-  character(len=20) :: GAUSSFORCE = '.gaussian2art'
+  character(len=20) :: GAUSS   = 'art2gaussian.inp'
+  character(len=20) :: GAUSSFORCE = 'gaussian2art'
   character(len=40) :: line
-  character(len=10) :: string_natoms
   logical :: read_energy_done,read_force_done,read_coordinates_done, success
   real(8), dimension(:), pointer :: xS, yS, zS
   real(8), dimension(:), pointer :: xa, ya, za
   real(8), dimension(:), pointer :: fax, fay, faz   ! Pointers for working force
-
-  success = .true.
 
   ! We first set-up pointers for the x, y, z components in the position and forces
   xa => posa(1:NATOMS)
@@ -42,12 +39,12 @@ subroutine calcforce_gau(nat,typa,posa,boxl,forca,energy)
   fay => forca(NATOMS+1:2*NATOMS)
   faz => forca(2*NATOMS+1:3*NATOMS)
   
-  ! Transform the coordinates system from box to angstroems
-
+  ! Transform the coordinates system from box to angstroems 
   do
 
      ! We first write to a file the format requested by Gaussian
-     open(unit=FGAUSS,file=GAUSS,status='replace',action='write',iostat=ierror)
+     call system('python create_header.py')
+     open(unit=FGAUSS,file=GAUSS,status='unknown',action='write', position = 'append', iostat=ierror)
 
      ! Prepares gaussian input file coordinates
      do i = 1, NATOMS
@@ -56,15 +53,8 @@ subroutine calcforce_gau(nat,typa,posa,boxl,forca,energy)
      write(FGAUSS,*)    
      
      close(FGAUSS)
- 
- 
-     !converting the number of atoms to a string value
-     write(string_natoms, '(i10)' )  NATOMS
-     
-     ! We now call Gaussian do to the minimization
-     ! Bash parameters: natoms=$1, optimization=$2
-     call system('sh .execute_gaussian.sh ' // string_natoms // ' ' // 'force')
 
+     call system('python execute_gaussian.py')
      open(unit=FGAUSS,file=GAUSSFORCE,status='old',action='read',iostat=ierror)
 
      read_force_done = .false.
@@ -72,9 +62,7 @@ subroutine calcforce_gau(nat,typa,posa,boxl,forca,energy)
      read_coordinates_done = .false.
 
      do 
-        !Reads the first line of the gaussian2art file
         read(FGAUSS,"(A40)") line
-
         ! Checks for IO errors or EOF marker
         if (ierror .eq. end_of_file) then
            if (.not.success) then
@@ -86,19 +74,13 @@ subroutine calcforce_gau(nat,typa,posa,boxl,forca,energy)
         endif
 
         !Gets the Gaussian output coordinates
-        write(*,*)"These are the coordinates read from gaussian2art: "
         if ( line  == "outcoor:" ) then
            do i = 1, NATOMS
-             ! read(FGAUSS,"(f15.6,f13.6,f11.6)") xS(i),yS(i),zS(i)
               read(FGAUSS,*) xS(i),yS(i),zS(i)
               write(*,*) xS(i),yS(i),zS(i)
-
            end do
            read_coordinates_done = .true.
         endif
-        
-       
-
 
         !Gets the final energy
         if ( line  == "energy:" ) then
@@ -109,7 +91,6 @@ subroutine calcforce_gau(nat,typa,posa,boxl,forca,energy)
         !Gets the forces
         if ( line  == "forces:" ) then
            do i = 1, NATOMS
-              ! read(FGAUSS,"(f21.9,f15.9,f15.9)") fax(i),fay(i),faz(i)
               read(FGAUSS,*) fax(i),fay(i),faz(i)
               ! ! unit conversion Gaussian format Forces (Hartrees/Bohr) to Gaussian format forces forces (eV/Ang):
               ! ! hartree_to_ev=27.2113838668 and bohr_to_angstrom=0.52917721092
@@ -125,16 +106,8 @@ subroutine calcforce_gau(nat,typa,posa,boxl,forca,energy)
      end do
      close(FGAUSS)
 
-     if (success) exit
+  if(success) exit
   end do
-
-! debug
-  write (*,*)
-  write (*,*)
-  write (*,*) 'Running with gaussian_force: '
- !DEBUG starts Bhupinder
- ! write(*,*)  xS(i),yS(i),zS(i)
- !DEBUG ends Bhupinder
 
   call center(forca,VECSIZE)
 end subroutine
