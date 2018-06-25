@@ -138,7 +138,7 @@ subroutine store( fname )
   open(unit=FCONF,file=fname,status='unknown',action='write',iostat=ierror)
   write(FCONF,*) 'run_id: ', mincounter
   write(FCONF,*) 'total_energy: ', total_energy
-  write(FCONF,*) boundary, boxl
+  !write(FCONF,*) boundary, boxl
   do i=1, NATOMS
      write(FCONF,'(1x,a,3(2x,f16.8))') typat(i), x(i), y(i), z(i)
   end do
@@ -363,7 +363,7 @@ subroutine write_refconfig( )
   open(unit=FREFCONFIG,file=REFCONFIG,status='unknown',action='write',iostat=ierror) 
   write(FREFCONFIG,*) 'run_id: ', refcounter
   write(FREFCONFIG,*) 'total_energy: ', total_energy
-  write(FREFCONFIG,*) boundary, boxl
+  !write(FREFCONFIG,*) boundary, boxl
   do i = 1, NATOMS
      write(FREFCONFIG,'(1x,a,3(2x,F16.8))') typat(i), x(i), y(i), z(i)
   end do
