@@ -23,6 +23,8 @@ subroutine calcforce_gau(nat,typa,posa,boxl,forca,energy)
   real(8), dimension(:), pointer :: xa, ya, za
   real(8), dimension(:), pointer :: fax, fay, faz   ! Pointers for working force
 
+  success = .true.
+
   ! We first set-up pointers for the x, y, z components in the position and forces
   xa => posa(1:NATOMS)
   ya => posa(NATOMS+1:2*NATOMS)
@@ -40,8 +42,8 @@ subroutine calcforce_gau(nat,typa,posa,boxl,forca,energy)
   faz => forca(2*NATOMS+1:3*NATOMS)
   
   ! Transform the coordinates system from box to angstroems 
+  
   do
-
      ! We first write to a file the format requested by Gaussian
      call system('python create_header.py')
      open(unit=FGAUSS,file=GAUSS,status='unknown',action='write', position = 'append', iostat=ierror)
@@ -63,7 +65,7 @@ subroutine calcforce_gau(nat,typa,posa,boxl,forca,energy)
 
      do 
         read(FGAUSS,"(A40)") line
-        ! Checks for IO errors or EOF marker
+   !      Checks for IO errors or EOF marker
         if (ierror .eq. end_of_file) then
            if (.not.success) then
               write(*,*) 'IO error in gaussian_force.f90'
@@ -108,6 +110,12 @@ subroutine calcforce_gau(nat,typa,posa,boxl,forca,energy)
 
   if(success) exit
   end do
+
+!debug
+
+write(*,*)
+write(*,*)
+write(*,*) "Running with gaussian force:"
 
   call center(forca,VECSIZE)
 end subroutine
