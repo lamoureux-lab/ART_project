@@ -1245,7 +1245,7 @@ END SUBROUTINE guess_direction
 SUBROUTINE align (each_read_min, current_min, align_well, each_read_dr, each_dr_transformed)
 
 
-        !! This program calculates a transformation matrix that minimizes the RMSD between two sets of coordinates.
+        !! This subroutine calculates a transformation matrix that minimizes the RMSD between two sets of coordinates.
         !The first step of this transformation involves a translation. This is simply done by re-centering the molecules so that their
         !centroids coincide with the origin of the coordinate system.
         !Next, a covariance matrix is calculated using the re-centered molecules.
@@ -1284,7 +1284,8 @@ SUBROUTINE align (each_read_min, current_min, align_well, each_read_dr, each_dr_
         real(kind=8) :: each_read_dr_transformed_nat4(natoms,4)
         real(kind=8) :: transformation_vec(4,4)
 
-        real(kind=8) :: sum_rmsd_before, rmsd_before, sum_rmsd_after, rmsd_after
+        real(kind=8) :: deviation_each_atom_before(natoms), deviation_each_atom_after(natoms)
+        real(kind=8) :: sum_deviations_before, rmsd_before, sum_deviations_after, rmsd_after
         real(kind=8) :: sum_read_x, sum_read_y, sum_read_z, cx_read, cy_read, cz_read
         real(kind=8) :: sum_current_x, sum_current_y, sum_current_z, cx_current, cy_current, cz_current
          
@@ -1302,20 +1303,25 @@ SUBROUTINE align (each_read_min, current_min, align_well, each_read_dr, each_dr_
         sum_read_y = 0.0
         sum_read_z = 0.0
         
-        
-        sum_rmsd_before = 0.0
-        sum_rmsd_after = 0.0
+        sum_deviations_before = 0.0
+        sum_deviations_after = 0.0
 
 
         do i=1,natoms
 
-                sum_rmsd_before = sum_rmsd_before + (each_read_min(i,1)-current_min(i,1))**2 + (each_read_min(i,2)-current_min(i,2))**2 + (each_read_min(i,3)-current_min(i,3))**2
-
-               
+                deviation_each_atom_before(i) = (each_read_min(i,1)-current_min(i,1))**2 + (each_read_min(i,2)-current_min(i,2))**2 + (each_read_min(i,3)-current_min(i,3))**2
+       
         enddo
 
-        
-        rmsd_before = sqrt(sum_rmsd_before/natoms) !Calculating RMSD before structural alignment
+        do i=1,natoms
+
+                sum_deviations_before = sum_deviations_before + (each_read_min(i,1)-current_min(i,1))**2 + (each_read_min(i,2)-current_min(i,2))**2 + (each_read_min(i,3)-current_min(i,3))**2
+       
+        enddo
+
+
+        rmsd_before = sqrt(sum_deviations_before/natoms) !Calculating RMSD before structural alignment
+
 
         write(*,*) "This is rmsd before alignment: ", rmsd_before
 
@@ -1420,30 +1426,36 @@ SUBROUTINE align (each_read_min, current_min, align_well, each_read_dr, each_dr_
 
         do i=1,natoms
 
-        sum_rmsd_after = sum_rmsd_after + (each_read_min_transformed(i,1)-current_min(i,1))**2 + (each_read_min_transformed(i,2)-current_min(i,2))**2 + (each_read_min_transformed(i,3)-current_min(i,3))**2 
+                deviation_each_atom_after=(each_read_min_transformed(i,1)-current_min(i,1))**2 + (each_read_min_transformed(i,2)-current_min(i,2))**2 + (each_read_min_transformed(i,3)-current_min(i,3))**2 
+        enddo
+        
+        do i=1,natoms
+
+                sum_deviations_after = sum_deviations_after + (each_read_min_transformed(i,1)-current_min(i,1))**2 + (each_read_min_transformed(i,2)-current_min(i,2))**2 + (each_read_min_transformed(i,3)-current_min(i,3))**2 
 
         enddo
 
-        rmsd_after = sqrt(sum_rmsd_after/natoms) !Calculating RMSD after structural alignment
+
+        rmsd_after = sqrt(sum_deviations_after/natoms) !Calculating RMSD after structural alignment
 
         write(*,*) "This is rmsd after alignment: ", rmsd_after
 
-        if (rmsd_after .LT. 0.1) then
+        do j = 1,natoms
 
-                align_well = .true.
+                if (rmsd_after .LT. 0.1 .and. deviation_each_atom_after(j) .LT. 0.1) then
 
-                each_read_dr_transformed_nat4 = transpose(matmul(transformation_vec,transpose(each_read_dr_nat4)))
+                        align_well = .true.
 
-                do i = 1,natoms
+                        each_read_dr_transformed_nat4 = transpose(matmul(transformation_vec,transpose(each_read_dr_nat4)))
 
-                        each_dr_transformed(i,1:3) = each_read_dr_transformed_nat4(i,1:3)
+                        do i = 1,natoms
 
-                enddo
+                                each_dr_transformed(i,1:3) = each_read_dr_transformed_nat4(i,1:3)
 
-        endif
+                        enddo
 
+                endif
 
-
-
+        enddo
         
 END SUBROUTINE align
