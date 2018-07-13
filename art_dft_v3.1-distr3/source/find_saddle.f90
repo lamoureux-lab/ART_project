@@ -91,7 +91,7 @@ subroutine find_saddle( success, saddle_energy )
 
   if ( ( .not. restart ) .and. new_event ) then 
 
-     evalf_number = 0                 ! Initialization of counter.
+     evalf_number = 0                 ! Initialization of line_counter.
 
      nat = 3 * NATOMS                         
 
@@ -151,15 +151,24 @@ subroutine global_move( )
   implicit none
 
   !Local variables
-  integer :: i
+  integer :: i, j, number_of_min, s, number_of_dr, k, line_counter, success_count, rand
   real(kind=8) :: dr2
   real(kind=8) :: cos_theta
   real(kind=8) :: ran3
   real(kind=8), dimension(:), pointer :: dx, dy, dz
   real(kind=8), dimension(:), pointer :: dx_tried, dy_tried, dz_tried
-  character(len=20) :: keyword
-  logical :: file_exists
-
+  real(kind=8) :: current_min(natoms,3)
+  real(kind=8), allocatable :: read_min(:,:,:)
+  real(kind=8) :: each_read_min(natoms,3)
+  real(kind=8), allocatable :: sad_list(:)
+  real(kind=8), allocatable :: dr_list(:)
+  real(kind=8), allocatable :: dr_transformed_list(:,:,:)
+  real(kind=8), allocatable :: read_dr(:,:,:)
+  real(kind=8) :: each_read_dr(natoms,3)
+  real(kind=8) :: each_dr_transformed(natoms,3)
+  real(kind=8) :: r
+  logical :: align_well
+  character(len=20) :: keyword 
 
   allocate(dr(3*natoms)) 
   allocate(dr_tried(3*natoms))
@@ -167,13 +176,12 @@ subroutine global_move( )
   allocate(norm_dr_tried(3*natoms))
   allocate(atom_displaced(natoms))
                                       ! We assign a few pointers. 
-
+  
 
   dx => dr(1:NATOMS)
   dy => dr(NATOMS+1:2*NATOMS)
   dz => dr(2*NATOMS+1:3*NATOMS)
-
-   
+  
   dx_tried => dr_tried(1:NATOMS)
   dy_tried => dr_tried(NATOMS+1:2*NATOMS)
   dz_tried => dr_tried(2*NATOMS+1:3*NATOMS)
@@ -187,13 +195,8 @@ subroutine global_move( )
 selectcase ( search_strategy )
 
    case ('0')
-        inquire(file = VECLOG, exist = file_exists)
-        if(file_exists) then
-                open(VLOG,file=VECLOG, action='write', position = 'append', status = 'unknown')
-        else
-                open(VLOG,file=VECLOG, action='write', status = 'unknown')
-        endif
-        write(VLOG,*) "Displacement vector" 
+        open(VLOG, file=VECLOG, action = 'write', position = 'append')
+        write(VLOG,*) "Displacement vector"
         do i = 1, natoms, 1
         ! if ( constr(i) == 0 ) then
             do
@@ -204,47 +207,192 @@ selectcase ( search_strategy )
                dr2 = dx(i)**2 + dy(i)**2 + dz(i)**2
                if ( dr2 < 0.25d0 ) exit 
             end do
+            write(VLOG,'((1X,a),3(2x,f16.8))') typat(i), dx(i), dy(i), dz(i)
             natom_displaced = natom_displaced + 1
             atom_displaced(i) = 1
         ! end if
-            write(VLOG,'(1x,a,3(2x,f16.8))') typat(i), dx(i), dy(i), dz(i) 
         end do
         close(VLOG)
 
    case ('1') ! "follow" strategy
-      open(VREAD, file=VECREAD, action='read', status = 'old')
 
-      do
-        read(VLOG,*) keyword
-        if (keyword .eq. 'Displacement') then
-                do i = 1, NATOMS
-                read(VLOG,*) typat(i), dx(i), dy(i), dz(i)
+
+      open(VREAD, file = VECREAD, status = 'old', action = 'read')
+
+        number_of_min =0
+        s = 0
+
+        do 
+                read(VREAD,*,end=50) keyword
+ 
+
+                if (keyword .eq. 'min') then
+
+                        number_of_min = number_of_min + 1
+
+                endif
+
+                if (keyword .eq. 'sad') then
+
+                        s = s + 1
+
+                endif
+
+        enddo
+
+
+        50 rewind(VREAD)
+
+
+        allocate(read_dr(s,natoms,3))
+        allocate(read_min(number_of_min,natoms,3))
+        allocate(sad_list(s))
+        allocate(dr_list(s))
+        
+
+        number_of_min = 0
+        line_counter = 0
+        s= 0
+
+        do
+                read(VREAD,*,end=100) keyword
+
+                line_counter = line_counter + 1
+
+                if (keyword .eq. 'min') then
+
+                        number_of_min = number_of_min + 1
+
+                        do i = 1,natoms
+
+                                read(VREAD,*) typat(i), read_min(number_of_min,i,1), read_min(number_of_min,i,2), read_min(number_of_min,i,3)
+                                line_counter = line_counter + 1
+
+                        enddo
+
+                endif
+
+
+                if (keyword .eq. 'sad') then
+
+                        s = s + 1
+
+                        sad_list(s) = line_counter
+
+                endif
+
+
+        enddo
+
+        100 rewind(VREAD)
+
+
+        do i=1,s
+        dr_list(i) = sad_list(i)-(natoms+1)
+        enddo
+        
+        number_of_dr = 0
+        line_counter = 0
+        do
+
+                read(VREAD,*,end=200)
+
+                line_counter = line_counter + 1
+
+                do k =1,s
+                        if (line_counter .eq. dr_list(k)) then
+
+                        number_of_dr = number_of_dr + 1
+
+                        do i = 1,natoms
+
+                                read(VREAD,*) typat(i), read_dr(number_of_dr,i,1), read_dr(number_of_dr,i,2), read_dr(number_of_dr,i,3)
+                                line_counter = line_counter + 1
+
+                        enddo
+                
+                        endif
+
+               enddo
+
+
+        enddo
+
+        200 rewind(VREAD)
+
+        allocate(dr_transformed_list(number_of_dr,natoms,3))
+
+        do i = 1,natoms
+
+                current_min(i,1) = x(i)
+                current_min(i,2) = y(i)
+                current_min(i,3) = z(i)
+
+        enddo
+        
+
+        success_count = 0
+
+        align_well = .false.
+
+
+        do j =1,number_of_dr
+
+                do i = 1,natoms
+
+                        each_read_min(i,1:3) = read_min(j,i,1:3)
+
+                        each_read_dr(i,1:3) = read_dr(j,i,1:3)
+
                 enddo
-        endif
-        if (keyword .eq. "SADDLE=") exit
-      enddo 
 
-      close(VLOG)
+                call align(each_read_min, current_min, align_well, each_read_dr, each_dr_transformed)
 
-      inquire(file = VECLOG, exist = file_exists)
-      if(file_exists) then
-                open(VLOG,file=VECLOG, action='write', position = 'append', status = 'unknown')
-      else
-                open(VLOG,file=VECLOG, action='write', status = 'unknown')
-      endif
-      write(VLOG,*)"Displacement vector"
+                if(align_well) then
+                        
+                        success_count = success_count + 1
 
-      do i=1,NATOMS
-      write(VLOG,'(1X,a,3(2x,f16.8))') typat(i), dx(i), dy(i), dz(i)
-      enddo
+                        do i =1,natoms
 
-      close(VLOG)
+                                dr_transformed_list(j,i,1:3) = each_dr_transformed(i,1:3)
+
+                        enddo
+
+                endif
+
+        enddo
+
+
+        call random_seed()
+        call random_number(r)
+        
+        rand = ceiling(success_count*r) 
+
+        do i = 1,natoms
+
+                dx(i) =  dr_transformed_list(rand,i,1)
+                dy(i) =  dr_transformed_list(rand,i,2)
+                dz(i) =  dr_transformed_list(rand,i,3)
+
+        enddo
+
+        open(VLOG, file = VECLOG, status = 'unknown', action = 'write', position = 'append')
+                
+                write(VLOG,*) "Displacement vector"
+
+                do i =1,NATOMS
+
+                        write(VLOG,'(1X,a,3(2x,f16.8))') typat(i), dx(i), dy(i), dz(i)
+        
+                enddo
+
+        close(VLOG)
+
+        
 
    case ('2') ! "avoid" strategy
 
-
-        open(VREAD, file=VECREAD, action='read', status = 'old') 
-
+        open(VREAD, file=VECREAD, action='read', status = 'old')
         do
            do i = 1, natoms, 1
             do
@@ -259,12 +407,12 @@ selectcase ( search_strategy )
            
            end do
          
-           read(VLOG,*) keyword
+           read(VREAD,*) keyword
 
            if (keyword .eq. 'Displacement') then
 
            do i = 1, NATOMS
-           read(VLOG,*) typat(i), dx_tried(i), dy_tried(i), dz_tried(i)
+           read(VREAD,*) typat(i), dx_tried(i), dy_tried(i), dz_tried(i)
            enddo
 
            norm_dr = dr/sqrt(dot_product(dr,dr))
@@ -284,12 +432,8 @@ selectcase ( search_strategy )
         close(VLOG)
 
        
-        inquire(file = VECLOG, exist = file_exists)
-        if(file_exists) then
-                open(VLOG,file=VECLOG, action='write', position = 'append', status = 'unknown')
-        else
-                open(VLOG,file=VECLOG, action='write', status = 'unknown')
-        endif
+        open(VLOG,file=VECLOG, action='write', position = 'append', status = 'unknown')
+        
         write(VLOG,*) "Displacement vector"
 
         do i =1,NATOMS
@@ -1097,3 +1241,209 @@ subroutine guess_direction ( )
   write(*,*) 'BART: Number of displaced atoms initially: ', natoms 
 
 END SUBROUTINE guess_direction 
+
+SUBROUTINE align (each_read_min, current_min, align_well, each_read_dr, each_dr_transformed)
+
+
+        !! This program calculates a transformation matrix that minimizes the RMSD between two sets of coordinates.
+        !The first step of this transformation involves a translation. This is simply done by re-centering the molecules so that their
+        !centroids coincide with the origin of the coordinate system.
+        !Next, a covariance matrix is calculated using the re-centered molecules.
+        !Then, the singular value decomposition (SVD) of this covariance matrix is calculated, which yields the factors of this
+        !covariance, viz U, S and V (Here U and V are the left- and right- singular vectors of the covariance matrix.)
+        ! According to the Kabsch algorithm, the product of V and U(transpose) is the optimal rotation matrix that minimizes the RMSD between
+        ! the two sets of vectors.
+        ! Here cov is the covariance matrix, U and VT are the left- and
+        !right- singular vectors of the cov, (VT is actually the transpose of V),
+        !S is one of the factors of the cov. R (V*U_transpose) is the rotation matrix
+        ! Work is one of the arguments required by the LAPACK library subroutine that calculates the SVD
+        !Documentation at: 
+        !http://www.netlib.org/lapack/explore-html/d1/d7e/group__double_g_esing_ga84fdf22a62b12ff364621e4713ce02f2.html#ga84fdf22a62b12ff364621e4713ce02f2
+
+        use defs
+
+        implicit none
+        
+        real(kind=8), intent(in) :: each_read_min(natoms,3)
+        real(kind=8), intent(in) :: current_min(natoms,3)
+        real(kind=8), intent(in) :: each_read_dr(natoms,3)
+
+        logical, intent(inout) :: align_well
+
+        real(kind=8), intent(out) :: each_dr_transformed(natoms,3)
+
+        real(kind=8) :: each_read_min_transformed(natoms,3)
+
+        real(kind=8) :: each_read_min_moved(natoms,3)
+        real(kind=8) :: current_min_moved(natoms,3)
+
+        real(kind=8) :: each_read_min_nat4(natoms,4)
+        real(kind=8) :: each_read_dr_nat4(natoms,4)
+
+        real(kind=8) :: each_read_min_transformed_nat4(natoms,4)
+        real(kind=8) :: each_read_dr_transformed_nat4(natoms,4)
+        real(kind=8) :: transformation_vec(4,4)
+
+        real(kind=8) :: sum_rmsd_before, rmsd_before, sum_rmsd_after, rmsd_after
+        real(kind=8) :: sum_read_x, sum_read_y, sum_read_z, cx_read, cy_read, cz_read
+        real(kind=8) :: sum_current_x, sum_current_y, sum_current_z, cx_current, cy_current, cz_current
+         
+        real(kind=8) :: cov(3,3), U(3,3), S(3), VT(3,3), R(3,3), work(20)
+        real(kind=8) :: U_transpose(3,3), V(3,3), det_U_transpose, det_V
+       
+        integer :: i, j, info
+        
+
+        sum_current_x = 0.0
+        sum_current_y = 0.0
+        sum_current_z = 0.0
+
+        sum_read_x = 0.0
+        sum_read_y = 0.0
+        sum_read_z = 0.0
+        
+        
+        sum_rmsd_before = 0.0
+        sum_rmsd_after = 0.0
+
+
+        do i=1,natoms
+
+                sum_rmsd_before = sum_rmsd_before + (each_read_min(i,1)-current_min(i,1))**2 + (each_read_min(i,2)-current_min(i,2))**2 + (each_read_min(i,3)-current_min(i,3))**2
+
+               
+        enddo
+
+        
+        rmsd_before = sqrt(sum_rmsd_before/natoms) !Calculating RMSD before structural alignment
+
+        write(*,*) "This is rmsd before alignment: ", rmsd_before
+
+
+        do i=1,natoms
+
+                sum_read_x = sum_read_x + each_read_min(i,1)
+                sum_read_y = sum_read_y + each_read_min(i,2)
+                sum_read_z = sum_read_z + each_read_min(i,3)
+
+                sum_current_x = sum_current_x + current_min(i,1)
+                sum_current_y = sum_current_y + current_min(i,2)
+                sum_current_z = sum_current_z + current_min(i,3)
+
+        enddo
+
+       
+        !Calculating the centroids for all the points
+
+
+        cx_read = sum_read_x/natoms
+        cy_read = sum_read_y/natoms
+        cz_read = sum_read_z/natoms
+
+
+        cx_current = sum_current_x/natoms
+        cy_current = sum_current_y/natoms
+        cz_current = sum_current_z/natoms
+
+
+        !Recentering the structures so that their centroids coincide with the origin of the coordinate system.
+
+
+        do i = 1,natoms
+
+                each_read_min_moved(i,1) = each_read_min(i,1) - cx_read
+                each_read_min_moved(i,2) = each_read_min(i,2) - cy_read
+                each_read_min_moved(i,3) = each_read_min(i,3) - cz_read 
+
+                current_min_moved(i,1) = current_min(i,1) - cx_current
+                current_min_moved(i,2) = current_min(i,2) - cy_current
+                current_min_moved(i,3) = current_min(i,3) - cz_current
+
+        enddo
+       
+        
+        !Calculating the covariance matrix         
+
+
+        cov = matmul(transpose(each_read_min_moved),current_min_moved)
+
+        !Invoking the LAPACK library subroutine "dgesvd" that calculates the SVD of the covariance matrix
+
+        call dgesvd('S','S',3,3,cov,3,S,U,3,VT,3,work,20,info)
+
+        U_transpose = transpose(U)
+
+        V = transpose(VT)
+
+        det_U_transpose = U_transpose(1,1)*(U_transpose(2,2)*U_transpose(3,3) - U_transpose(2,3)*U_transpose(3,2)) - U_transpose(1,2)*(U_transpose(2,1)*U_transpose(3,3) - U_transpose(2,3)*U_transpose(3,1)) + U_transpose(3,1)*(U_transpose(2,1)*U_transpose(3,2) - U_transpose(2,2)*U_transpose(3,1))
+
+        det_V = V(1,1)*(V(2,2)*V(3,3) - V(2,3)*V(3,2)) - V(1,2)*(V(2,1)*V(3,3) - V(2,3)*V(3,1)) + V(3,1)*(V(2,1)*V(3,2) - V(2,2)*V(3,1))
+        
+        if(det_V * det_U_transpose .LT. 0) then       ! A small correction to ensure a right-handed coordinate system
+
+                V(:,3) = -V(:,3)              
+
+        endif
+
+        R = matmul(V,U_transpose)  !This is the optimal rotation matrix 
+
+        do i =1,3
+
+                transformation_vec(i,1:3) = R(i,1:3)
+
+        enddo
+
+        transformation_vec(4,1:4) = 0.0d0
+
+        transformation_vec(1,4) = cx_read
+        transformation_vec(2,4) = cy_read
+        transformation_vec(3,4) = cz_read
+
+
+        do i =1,natoms
+
+                each_read_min_nat4(i,1:3) = each_read_min(i,1:3)
+                each_read_min_nat4(i,4) = 0.0d0
+
+                each_read_dr_nat4(i,1:3) = each_read_dr(i,1:3)
+                each_read_dr_nat4(i,4) = 0.0d0
+
+        enddo
+
+        each_read_min_transformed_nat4 = transpose(matmul(transformation_vec,transpose(each_read_min_nat4)))
+
+        do i = 1,natoms
+
+                each_read_min_transformed(i,1:3) = each_read_min_transformed_nat4(i,1:3)
+
+        enddo
+
+        do i=1,natoms
+
+        sum_rmsd_after = sum_rmsd_after + (each_read_min_transformed(i,1)-current_min(i,1))**2 + (each_read_min_transformed(i,2)-current_min(i,2))**2 + (each_read_min_transformed(i,3)-current_min(i,3))**2 
+
+        enddo
+
+        rmsd_after = sqrt(sum_rmsd_after/natoms) !Calculating RMSD after structural alignment
+
+        write(*,*) "This is rmsd after alignment: ", rmsd_after
+
+        if (rmsd_after .LT. 0.1) then
+
+                align_well = .true.
+
+                each_read_dr_transformed_nat4 = transpose(matmul(transformation_vec,transpose(each_read_dr_nat4)))
+
+                do i = 1,natoms
+
+                        each_dr_transformed(i,1:3) = each_read_dr_transformed_nat4(i,1:3)
+
+                enddo
+
+        endif
+
+
+
+
+        
+END SUBROUTINE align
