@@ -91,7 +91,7 @@ subroutine find_saddle( success, saddle_energy )
 
   if ( ( .not. restart ) .and. new_event ) then 
 
-     evalf_number = 0                 ! Initialization of line_counter.
+     evalf_number = 0                 ! Initialization of counter.
 
      nat = 3 * NATOMS                         
 
@@ -151,7 +151,7 @@ subroutine global_move( )
   implicit none
 
   !Local variables
-  integer :: i, j, number_of_min, s, number_of_dr, k, line_counter, success_count, rand
+  integer :: i, j, number_of_min, number_of_sad, success_count, rand
   real(kind=8) :: dr2
   real(kind=8) :: cos_theta
   real(kind=8) :: ran3
@@ -159,11 +159,10 @@ subroutine global_move( )
   real(kind=8), dimension(:), pointer :: dx_tried, dy_tried, dz_tried
   real(kind=8) :: current_min(natoms,3)
   real(kind=8), allocatable :: read_min(:,:,:)
-  real(kind=8) :: each_read_min(natoms,3)
-  real(kind=8), allocatable :: sad_list(:)
-  real(kind=8), allocatable :: dr_list(:)
-  real(kind=8), allocatable :: dr_transformed_list(:,:,:)
+  real(kind=8), allocatable :: read_sad(:,:,:)
   real(kind=8), allocatable :: read_dr(:,:,:)
+  real(kind=8), allocatable :: dr_transformed_list(:,:,:)
+  real(kind=8) :: each_read_min(natoms,3)
   real(kind=8) :: each_read_dr(natoms,3)
   real(kind=8) :: each_dr_transformed(natoms,3)
   real(kind=8) :: r
@@ -220,7 +219,7 @@ selectcase ( search_strategy )
       open(VREAD, file = VECREAD, status = 'old', action = 'read')
 
         number_of_min =0
-        s = 0
+        number_of_sad = 0
 
         do 
                 read(VREAD,*,end=50) keyword
@@ -234,7 +233,7 @@ selectcase ( search_strategy )
 
                 if (keyword .eq. 'sad') then
 
-                        s = s + 1
+                        number_of_sad = number_of_sad + 1
 
                 endif
 
@@ -244,20 +243,17 @@ selectcase ( search_strategy )
         50 rewind(VREAD)
 
 
-        allocate(read_dr(s,natoms,3))
         allocate(read_min(number_of_min,natoms,3))
-        allocate(sad_list(s))
-        allocate(dr_list(s))
+        allocate(read_sad(number_of_sad,natoms,3))
+        allocate(read_dr(number_of_sad,natoms,3))
+        allocate(dr_transformed_list(number_of_sad,natoms,3))
         
 
         number_of_min = 0
-        line_counter = 0
-        s= 0
+        number_of_sad = 0
 
         do
                 read(VREAD,*,end=100) keyword
-
-                line_counter = line_counter + 1
 
                 if (keyword .eq. 'min') then
 
@@ -266,7 +262,6 @@ selectcase ( search_strategy )
                         do i = 1,natoms
 
                                 read(VREAD,*) typat(i), read_min(number_of_min,i,1), read_min(number_of_min,i,2), read_min(number_of_min,i,3)
-                                line_counter = line_counter + 1
 
                         enddo
 
@@ -275,9 +270,13 @@ selectcase ( search_strategy )
 
                 if (keyword .eq. 'sad') then
 
-                        s = s + 1
+                        number_of_sad = number_of_sad + 1
 
-                        sad_list(s) = line_counter
+                        do i = 1,natoms
+
+                                read(VREAD,*) typat(i), read_sad(number_of_sad,i,1), read_sad(number_of_sad,i,2), read_sad(number_of_sad,i,3)
+
+                        enddo
 
                 endif
 
@@ -287,40 +286,15 @@ selectcase ( search_strategy )
         100 rewind(VREAD)
 
 
-        do i=1,s
-        dr_list(i) = sad_list(i)-(natoms+1)
-        enddo
-        
-        number_of_dr = 0
-        line_counter = 0
-        do
+        do j = 1, number_of_sad
 
-                read(VREAD,*,end=200)
+                do i = 1,natoms
 
-                line_counter = line_counter + 1
+                        read_dr(j,i,1:3) = read_sad(j,i,1:3) - read_min(j,i,1:3)
 
-                do k =1,s
-                        if (line_counter .eq. dr_list(k)) then
-
-                        number_of_dr = number_of_dr + 1
-
-                        do i = 1,natoms
-
-                                read(VREAD,*) typat(i), read_dr(number_of_dr,i,1), read_dr(number_of_dr,i,2), read_dr(number_of_dr,i,3)
-                                line_counter = line_counter + 1
-
-                        enddo
-                
-                        endif
-
-               enddo
-
+                enddo
 
         enddo
-
-        200 rewind(VREAD)
-
-        allocate(dr_transformed_list(number_of_dr,natoms,3))
 
         do i = 1,natoms
 
@@ -336,7 +310,7 @@ selectcase ( search_strategy )
         align_well = .false.
 
 
-        do j =1,number_of_dr
+        do j =1,number_of_sad
 
                 do i = 1,natoms
 
@@ -368,13 +342,17 @@ selectcase ( search_strategy )
         
         rand = ceiling(success_count*r) 
 
-        do i = 1,natoms
+        do i = 1,natoms,1
 
                 dx(i) =  dr_transformed_list(rand,i,1)
                 dy(i) =  dr_transformed_list(rand,i,2)
                 dz(i) =  dr_transformed_list(rand,i,3)
+                natom_displaced = natom_displaced + 1
+                atom_displaced(i) = 1
 
         enddo
+
+        close(VREAD)
 
         open(VLOG, file = VECLOG, status = 'unknown', action = 'write', position = 'append')
                 
@@ -389,6 +367,10 @@ selectcase ( search_strategy )
         close(VLOG)
 
         
+        deallocate(read_min)
+        deallocate(read_sad)
+        deallocate(read_dr)
+        deallocate(dr_transformed_list)
 
    case ('2') ! "avoid" strategy
 
@@ -1309,7 +1291,8 @@ SUBROUTINE align (each_read_min, current_min, align_well, each_read_dr, each_dr_
 
         do i=1,natoms
 
-                deviation_each_atom_before(i) = (each_read_min(i,1)-current_min(i,1))**2 + (each_read_min(i,2)-current_min(i,2))**2 + (each_read_min(i,3)-current_min(i,3))**2
+                deviation_each_atom_before(i) = sqrt((each_read_min(i,1)-current_min(i,1))**2 +&
+                (each_read_min(i,2)-current_min(i,2))**2 + (each_read_min(i,3)-current_min(i,3))**2)
        
         enddo
 
@@ -1426,7 +1409,8 @@ SUBROUTINE align (each_read_min, current_min, align_well, each_read_dr, each_dr_
 
         do i=1,natoms
 
-                deviation_each_atom_after=(each_read_min_transformed(i,1)-current_min(i,1))**2 + (each_read_min_transformed(i,2)-current_min(i,2))**2 + (each_read_min_transformed(i,3)-current_min(i,3))**2 
+                deviation_each_atom_after=sqrt((each_read_min_transformed(i,1)-current_min(i,1))**2 +&
+                (each_read_min_transformed(i,2)-current_min(i,2))**2 + (each_read_min_transformed(i,3)-current_min(i,3))**2) 
         enddo
         
         do i=1,natoms
