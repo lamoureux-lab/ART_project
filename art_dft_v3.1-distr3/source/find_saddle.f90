@@ -214,10 +214,8 @@ selectcase ( search_strategy )
    case ('1') ! "follow" strategy
 
       open(VREAD, file = VECREAD, status = 'old', action = 'read')
-
         number_of_min =0
         number_of_sad = 0
-
         do 
                 read(VREAD,*,end=50) keyword
                 if (keyword .eq. 'min') then
@@ -236,7 +234,6 @@ selectcase ( search_strategy )
         
         number_of_min = 0
         number_of_sad = 0
-
         do
                 read(VREAD,*,end=100) keyword
                 if (keyword .eq. 'min') then
@@ -267,7 +264,6 @@ selectcase ( search_strategy )
         
         success_count = 0
         align_well = .false.
-
         do j =1,number_of_sad
                 do i = 1,natoms
                         each_read_min(i,1:3) = read_min(j,i,1:3)
@@ -309,11 +305,10 @@ selectcase ( search_strategy )
         deallocate(dr_transformed_list)
 
    case ('2') ! "avoid" strategy
-      open(VREAD, file = VECREAD, status = 'old', action = 'read')
 
+      open(VREAD, file = VECREAD, status = 'old', action = 'read')
         number_of_min =0
         number_of_sad = 0
-
         do 
                 read(VREAD,*,end=250) keyword
                 if (keyword .eq. 'min') then
@@ -332,7 +327,6 @@ selectcase ( search_strategy )
         
         number_of_min = 0
         number_of_sad = 0
-
         do
                 read(VREAD,*,end=300) keyword
                 if (keyword .eq. 'min') then
@@ -364,7 +358,6 @@ selectcase ( search_strategy )
         
         success_count = 0
         align_well = .false.
-
         do j =1,number_of_sad
                 do i = 1,natoms
                         each_read_min(i,1:3) = read_min(j,i,1:3)
@@ -397,7 +390,6 @@ selectcase ( search_strategy )
 
         norm_dr = dr/sqrt(dot_product(dr,dr))
         similar = 0
-
         do j = 1,success_count
                 cos_theta(j) = dot_product(norm_dr,normalized_dr_transformed_list(j,1:natoms*3))
                 if (cos_theta(j) .GT. 0.8) then
