@@ -18,8 +18,6 @@ module saddles
   integer :: MAXIPERP, MAXKPERP
   integer, dimension(:), allocatable  :: atom_displaced  ! Id of local atoms displaced
   real(kind=8), dimension(:), allocatable, target :: dr
-  real(kind=8), dimension(:), allocatable, target :: dr_tried
-  real(kind=8), dimension(:), allocatable :: norm_dr, norm_dr_tried
 
   real(kind=8) :: INITSTEPSIZE 
   real(kind=8) :: LOCAL_CUTOFF
@@ -151,28 +149,27 @@ subroutine global_move( )
   implicit none
 
   !Local variables
-  integer :: i, j, number_of_min, number_of_sad, success_count, rand
+  integer :: i, j, number_of_min, number_of_sad, success_count, rand, similar
   real(kind=8) :: dr2
-  real(kind=8) :: cos_theta
   real(kind=8) :: ran3
   real(kind=8), dimension(:), pointer :: dx, dy, dz
-  real(kind=8), dimension(:), pointer :: dx_tried, dy_tried, dz_tried
   real(kind=8) :: current_min(natoms,3)
   real(kind=8), allocatable :: read_min(:,:,:)
   real(kind=8), allocatable :: read_sad(:,:,:)
   real(kind=8), allocatable :: read_dr(:,:,:)
   real(kind=8), allocatable :: dr_transformed_list(:,:,:)
+  real(kind=8), allocatable :: normalized_dr_transformed_list(:,:)
+  real(kind=8), allocatable :: cos_theta(:)
   real(kind=8) :: each_read_min(natoms,3)
   real(kind=8) :: each_read_dr(natoms,3)
   real(kind=8) :: each_dr_transformed(natoms,3)
+  real(kind=8) :: norm_dr(natoms*3)
+  real(kind=8) :: norm_each_dr_transformed(natoms*3)
   real(kind=8) :: r
   logical :: align_well
   character(len=20) :: keyword 
 
   allocate(dr(3*natoms)) 
-  allocate(dr_tried(3*natoms))
-  allocate(norm_dr(3*natoms)) 
-  allocate(norm_dr_tried(3*natoms))
   allocate(atom_displaced(natoms))
                                       ! We assign a few pointers. 
   
@@ -181,10 +178,6 @@ subroutine global_move( )
   dy => dr(NATOMS+1:2*NATOMS)
   dz => dr(2*NATOMS+1:3*NATOMS)
   
-  dx_tried => dr_tried(1:NATOMS)
-  dy_tried => dr_tried(NATOMS+1:2*NATOMS)
-  dz_tried => dr_tried(2*NATOMS+1:3*NATOMS)
-
   atom_displaced = 0 
   natom_displaced = 0 
   dr = 0.0d0
@@ -194,8 +187,11 @@ subroutine global_move( )
 selectcase ( search_strategy )
 
    case ('0')
+
         open(VLOG, file=VECLOG, action = 'write', position = 'append')
+
         write(VLOG,*) "Displacement vector"
+
         do i = 1, natoms, 1
         ! if ( constr(i) == 0 ) then
             do
@@ -206,7 +202,9 @@ selectcase ( search_strategy )
                dr2 = dx(i)**2 + dy(i)**2 + dz(i)**2
                if ( dr2 < 0.25d0 ) exit 
             end do
+
             write(VLOG,'((1X,a),3(2x,f16.8))') typat(i), dx(i), dy(i), dz(i)
+
             natom_displaced = natom_displaced + 1
             atom_displaced(i) = 1
         ! end if
@@ -215,7 +213,6 @@ selectcase ( search_strategy )
 
    case ('1') ! "follow" strategy
 
-
       open(VREAD, file = VECREAD, status = 'old', action = 'read')
 
         number_of_min =0
@@ -223,149 +220,88 @@ selectcase ( search_strategy )
 
         do 
                 read(VREAD,*,end=50) keyword
- 
-
                 if (keyword .eq. 'min') then
-
                         number_of_min = number_of_min + 1
-
                 endif
-
                 if (keyword .eq. 'sad') then
-
                         number_of_sad = number_of_sad + 1
-
                 endif
-
         enddo
-
-
         50 rewind(VREAD)
-
 
         allocate(read_min(number_of_min,natoms,3))
         allocate(read_sad(number_of_sad,natoms,3))
         allocate(read_dr(number_of_sad,natoms,3))
         allocate(dr_transformed_list(number_of_sad,natoms,3))
         
-
         number_of_min = 0
         number_of_sad = 0
 
         do
                 read(VREAD,*,end=100) keyword
-
                 if (keyword .eq. 'min') then
-
                         number_of_min = number_of_min + 1
-
                         do i = 1,natoms
-
                                 read(VREAD,*) typat(i), read_min(number_of_min,i,1), read_min(number_of_min,i,2), read_min(number_of_min,i,3)
-
                         enddo
-
                 endif
-
-
                 if (keyword .eq. 'sad') then
-
                         number_of_sad = number_of_sad + 1
-
                         do i = 1,natoms
-
                                 read(VREAD,*) typat(i), read_sad(number_of_sad,i,1), read_sad(number_of_sad,i,2), read_sad(number_of_sad,i,3)
-
                         enddo
-
                 endif
-
-
         enddo
-
         100 rewind(VREAD)
 
-
         do j = 1, number_of_sad
-
                 do i = 1,natoms
-
                         read_dr(j,i,1:3) = read_sad(j,i,1:3) - read_min(j,i,1:3)
-
                 enddo
-
         enddo
-
         do i = 1,natoms
-
                 current_min(i,1) = x(i)
                 current_min(i,2) = y(i)
                 current_min(i,3) = z(i)
-
         enddo
         
-
         success_count = 0
-
         align_well = .false.
 
-
         do j =1,number_of_sad
-
                 do i = 1,natoms
-
                         each_read_min(i,1:3) = read_min(j,i,1:3)
-
                         each_read_dr(i,1:3) = read_dr(j,i,1:3)
 
                 enddo
-
                 call align(each_read_min, current_min, align_well, each_read_dr, each_dr_transformed)
-
-                if(align_well) then
-                        
+                if(align_well) then                        
                         success_count = success_count + 1
-
                         do i =1,natoms
-
                                 dr_transformed_list(j,i,1:3) = each_dr_transformed(i,1:3)
-
                         enddo
-
                 endif
-
         enddo
 
-
         call random_seed()
-        call random_number(r)
-        
+        call random_number(r)        
         rand = ceiling(success_count*r) 
 
         do i = 1,natoms,1
-
                 dx(i) =  dr_transformed_list(rand,i,1)
                 dy(i) =  dr_transformed_list(rand,i,2)
                 dz(i) =  dr_transformed_list(rand,i,3)
                 natom_displaced = natom_displaced + 1
                 atom_displaced(i) = 1
-
         enddo
-
         close(VREAD)
 
-        open(VLOG, file = VECLOG, status = 'unknown', action = 'write', position = 'append')
-                
+        open(VLOG, file = VECLOG, status = 'unknown', action = 'write', position = 'append')                
                 write(VLOG,*) "Displacement vector"
-
                 do i =1,NATOMS
-
-                        write(VLOG,'(1X,a,3(2x,f16.8))') typat(i), dx(i), dy(i), dz(i)
-        
+                        write(VLOG,'(1X,a,3(2x,f16.8))') typat(i), dx(i), dy(i), dz(i)        
                 enddo
-
         close(VLOG)
-
         
         deallocate(read_min)
         deallocate(read_sad)
@@ -373,63 +309,112 @@ selectcase ( search_strategy )
         deallocate(dr_transformed_list)
 
    case ('2') ! "avoid" strategy
+      open(VREAD, file = VECREAD, status = 'old', action = 'read')
 
-        open(VREAD, file=VECREAD, action='read', status = 'old')
+        number_of_min =0
+        number_of_sad = 0
+
+        do 
+                read(VREAD,*,end=250) keyword
+                if (keyword .eq. 'min') then
+                        number_of_min = number_of_min + 1
+                endif
+                if (keyword .eq. 'sad') then
+                        number_of_sad = number_of_sad + 1
+                endif
+        enddo
+        250 rewind(VREAD)
+
+        allocate(read_min(number_of_min,natoms,3))
+        allocate(read_sad(number_of_sad,natoms,3))
+        allocate(read_dr(number_of_sad,natoms,3))
+        allocate(normalized_dr_transformed_list(number_of_sad,natoms*3))
+        
+        number_of_min = 0
+        number_of_sad = 0
+
         do
-           do i = 1, natoms, 1
+                read(VREAD,*,end=300) keyword
+                if (keyword .eq. 'min') then
+                        number_of_min = number_of_min + 1
+                        do i = 1,natoms
+                                read(VREAD,*) typat(i), read_min(number_of_min,i,1), read_min(number_of_min,i,2), read_min(number_of_min,i,3)
+                        enddo
+                endif
+                if (keyword .eq. 'sad') then
+                        number_of_sad = number_of_sad + 1
+                        do i = 1,natoms
+                                read(VREAD,*) typat(i), read_sad(number_of_sad,i,1), read_sad(number_of_sad,i,2), read_sad(number_of_sad,i,3)
+                        enddo
+                endif
+        enddo
+        300 rewind(VREAD)
+
+        do j = 1, number_of_sad
+                do i = 1,natoms
+                        read_dr(j,i,1:3) = read_sad(j,i,1:3) - read_min(j,i,1:3)
+                enddo
+        enddo
+
+        do i = 1,natoms
+                current_min(i,1) = x(i)
+                current_min(i,2) = y(i)
+                current_min(i,3) = z(i)
+        enddo
+        
+        success_count = 0
+        align_well = .false.
+
+        do j =1,number_of_sad
+                do i = 1,natoms
+                        each_read_min(i,1:3) = read_min(j,i,1:3)
+                        each_read_dr(i,1:3) = read_dr(j,i,1:3)
+                enddo
+
+                call align(each_read_min, current_min, align_well, each_read_dr, each_dr_transformed)
+                if(align_well) then                       
+                        success_count = success_count + 1
+                        norm_each_dr_transformed = reshape((each_dr_transformed),(/natoms*3/))/sqrt(dot_product(reshape((each_dr_transformed),(/natoms*3/)), reshape((each_dr_transformed),(/natoms*3/))))
+                        normalized_dr_transformed_list(j,1:natoms*3) = norm_each_dr_transformed(natoms*3)
+                endif
+        enddo
+        allocate(cos_theta(success_count))
+    do 
+        do i = 1, natoms, 1
+        ! if ( constr(i) == 0 ) then
             do
                dx(i) = 0.5d0 - ran3()
                dy(i) = 0.5d0 - ran3()
                dz(i) = 0.5d0 - ran3()                             
+               ! Ensures that the random displacement is isotropic
                dr2 = dx(i)**2 + dy(i)**2 + dz(i)**2
                if ( dr2 < 0.25d0 ) exit 
             end do
             natom_displaced = natom_displaced + 1
             atom_displaced(i) = 1
-           
-           end do
-         
-           read(VREAD,*) keyword
+        ! end if
+        end do
 
-           if (keyword .eq. 'Displacement') then
+        norm_dr = dr/sqrt(dot_product(dr,dr))
+        similar = 0
 
-           do i = 1, NATOMS
-           read(VREAD,*) typat(i), dx_tried(i), dy_tried(i), dz_tried(i)
-           enddo
-
-           norm_dr = dr/sqrt(dot_product(dr,dr))
-           norm_dr_tried = dr_tried/sqrt(dot_product(dr_tried, dr_tried))
-           cos_theta = dot_product(norm_dr, norm_dr_tried)
-
-           if (cos_theta .gt. 0.8) continue 
-
-           write(*,*) "This is the angle between the two vectors", cos_theta
-
-           endif
-           
-           if (keyword .eq. "SADDLE=") exit
-
-           enddo
-        
-        close(VLOG)
-
-       
-        open(VLOG,file=VECLOG, action='write', position = 'append', status = 'unknown')
-        
-        write(VLOG,*) "Displacement vector"
-
-        do i =1,NATOMS
-
-        write(VLOG,'(1X,a,3(2x,f16.8))') typat(i), dx(i), dy(i), dz(i)
-        
+        do j = 1,success_count
+                cos_theta(j) = dot_product(norm_dr,normalized_dr_transformed_list(j,1:natoms*3))
+                if (cos_theta(j) .GT. 0.8) then
+                        similar = similar + 1
+                endif
         enddo
-
-        close(VLOG)
+        if (similar .eq. 0) exit
+    enddo
+  open(VLOG, file=VECLOG, action='write', position='append', status='unknown')
+        write(VLOG,*) "Displacement vector"
+        do i =1,NATOMS
+                write(VLOG,'(1X,a,3(2x,f16.8))') typat(i), dx(i), dy(i), dz(i)        
+        enddo
+  close(VLOG)
 
 endselect
-
   call center_and_norm ( INITSTEPSIZE )
-
 
 END SUBROUTINE global_move
 
@@ -896,11 +881,16 @@ subroutine center_and_norm ( step )
      xsum = sum(dx) / natom_displaced
      ysum = sum(dy) / natom_displaced
      zsum = sum(dz) / natom_displaced
+
+     write(*,*) "This is the centroid", xsum, ysum, zsum
      
      dx = dx - xsum * atom_displaced
      dy = dy - ysum * atom_displaced
      dz = dz - zsum * atom_displaced
   end if
+
+  write(*,*) 'This is dr:'
+  write(*,*) dr
   
   ! And normalize the total random displacement effected to the value
   ! desired.
@@ -929,8 +919,6 @@ subroutine center_and_norm ( step )
   ! Now, we normalize dr to get the initial_direction (note that this
   ! had to be done after the transfer into box units.
   initial_direction = dr 
-  write(*,*) 'This is dr:'
-  write(*,*) dr
   norm = dot_product( initial_direction, initial_direction ) 
   norm = 1.0d0 / sqrt(norm)
   initial_direction  = initial_direction * norm
@@ -941,9 +929,6 @@ subroutine center_and_norm ( step )
 
   deallocate(atom_displaced)
   deallocate(dr)
-  deallocate(dr_tried)
-  deallocate(norm_dr)
-  deallocate(norm_dr_tried)
 
 END SUBROUTINE center_and_norm 
 
@@ -1215,9 +1200,6 @@ subroutine guess_direction ( )
   pos = pos + INITSTEPSIZE*initial_direction
 
   deallocate(dr)
-  deallocate(dr_tried)
-  deallocate(norm_dr)
-  deallocate(norm_dr_tried)
   deallocate(posa)
   deallocate(posb)
   write(*,*) 'BART: Number of displaced atoms initially: ', natoms 
@@ -1239,8 +1221,6 @@ SUBROUTINE align (each_read_min, current_min, align_well, each_read_dr, each_dr_
         !right- singular vectors of the cov, (VT is actually the transpose of V),
         !S is one of the factors of the cov. R (V*U_transpose) is the rotation matrix
         ! Work is one of the arguments required by the LAPACK library subroutine that calculates the SVD
-        !Documentation at: 
-        !http://www.netlib.org/lapack/explore-html/d1/d7e/group__double_g_esing_ga84fdf22a62b12ff364621e4713ce02f2.html#ga84fdf22a62b12ff364621e4713ce02f2
 
         use defs
 
@@ -1368,7 +1348,7 @@ SUBROUTINE align (each_read_min, current_min, align_well, each_read_dr, each_dr_
 
         det_V = V(1,1)*(V(2,2)*V(3,3) - V(2,3)*V(3,2)) - V(1,2)*(V(2,1)*V(3,3) - V(2,3)*V(3,1)) + V(3,1)*(V(2,1)*V(3,2) - V(2,2)*V(3,1))
         
-        if(det_V * det_U_transpose .LT. 0) then       ! A small correction to ensure a right-handed coordinate system
+        if(det_V * det_U_transpose .LT. 0) then    ! If det(V*UT) is less than zero, then multiply the last column of V by -1 (reflection)
 
                 V(:,3) = -V(:,3)              
 
@@ -1384,9 +1364,9 @@ SUBROUTINE align (each_read_min, current_min, align_well, each_read_dr, each_dr_
 
         transformation_vec(4,1:4) = 0.0d0
 
-        transformation_vec(1,4) = cx_read
-        transformation_vec(2,4) = cy_read
-        transformation_vec(3,4) = cz_read
+        transformation_vec(1,4) = -1.0*cx_read
+        transformation_vec(2,4) = -1.0*cy_read
+        transformation_vec(3,4) = -1.0*cz_read
 
 
         do i =1,natoms
