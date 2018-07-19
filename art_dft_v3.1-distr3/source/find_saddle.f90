@@ -158,11 +158,14 @@ subroutine global_move( )
   real(kind=8), allocatable :: read_sad(:,:,:)
   real(kind=8), allocatable :: read_dr(:,:,:)
   real(kind=8), allocatable :: dr_transformed_list(:,:,:)
+  real(kind=8), allocatable :: sad_transformed_list(:,:,:)
   real(kind=8), allocatable :: normalized_dr_transformed_list(:,:)
   real(kind=8), allocatable :: cos_theta(:)
   real(kind=8) :: each_read_min(natoms,3)
   real(kind=8) :: each_read_dr(natoms,3)
+  real(kind=8) :: each_read_sad(natoms,3)
   real(kind=8) :: each_dr_transformed(natoms,3)
+  real(kind=8) :: each_sad_transformed(natoms,3)
   real(kind=8) :: norm_dr(natoms*3)
   real(kind=8) :: norm_each_dr_transformed(natoms*3)
   real(kind=8) :: r
@@ -231,6 +234,7 @@ selectcase ( search_strategy )
         allocate(read_sad(number_of_sad,natoms,3))
         allocate(read_dr(number_of_sad,natoms,3))
         allocate(dr_transformed_list(number_of_sad,natoms,3))
+        allocate(sad_transformed_list(number_of_sad,natoms,3))
         
         number_of_min = 0
         number_of_sad = 0
@@ -267,14 +271,15 @@ selectcase ( search_strategy )
         do j =1,number_of_sad
                 do i = 1,natoms
                         each_read_min(i,1:3) = read_min(j,i,1:3)
+                        each_read_sad(i,1:3) = read_sad(j,i,1:3)
                         each_read_dr(i,1:3) = read_dr(j,i,1:3)
-
                 enddo
-                call align(each_read_min, current_min, align_well, each_read_dr, each_dr_transformed)
+                call align(each_read_min, current_min, align_well, each_read_sad, each_read_dr, each_dr_transformed, each_sad_transformed)
                 if(align_well) then                        
                         success_count = success_count + 1
                         do i =1,natoms
-                                dr_transformed_list(j,i,1:3) = each_dr_transformed(i,1:3)
+                                dr_transformed_list(success_count,i,1:3) = each_dr_transformed(i,1:3)
+                                sad_transformed_list(success_count,i,1:3) = each_sad_transformed(i,1:3)
                         enddo
                 endif
         enddo
@@ -324,6 +329,7 @@ selectcase ( search_strategy )
         allocate(read_sad(number_of_sad,natoms,3))
         allocate(read_dr(number_of_sad,natoms,3))
         allocate(normalized_dr_transformed_list(number_of_sad,natoms*3))
+        allocate(sad_transformed_list(number_of_sad,natoms,3))
         
         number_of_min = 0
         number_of_sad = 0
@@ -362,13 +368,17 @@ selectcase ( search_strategy )
                 do i = 1,natoms
                         each_read_min(i,1:3) = read_min(j,i,1:3)
                         each_read_dr(i,1:3) = read_dr(j,i,1:3)
+                        each_read_sad(i,1:3) = read_sad(j,i,1:3)
                 enddo
 
-                call align(each_read_min, current_min, align_well, each_read_dr, each_dr_transformed)
+                call align(each_read_min, current_min, align_well, each_read_sad, each_read_dr, each_dr_transformed, each_sad_transformed)
                 if(align_well) then                       
                         success_count = success_count + 1
                         norm_each_dr_transformed = reshape((each_dr_transformed),(/natoms*3/))/sqrt(dot_product(reshape((each_dr_transformed),(/natoms*3/)), reshape((each_dr_transformed),(/natoms*3/))))
-                        normalized_dr_transformed_list(j,1:natoms*3) = norm_each_dr_transformed(natoms*3)
+                        normalized_dr_transformed_list(success_count,1:natoms*3) = norm_each_dr_transformed(natoms*3)
+                        do i = 1,natoms
+                                sad_transformed_list(success_count,i,1:3) = each_sad_transformed(i,1:3)
+                        enddo
                 endif
         enddo
         allocate(cos_theta(success_count))
@@ -1198,7 +1208,7 @@ subroutine guess_direction ( )
 
 END SUBROUTINE guess_direction 
 
-SUBROUTINE align (each_read_min, current_min, align_well, each_read_dr, each_dr_transformed)
+SUBROUTINE align (each_read_min, current_min, align_well, each_read_sad, each_read_dr, each_dr_transformed, each_sad_transformed)
 
 
         !! This subroutine calculates a transformation matrix that minimizes the RMSD between two sets of coordinates.
@@ -1221,10 +1231,12 @@ SUBROUTINE align (each_read_min, current_min, align_well, each_read_dr, each_dr_
         real(kind=8), intent(in) :: each_read_min(natoms,3)
         real(kind=8), intent(in) :: current_min(natoms,3)
         real(kind=8), intent(in) :: each_read_dr(natoms,3)
+        real(kind=8), intent(in) :: each_read_sad(natoms,3)
 
         logical, intent(inout) :: align_well
 
         real(kind=8), intent(out) :: each_dr_transformed(natoms,3)
+        real(kind=8), intent(out) :: each_sad_transformed(natoms,3)
 
         real(kind=8) :: each_read_min_transformed(natoms,3)
 
@@ -1233,9 +1245,11 @@ SUBROUTINE align (each_read_min, current_min, align_well, each_read_dr, each_dr_
 
         real(kind=8) :: each_read_min_nat4(natoms,4)
         real(kind=8) :: each_read_dr_nat4(natoms,4)
+        real(kind=8) :: each_read_sad_nat4(natoms,4)
 
         real(kind=8) :: each_read_min_transformed_nat4(natoms,4)
         real(kind=8) :: each_read_dr_transformed_nat4(natoms,4)
+        real(kind=8) :: each_read_sad_transformed_nat4(natoms,4)
         real(kind=8) :: transformation_vec(4,4)
 
         real(kind=8) :: deviation_each_atom_before(natoms), deviation_each_atom_after(natoms)
@@ -1369,6 +1383,9 @@ SUBROUTINE align (each_read_min, current_min, align_well, each_read_dr, each_dr_
                 each_read_dr_nat4(i,1:3) = each_read_dr(i,1:3)
                 each_read_dr_nat4(i,4) = 0.0d0
 
+                each_read_sad_nat4(i,1:3) = each_read_sad(i,1:3)
+                each_read_sad_nat4(i,4) = 0.0d0
+
         enddo
 
         each_read_min_transformed_nat4 = transpose(matmul(transformation_vec,transpose(each_read_min_nat4)))
@@ -1403,10 +1420,12 @@ SUBROUTINE align (each_read_min, current_min, align_well, each_read_dr, each_dr_
                         align_well = .true.
 
                         each_read_dr_transformed_nat4 = transpose(matmul(transformation_vec,transpose(each_read_dr_nat4)))
+                        each_read_sad_transformed_nat4 = transpose(matmul(transformation_vec,transpose(each_read_sad_nat4)))
 
                         do i = 1,natoms
 
                                 each_dr_transformed(i,1:3) = each_read_dr_transformed_nat4(i,1:3)
+                                each_sad_transformed(i,1:3) = each_read_sad_transformed_nat4(i,1:3)
 
                         enddo
 
