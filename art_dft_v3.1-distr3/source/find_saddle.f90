@@ -189,7 +189,7 @@ subroutine global_move( )
 
 selectcase ( search_strategy )
 
-   case ('0')
+   case ('0') ! default 
 
         open(VLOG, file=VECLOG, action = 'write', position = 'append')
 
@@ -274,7 +274,7 @@ selectcase ( search_strategy )
                         each_read_sad(i,1:3) = read_sad(j,i,1:3)
                         each_read_dr(i,1:3) = read_dr(j,i,1:3)
                 enddo
-                call align(each_read_min, current_min, align_well, each_read_sad, each_read_dr, each_dr_transformed, each_sad_transformed)
+                call align ( each_read_min, current_min, align_well, each_read_sad, each_read_dr, each_dr_transformed, each_sad_transformed )
                 if(align_well) then                        
                         success_count = success_count + 1
                         do i =1,natoms
@@ -283,6 +283,7 @@ selectcase ( search_strategy )
                         enddo
                 endif
         enddo
+        call end_art()
 
         call random_seed()
         call random_number(r)        
@@ -371,7 +372,7 @@ selectcase ( search_strategy )
                         each_read_sad(i,1:3) = read_sad(j,i,1:3)
                 enddo
 
-                call align(each_read_min, current_min, align_well, each_read_sad, each_read_dr, each_dr_transformed, each_sad_transformed)
+                call align ( each_read_min, current_min, align_well, each_read_sad, each_read_dr, each_dr_transformed, each_sad_transformed )
                 if(align_well) then                       
                         success_count = success_count + 1
                         norm_each_dr_transformed = reshape((each_dr_transformed),(/natoms*3/))/sqrt(dot_product(reshape((each_dr_transformed),(/natoms*3/)), reshape((each_dr_transformed),(/natoms*3/))))
@@ -1208,8 +1209,7 @@ subroutine guess_direction ( )
 
 END SUBROUTINE guess_direction 
 
-SUBROUTINE align (each_read_min, current_min, align_well, each_read_sad, each_read_dr, each_dr_transformed, each_sad_transformed)
-
+SUBROUTINE align ( each_read_min, current_min, align_well, each_read_sad, each_read_dr, each_dr_transformed, each_sad_transformed )
 
         !! This subroutine calculates a transformation matrix that minimizes the RMSD between two sets of coordinates.
         !The first step of this transformation involves a translation. This is simply done by re-centering the molecules so that their
@@ -1262,7 +1262,6 @@ SUBROUTINE align (each_read_min, current_min, align_well, each_read_sad, each_re
        
         integer :: i, j, info
         
-
         sum_current_x = 0.0
         sum_current_y = 0.0
         sum_current_z = 0.0
@@ -1274,29 +1273,18 @@ SUBROUTINE align (each_read_min, current_min, align_well, each_read_sad, each_re
         sum_deviations_before = 0.0
         sum_deviations_after = 0.0
 
-
         do i=1,natoms
-
-                deviation_each_atom_before(i) = sqrt((each_read_min(i,1)-current_min(i,1))**2 +&
-                (each_read_min(i,2)-current_min(i,2))**2 + (each_read_min(i,3)-current_min(i,3))**2)
-       
+                deviation_each_atom_before(i) = sqrt((each_read_min(i,1)-current_min(i,1))**2 + (each_read_min(i,2)-current_min(i,2))**2 + (each_read_min(i,3)-current_min(i,3))**2)       
         enddo
 
         do i=1,natoms
-
-                sum_deviations_before = sum_deviations_before + (each_read_min(i,1)-current_min(i,1))**2 + (each_read_min(i,2)-current_min(i,2))**2 + (each_read_min(i,3)-current_min(i,3))**2
-       
+                sum_deviations_before = sum_deviations_before + (each_read_min(i,1)-current_min(i,1))**2 + (each_read_min(i,2)-current_min(i,2))**2 + (each_read_min(i,3)-current_min(i,3))**2       
         enddo
-
 
         rmsd_before = sqrt(sum_deviations_before/natoms) !Calculating RMSD before structural alignment
-
-
         write(*,*) "This is rmsd before alignment: ", rmsd_before
 
-
         do i=1,natoms
-
                 sum_read_x = sum_read_x + each_read_min(i,1)
                 sum_read_y = sum_read_y + each_read_min(i,2)
                 sum_read_z = sum_read_z + each_read_min(i,3)
@@ -1304,28 +1292,24 @@ SUBROUTINE align (each_read_min, current_min, align_well, each_read_sad, each_re
                 sum_current_x = sum_current_x + current_min(i,1)
                 sum_current_y = sum_current_y + current_min(i,2)
                 sum_current_z = sum_current_z + current_min(i,3)
-
         enddo
 
-       
         !Calculating the centroids for all the points
-
 
         cx_read = sum_read_x/natoms
         cy_read = sum_read_y/natoms
         cz_read = sum_read_z/natoms
 
-
         cx_current = sum_current_x/natoms
         cy_current = sum_current_y/natoms
         cz_current = sum_current_z/natoms
 
+        write(*,*) "This is the centroid for current_min:"
+        write(*,*) cx_current, cy_current, cz_current
 
         !Recentering the structures so that their centroids coincide with the origin of the coordinate system.
 
-
         do i = 1,natoms
-
                 each_read_min_moved(i,1) = each_read_min(i,1) - cx_read
                 each_read_min_moved(i,2) = each_read_min(i,2) - cy_read
                 each_read_min_moved(i,3) = each_read_min(i,3) - cz_read 
@@ -1333,21 +1317,16 @@ SUBROUTINE align (each_read_min, current_min, align_well, each_read_sad, each_re
                 current_min_moved(i,1) = current_min(i,1) - cx_current
                 current_min_moved(i,2) = current_min(i,2) - cy_current
                 current_min_moved(i,3) = current_min(i,3) - cz_current
-
         enddo
-       
-        
+               
         !Calculating the covariance matrix         
-
 
         cov = matmul(transpose(each_read_min_moved),current_min_moved)
 
         !Invoking the LAPACK library subroutine "dgesvd" that calculates the SVD of the covariance matrix
 
         call dgesvd('S','S',3,3,cov,3,S,U,3,VT,3,work,20,info)
-
         U_transpose = transpose(U)
-
         V = transpose(VT)
 
         det_U_transpose = U_transpose(1,1)*(U_transpose(2,2)*U_transpose(3,3) - U_transpose(2,3)*U_transpose(3,2)) - U_transpose(1,2)*(U_transpose(2,1)*U_transpose(3,3) - U_transpose(2,3)*U_transpose(3,1)) + U_transpose(3,1)*(U_transpose(2,1)*U_transpose(3,2) - U_transpose(2,2)*U_transpose(3,1))
@@ -1355,82 +1334,60 @@ SUBROUTINE align (each_read_min, current_min, align_well, each_read_sad, each_re
         det_V = V(1,1)*(V(2,2)*V(3,3) - V(2,3)*V(3,2)) - V(1,2)*(V(2,1)*V(3,3) - V(2,3)*V(3,1)) + V(3,1)*(V(2,1)*V(3,2) - V(2,2)*V(3,1))
         
         if(det_V * det_U_transpose .LT. 0) then    ! If det(V*UT) is less than zero, then multiply the last column of V by -1 (reflection)
-
                 V(:,3) = -V(:,3)              
-
         endif
 
         R = matmul(V,U_transpose)  !This is the optimal rotation matrix 
 
         do i =1,3
-
                 transformation_vec(i,1:3) = R(i,1:3)
-
         enddo
-
-        transformation_vec(4,1:4) = 0.0d0
+        transformation_vec(4,1:3) = 0.0d0
+        transformation_vec(4,4) = 1.0d0
 
         transformation_vec(1,4) = -1.0*cx_read
         transformation_vec(2,4) = -1.0*cy_read
         transformation_vec(3,4) = -1.0*cz_read
 
-
         do i =1,natoms
-
                 each_read_min_nat4(i,1:3) = each_read_min(i,1:3)
-                each_read_min_nat4(i,4) = 0.0d0
+                each_read_min_nat4(i,4) = 1.0d0
 
                 each_read_dr_nat4(i,1:3) = each_read_dr(i,1:3)
-                each_read_dr_nat4(i,4) = 0.0d0
+                each_read_dr_nat4(i,4) = 1.0d0
 
                 each_read_sad_nat4(i,1:3) = each_read_sad(i,1:3)
-                each_read_sad_nat4(i,4) = 0.0d0
-
+                each_read_sad_nat4(i,4) = 1.0d0
         enddo
 
         each_read_min_transformed_nat4 = transpose(matmul(transformation_vec,transpose(each_read_min_nat4)))
-
-        do i = 1,natoms
-
-                each_read_min_transformed(i,1:3) = each_read_min_transformed_nat4(i,1:3)
-
-        enddo
-
-        do i=1,natoms
-
-                deviation_each_atom_after=sqrt((each_read_min_transformed(i,1)-current_min(i,1))**2 +&
-                (each_read_min_transformed(i,2)-current_min(i,2))**2 + (each_read_min_transformed(i,3)-current_min(i,3))**2) 
-        enddo
         
-        do i=1,natoms
-
-                sum_deviations_after = sum_deviations_after + (each_read_min_transformed(i,1)-current_min(i,1))**2 + (each_read_min_transformed(i,2)-current_min(i,2))**2 + (each_read_min_transformed(i,3)-current_min(i,3))**2 
-
+        do i = 1,natoms
+                each_read_min_transformed(i,1:3) = each_read_min_transformed_nat4(i,1:3)
         enddo
 
+        do i=1,natoms
+                deviation_each_atom_after=sqrt((each_read_min_transformed(i,1)-current_min_moved(i,1))**2 + (each_read_min_transformed(i,2)-current_min_moved(i,2))**2 + (each_read_min_transformed(i,3)-current_min_moved(i,3))**2) 
+        enddo        
+
+        do i=1,natoms
+                sum_deviations_after = sum_deviations_after + (each_read_min_transformed(i,1)-current_min_moved(i,1))**2 + (each_read_min_transformed(i,2)-current_min_moved(i,2))**2 + (each_read_min_transformed(i,3)-current_min_moved(i,3))**2 
+        enddo
 
         rmsd_after = sqrt(sum_deviations_after/natoms) !Calculating RMSD after structural alignment
-
+        
         write(*,*) "This is rmsd after alignment: ", rmsd_after
 
         do j = 1,natoms
-
                 if (rmsd_after .LT. 0.1 .and. deviation_each_atom_after(j) .LT. 0.1) then
-
                         align_well = .true.
-
                         each_read_dr_transformed_nat4 = transpose(matmul(transformation_vec,transpose(each_read_dr_nat4)))
                         each_read_sad_transformed_nat4 = transpose(matmul(transformation_vec,transpose(each_read_sad_nat4)))
-
                         do i = 1,natoms
-
                                 each_dr_transformed(i,1:3) = each_read_dr_transformed_nat4(i,1:3)
                                 each_sad_transformed(i,1:3) = each_read_sad_transformed_nat4(i,1:3)
-
                         enddo
-
                 endif
-
         enddo
         
 END SUBROUTINE align
