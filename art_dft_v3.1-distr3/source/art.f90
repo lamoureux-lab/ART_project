@@ -26,6 +26,7 @@ program art90
   character(20) :: fname
   character(4)  :: scounter
   real(kind=8)  :: a1, b1, c1, prod
+  integer :: i
 ! _________
 
   call CPU_TIME( t1 )
@@ -147,9 +148,17 @@ program art90
               prod = -1.0d0
            end if
         end if
-        
+        !DEBUG Bhupinder
+
+        write(*,*) "This is dif_pos:", difpos
+        write(*,*) "This is projection:", projection
+
+        write(*,*) "This is pos_before", pos
+
         pos = pos + prod * PUSH_OVER * difpos * projection
         
+        write(*,*) "This is pos after push", pos
+
         call min_converge( success )     ! And we converge to the new minimum.
         delta_e = total_energy - ref_energy 
 
@@ -159,6 +168,14 @@ program art90
         fname = FINAL // scounter
         conf_final = fname
         call store( fname ) 
+
+        open(unit=VLOG, file = VECLOG, status = 'unknown', action='write', position='append')
+        write(VLOG,*) FINAL // ' ' // scounter
+        do i=1,NATOMS
+                write(VLOG,'(1x,a,3(2x,f16.8))') typat(i), x(i), y(i), z(i)
+        end do
+        close(VLOG)
+
      
         ! Magnitude of the displacement (utils.f90).
         call displacement( posref, pos, delr, npart )
@@ -173,10 +190,6 @@ program art90
         If_bol: if ( ( (total_energy - ref_energy) < -temperature * log( random_number ) )& 
              & .and. ( temperature >= 0.0d0 ) .and. success ) then
            accept = "ACCEPTED"
-! bharat starts
-        write (*,*) 'energy difference: ',(total_energy - ref_energy)
-        write (*,*) 'temperature, random_number, temperature * log(random_number)', temperature, random_number, -temperature * log( random_number )
-! bharat ends
            write(FLIST,*) conf_initial, conf_saddle, conf_final,'    accepted'
            
            ! We now redefine the reference configuration
