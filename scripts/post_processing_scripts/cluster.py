@@ -10,7 +10,7 @@ def mapping(files_to_test, tolerance):
             for line in f:
                 if (re.findall(r'\s\d+\s+[-]?\d[.]\d+\s+[-]?\d[.]\d+\s+[-]?\d[.]\d+\s+',line)):
                     coords.append((float(line.split()[1]), float(line.split()[2]), float(line.split()[3])))
-            file_coords[each_file] = coords    
+        file_coords[each_file] = coords    
 
     file_matrix = {}
     for every_file, coordinates in file_coords.items():
