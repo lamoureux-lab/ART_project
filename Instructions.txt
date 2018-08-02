@@ -2,7 +2,7 @@
  ## Running  
 
 Once in the ART source directory, compile ART by running 
-    `make artdft`
+    `make`
 	
 To run the simulations, navigate to a directory containing Gaussian input files and run:
     `python <path_to_scripts>/artgau.py`
@@ -16,6 +16,6 @@ scripts to run ART with Gaussian. A submission script from each output directory
 run these jobs in parallel. All min and saddle results are stored in the output directories. 
 
 Review your queued jobs and their progress:
-    `squeue -u <username>`
+    `sbatch -u <username>`
  
 
