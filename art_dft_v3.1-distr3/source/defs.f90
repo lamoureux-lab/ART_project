@@ -26,6 +26,9 @@ module defs
 
   real(kind=8) :: TEMPERATURE        ! Temperature in eV
   integer      :: NATOMS             ! Number of atoms in the system
+  integer      :: NATOMS_READ             ! Number of atoms in the system
+  integer      :: NMIN_READ           ! Number of atoms in the system
+  integer      :: NSAD_READ             ! Number of atoms in the system
   integer      :: MAXNEI             ! Maximum number of nearest neighbours
   integer      :: VECSIZE            ! Length of the force and position vectors
   integer      :: nbr_quantum        !Number of quantum atoms for BSW force_calc. These are the first atoms in the input file
