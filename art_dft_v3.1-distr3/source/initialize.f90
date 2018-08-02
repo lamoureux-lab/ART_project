@@ -63,7 +63,7 @@ subroutine initialize()
   open(unit=FREFCONFIG,file=REFCONFIG,status='old',action='read',iostat=ierror)
   read(FREFCONFIG,*) dummy, refcounter
   read(FREFCONFIG,*) dummy, ref_energy
-  !read(FREFCONFIG,*) boundary, boxref_(1),boxref_(2),boxref_(3)
+  read(FREFCONFIG,*) boundary, boxref_(1),boxref_(2),boxref_(3)
   do i = 1, NATOMS
     read(FREFCONFIG,*) typ_a(i), xa(i), ya(i), za(i)
   end do
@@ -120,6 +120,12 @@ subroutine initialize()
 
      call write_refconfig( )       ! Write reference in REFCONFIG. 
      call store( fname )           ! Store the configuration into fname.
+     open(unit=VLOG, file = VECLOG, status = 'unknown', action='write', position='append')
+     write(VLOG,*) FINAL // ' ' // scounter
+     do i=1,NATOMS
+        write(VLOG,'(1x,a,3(2x,f16.8))') typat(i), x(i), y(i), z(i)
+     end do
+     close(VLOG)
 
      open( unit = FLOG, file = LOGFILE, status = 'unknown',&
           & action = 'write', position = 'append', iostat = ierror )
