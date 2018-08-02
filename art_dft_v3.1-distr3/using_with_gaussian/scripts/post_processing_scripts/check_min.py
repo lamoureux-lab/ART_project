@@ -92,7 +92,7 @@ def read_submission_template(submission_script_tempalte):
     return new_line
 
 
-def write_submission_script(filename, submission_script_contents, dist_tolerance, file_string, check_per_cluster):
+def write_submission_script(filename, submission_script_contents, dist_tolerance, file_string):
     new_line = ''
     submission_script = filename + '.sub'
     with open(submission_script,'w') as f:
@@ -100,11 +100,11 @@ def write_submission_script(filename, submission_script_contents, dist_tolerance
             if line.startswith('g16'):
                 line = line.replace('g16', 'g16 ' + filename + '.inp')
             elif line.startswith('python'):
-                if check_per_cluster:
-                    line = line.replace('python', 'python '+checking_frequency_script+' -tol2 '+ str(dist_tolerance)+' < '+min_file+'.log'+' > '+min_file+'_results.txt' + 
+                if args.check_one_per_cluster:
+                    line = line.replace('python', 'python ' + checking_frequency_script + ' -tol2 ' + str(dist_tolerance) + ' < '+ min_file + '.log' + ' > ' + min_file + '_results.txt' + 
                                         '\n' + 'python '+ checking_cluster_members + ' -m ' + file_string + '-tol ' + str(args.dist_tol))
-                if not check_per_cluster:
-                    line = line.replace('python', 'python '+checking_frequency_script+' -tol2 '+ str(dist_tolerance)+' < '+min_file+'.log'+' > '+min_file+'_results.txt')
+                if not args.check_one_per_cluster:
+                    line = line.replace('python', 'python ' + checking_frequency_script + ' -tol2 ' + str(dist_tolerance) + ' < ' + min_file + '.log' + ' > ' + min_file + '_results.txt')
             
             new_line = new_line + line + '\n'
         f.write(new_line)
@@ -112,9 +112,8 @@ def write_submission_script(filename, submission_script_contents, dist_tolerance
 
 
 def mapping_cluster_files(): 
-     mapping = cluster.calculate_cluster_map(files_to_test, tolerance)
-     file_dict = cluster.order_cluster_mapping(mapping)
-     return(file_dict)
+     cluster_map = cluster.mapping(files_to_test, tolerance)
+     return(cluster_map)
 
 
 def string_of_files():
@@ -128,32 +127,22 @@ if __name__ == '__main__':
 
     link0_route_title_charge_mult = get_link0_route_title_charge_mult(input_file_template)
     submission_script_contents = read_submission_template(submission_script_template)
-
-
-
     files_to_test = args.min_files
-
     file_string = string_of_files()
 
-    check_per_cluster = False
-
     if args.check_one_per_cluster:
-
-        check_per_cluster = True
-
-        file_dict = mapping_cluster_files()
-        
+        cluster_map = mapping_cluster_files()
         files_to_test = []
-        for key in file_dict.keys():
+        for key in cluster_map.keys():
             files_to_test.append(key)
     
-  
     for min_file in files_to_test:
-        if not os.path.isfile(min_file + '.inp'):
-            submission_script = write_submission_script(min_file, submission_script_contents, dist_tolerance, file_string, check_per_cluster)
+        if not os.path.isfile(min_file + '.log'):
+            submission_script = write_submission_script(min_file, submission_script_contents, dist_tolerance, file_string)
             coords = get_atomic_coordinates(min_file)
             create_gaussian_input_file(min_file)
-            call(['sbatch','-J ' + jn + '_' + min_file, '-t' + wt,'-c' + np, submission_script], shell=False)
+            print("Running jobs for ", min_file)
+        #    call(['sbatch','-J ' + jn + '_' + min_file, '-t' + wt,'-c' + np, submission_script], shell=False)
       
 
 
