@@ -2,32 +2,31 @@ Montréal, October 7th, 2014
 
 V 3.1
 
-This version of ART nouveau implements FIRE for perpendicular minimization during the activation (by Laurent Karim Béland, Oak Ridge National Lab). 
+This version of ART nouveau implements FIRE for perpendicular minimization
+during the activation (by Laurent Karim Béland, Oak Ridge National Lab). 
 
-It also incorporates a number of corrections and bug fixing by Jean-François Joly (Carleton University), who revised, among other things, the implementation of Fire.
-
-Although the basic code is taken from the ab-initio compatible version, it
-is given as an exemple for empirical potential.
+It also incorporates a number of corrections and bug fixing by
+Jean-François Joly (Carleton University), who revised, among other things,
+the implementation of Fire.
 
 ---------
 
 
-Montréal, April 3rd, 2012
-This version of ART nouveau incorporates a number of revisions, corrections, modifications and improvements made by
-Eduardo Machado-Charry (CEA-Grenoble) and Laurent Karim Béland (Université de Montréal) as well as suggestions made by M.-C. Marinica (CEA-Saclay), E. Cances (École des ponts et chaussées) and F. Legoll (École des ponts et chaussées).
 
-When using this program, please site the following papers:
+This version of ART nouveau for DFT has been written by Normand Mousseau, Eduardo Machado-Charry and Laurent Karim Beland. 
 
-G. T. Barkema et N. Mousseau, Phys. Rev. Lett. {\bf 77}, 4358 (1996). 
-R. Malek et N. Mousseau, Phys. Rev. E {\bf 62}, 7723-7728 (2000). 
-E. Cances, F. Legoll, M.-C. Marinica, K. Minoukadeh, and F. Willaime, J. Chem. Phys. \textbf{130}, 114711 (2009).
-E. Machado-Charry, L.K. B\'eland, D. Caliste, L. Genovese, T. Deutsch, N. Mousseau and P. Pochet, J. Chem. Phys. {\bf 135}, 034102 (2011).
+This code cannot be distributed without this file. 
+
+The latest version of the code can be found under the Software tab on 
+
+http://physique.umontreal.ca/~mousseau
 
 
-Details on compilation and running can be found in DOC. 
+Please see the Manual for details. 
 
-Updated versions of the code can be found on http://www.phys.umontreal.ca/~mousseau/index.php?n=Main.Logiciels
+Normand Mousseau 
+Département de physique
+Univerité de Montréal
 
-Normand Mousseau
 normand.mousseau@umontreal.ca
-
+10 juillet 2014

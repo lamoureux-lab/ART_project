@@ -1,5 +1,0 @@
-The files provided here are meant to give an example of the file formats used
-in a typical siestart run. As they were taken from different runs simulating 
-different systems, they are not currently meant to be compatible with each 
-other. It is the user's responsibility to adapt them to his own needs and 
-calculation architecture.  
