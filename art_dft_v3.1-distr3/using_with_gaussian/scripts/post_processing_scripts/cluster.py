@@ -1,53 +1,43 @@
-#Cluster the min and sad files based on their distance matrices.
-
+import argparse
+import re
 import numpy as np
 
-
-def order_cluster_mapping(cluster_map):
-    
-    ordered_cluster_map = {}
-    for key, value in sorted(cluster_map.items()): # Changed iteritems to items for python3
-        if not value in ordered_cluster_map:
-            ordered_cluster_map[value] = []
-        ordered_cluster_map[value].append(key)
-    return ordered_cluster_map
-
-
-def calculate_cluster_map(file_list, tolerance):
-    my_dict = {}  # Initialize a Dictionary
-    for min_file in file_list:
+def mapping(files_to_test, tolerance):
+    file_coords = {}
+    for each_file in files_to_test:
         coords = []
-        with open(min_file) as f:
-            for line_number, line in enumerate(f,1):
-                if line_number > 3:
-                    coord = line.split()
-                    x = float(coord[1])
-                    y = float(coord[2])
-                    z = float(coord[3])
-                    coords.append((x, y, z))
+        with open(each_file) as f:
+            for line in f:
+                if (re.findall(r'\s\d+\s+[-]?\d[.]\d+\s+[-]?\d[.]\d+\s+[-]?\d[.]\d+\s+',line)):
+                    coords.append((float(line.split()[1]), float(line.split()[2]), float(line.split()[3])))
+            file_coords[each_file] = coords    
 
-        my_dict[min_file] = coords  # Added coordinates to the dictionary
+    file_matrix = {}
+    for every_file, coordinates in file_coords.items():
+        distance_matrix = []
+        for each_atom in coordinates:
+            for every_other_atom in coordinates:
+                distance = ((each_atom[0] - every_other_atom[0])**2 + (each_atom[1] - every_other_atom[1])**2 + (each_atom[2] - every_other_atom[2])**2)**0.5
+                distance_matrix.append(distance)
+    
+        file_matrix[every_file] = distance_matrix
 
     cluster = {}
-    map_to_cluster = {}
-    for key in sorted(my_dict.keys()):
-        mat = np.zeros((len(my_dict[key]), len(my_dict[key])))
-        for n, (x0, y0, z0) in enumerate(my_dict[key]):
-            for m, (x1, y1, z1) in enumerate(my_dict[key]):
-                dist = np.linalg.norm(np.array([x0, y0, z0]) - np.array([x1, y1, z1]))
-                mat[n, m] = dist
-        different_from_all = True
-        k_to_map = key
+    count = 0
+    for every_file in sorted(file_matrix.keys()):
+        member_list = []
+        for every_other_file in sorted(file_matrix.keys()):
+            if (np.allclose(file_matrix[every_file], file_matrix[every_other_file], atol = tolerance)):
+                    member_list.append(every_other_file)
+                    cluster[every_file] = member_list
 
-        for k in sorted(cluster.keys()):
-            if (np.allclose(mat, cluster[k], atol= tolerance)):
-                different_from_all = False
-                k_to_map = k
-                break
-        if (different_from_all):
-            cluster[key] = mat
-        map_to_cluster[key] = k_to_map
-    return map_to_cluster
+        for member in member_list:
+            for each_test_file in files_to_test:
+                if member == each_test_file:
+                    count = count + 1
 
+        if count == len(files_to_test):
+            break
 
+    return cluster
 
