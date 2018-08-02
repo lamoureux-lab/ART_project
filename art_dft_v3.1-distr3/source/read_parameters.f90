@@ -568,12 +568,38 @@ subroutine read_parameters( )
 
   !!__________________
   ! Choose the strategy of search.
-  call getenv('Strategy_of_Search', SEARCH_STRATEGY)
-  if (SEARCH_STRATEGY .eq. '') then  
-        SEARCH_STRATEGY = '0'
+  call getenv('Strategy_of_Search', temporary)
+  if (temporary .eq. '') then  
+        temporary = '0'
+  else
+        read(temporary,*) SEARCH_STRATEGY
   endif
-  if ((SEARCH_STRATEGY .ne. '') .and. (SEARCH_STRATEGY .ne. '0') .and. (SEARCH_STRATEGY .ne. '1') .and. (SEARCH_STRATEGY .ne. '2')) then
-          write(*,*) "Strategy_of_Search only takes either of the following options: 0, 1, 2. You provided: ", SEARCH_STRATEGY
+
+  !!__________________
+  ! Choose number of min read from log
+  call getenv('nmin_read', temporary)
+  if (temporary .eq. '') then  
+        temporary = '0'
+  else
+        read(temporary,*) nmin_read
+  endif
+
+  !!__________________
+  ! Choose number of sad read from log
+  call getenv('nsad_read', temporary)
+  if (temporary .eq. '') then  
+        temporary = '0'
+  else
+        read(temporary,*) nsad_read
+  endif
+
+  !!__________________
+  ! Choose number of atoms read from log
+  call getenv('natoms_read', temporary)
+  if (temporary .eq. '') then  
+        temporary = '0'
+  else
+        read(temporary,*) natoms_read
   endif
 
   !!__________________
@@ -819,9 +845,7 @@ subroutine write_parameters( )
   call date_and_time(values=values)
 
   if ( .not. setup_initial ) then
-     !DEBUG Bhupinder -- Setting idum to a fixed value, so that ART shoots in the same direction every time     
-     !idum = -1 * mod( (1000 * values(7) + values(8))+iproc, 1024)
-     idum = -606
+     idum = -1 * mod( (1000 * values(7) + values(8))+iproc, 1024)
   else
      idum = 0
   end if
@@ -861,12 +885,12 @@ subroutine write_parameters( )
   write(flog,'(1X,A39,I12  )')  ' - Number of events                  : ', number_events
   write(flog,'(1X,A39,I12  )')  ' - Maximum number of neighbours      : ', maxnei    
 
-  write(flog,'(1X,A39  )')  ' - Atomic types                      : '
-  do i =1, 5
-     if (type_name(i) .ne. '') then
-        write(flog,'(1X,A31,I3,A5,a12  )')  ' Type ',i,': ', trim(type_name(i))
-     end if
-  end do
+  !write(flog,'(1X,A39  )')  ' - Atomic types                      : '
+  !do i =1, 5
+   !  if (type_name(i) .ne. '') then
+    !    write(flog,'(1X,A31,I3,A5,a12  )')  ' Type ',i,': ', trim(type_name(i))
+    ! end if
+ ! end do
 
   write(flog,*) ' '
   write(flog,*) 'Selection of the event '
