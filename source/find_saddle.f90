@@ -28,7 +28,7 @@ module saddles
 
   character(len=20) :: TYPE_EVENTS
 
-  character(len=40) :: SEARCH_STRATEGY 
+  integer :: SEARCH_STRATEGY 
 
 
   real(kind=8) :: delta_e  ! current_energy - ref_energy
@@ -58,112 +58,8 @@ module saddles
 
 END MODULE saddles
 
-module search
 
-        CONTAINS
-
-        SUBROUTINE read_and_transform ( dr_transformed_list, sad_transformed_list, success_count )
-
-                use defs
-        
-                implicit none
-
-                real(kind=8), allocatable, intent(out) :: dr_transformed_list(:,:,:)
-                real(kind=8), allocatable, intent(out) :: sad_transformed_list(:,:,:)
-                integer, intent(out) :: success_count
-        
-                integer :: i, j, number_of_min, number_of_sad
-
-                real(kind=8), allocatable :: read_min(:,:,:)
-                real(kind=8), allocatable :: read_sad(:,:,:)
-                real(kind=8), allocatable :: read_dr(:,:,:)
-                real(kind=8) :: current_min(natoms,3)
-                real(kind=8) :: each_read_min(natoms,3)
-                real(kind=8) :: each_read_dr(natoms,3)
-                real(kind=8) :: each_read_sad(natoms,3)
-                real(kind=8) :: each_dr_transformed(natoms,3)
-                real(kind=8) :: each_sad_transformed(natoms,3)
-                logical :: align_well
-                character(len=20) :: keyword 
-
-                open(VREAD, file = VECREAD, status = 'old', action = 'read')
-                number_of_min =0
-                number_of_sad = 0
-                do 
-                        read(VREAD,*,end = 50) keyword
-                        if (keyword .eq. 'min') then
-                                number_of_min = number_of_min + 1
-                        endif
-                        if (keyword .eq. 'sad') then
-                                number_of_sad = number_of_sad + 1
-                        endif
-                enddo
-                50 rewind(VREAD)
-
-                allocate(read_min(number_of_min,natoms,3))
-                allocate(read_sad(number_of_sad,natoms,3))
-                allocate(read_dr(number_of_sad,natoms,3))
-                allocate(dr_transformed_list(number_of_sad,natoms,3))
-                allocate(sad_transformed_list(number_of_sad,natoms,3))
-        
-                number_of_min = 0
-                number_of_sad = 0
-                do
-                        read(VREAD,*,end = 100) keyword
-                        if (keyword .eq. 'min') then
-                                number_of_min = number_of_min + 1
-                                do i = 1, natoms
-                                        read(VREAD,*) typat(i), read_min(number_of_min,i,1), read_min(number_of_min,i,2), read_min(number_of_min,i,3)
-                                enddo
-                        endif
-                        if (keyword .eq. 'sad') then
-                                number_of_sad = number_of_sad + 1
-                                do i = 1, natoms
-                                        read(VREAD,*) typat(i), read_sad(number_of_sad,i,1), read_sad(number_of_sad,i,2), read_sad(number_of_sad,i,3)
-                                enddo
-                        endif
-                enddo
-                100 rewind(VREAD)
-
-                close(VREAD)
-
-                do j = 1, number_of_sad
-                        do i = 1, natoms
-                                read_dr(j,i,1:3) = read_sad(j,i,1:3) - read_min(j,i,1:3)
-                        enddo
-                enddo
-
-                do i = 1, natoms
-                        current_min(i,1) = x(i)
-                        current_min(i,2) = y(i)
-                        current_min(i,3) = z(i)
-                enddo
-        
-                success_count = 0
-                align_well = .false.
-                do j = 1, number_of_sad
-                        do i = 1, natoms
-                                each_read_min(i,1:3) = read_min(j,i,1:3)
-                                each_read_sad(i,1:3) = read_sad(j,i,1:3)
-                                each_read_dr(i,1:3) = read_dr(j,i,1:3)
-                        enddo
-                        call align ( each_read_min, current_min, align_well, each_read_sad, each_read_dr, each_dr_transformed, each_sad_transformed )
-                        if ( align_well ) then                        
-                                success_count = success_count + 1
-                                do i = 1, natoms
-                                        dr_transformed_list(success_count,i,1:3) = each_dr_transformed(i,1:3)
-                                        sad_transformed_list(success_count,i,1:3) = each_sad_transformed(i,1:3)
-                                enddo
-                        endif
-                enddo
-
-                deallocate(read_min)
-                deallocate(read_sad)
-                deallocate(read_dr)
-
-        END SUBROUTINE read_and_transform
-
-END MODULE search
+!END MODULE search
 
 !> ART find_saddle
 !!   This subroutine initiates the random displacement at the start
@@ -252,16 +148,15 @@ subroutine global_move( )
   use defs
   use random
   use saddles
-  use search
   implicit none
 
   !Local variables
-  integer :: i, j, success_count, rand, similar
+  integer :: i, j, success_counter, rand, similar
   real(kind=8) :: dr2
   real(kind=8) :: ran3
   real(kind=8), dimension(:), pointer :: dx, dy, dz
-  real(kind=8), allocatable :: dr_transformed_list(:,:,:)
-  real(kind=8), allocatable :: sad_transformed_list(:,:,:)
+  real(kind=8) :: dr_transformed_list(nsad_read,natoms,3)
+  real(kind=8) :: sad_transformed_list(nsad_read,natoms,3)
   real(kind=8) :: cos_theta
 
   allocate(dr(3*natoms)) 
@@ -281,7 +176,7 @@ subroutine global_move( )
 
   selectcase ( search_strategy )
 
-  case ('0') ! default 
+  case ( 0 ) ! default 
 
         do i = 1, natoms
         ! if ( constr(i) == 0 ) then
@@ -305,11 +200,16 @@ subroutine global_move( )
         enddo
         close(VLOG)
 
-  case ('1') ! "follow" strategy
+  case ( 1 ) ! "follow" strategy
 
-        call read_and_transform ( dr_transformed_list, sad_transformed_list, success_count )
+        call read_and_transform ( dr_transformed_list, sad_transformed_list, success_counter )
 
-        rand = ceiling(success_count*ran3()) 
+        if (success_counter .eq. 0) then
+                write(*,*) "None of the read min align well with the current min"
+                call end_art()
+        endif
+
+        rand = ceiling(success_counter*ran3()) 
 
         do i = 1, natoms
                 dx(i) = dr_transformed_list(rand,i,1)
@@ -326,12 +226,14 @@ subroutine global_move( )
         enddo
         close(VLOG)
 
-        deallocate(dr_transformed_list)
-        deallocate(sad_transformed_list)
-        
-  case ('2') ! "avoid" strategy
+  case ( 2 ) ! "avoid" strategy
 
-        call read_and_transform ( dr_transformed_list, sad_transformed_list, success_count )
+        call read_and_transform ( dr_transformed_list, sad_transformed_list, success_counter )
+
+        if (success_counter .eq. 0) then
+                write(*,*) "None of the read min align well with the current min"
+                call end_art()
+        endif
 
         do
             do i = 1, natoms 
@@ -347,7 +249,7 @@ subroutine global_move( )
             end do
 
             similar = 0
-            do j = 1, success_count
+            do j = 1, success_counter
                         cos_theta = dot_product(dr,reshape(dr_transformed_list(j,1:natoms,1:3),(/natoms*3/))) / &
                                     & sqrt(dot_product(dr,dr)*dot_product(reshape(dr_transformed_list(j,1:natoms,1:3),(/natoms*3/)),&
                                     & reshape(dr_transformed_list(j,1:natoms,1:3),(/natoms*3/))))
@@ -364,9 +266,6 @@ subroutine global_move( )
                 write(VLOG,'(1X,a,3(2x,f16.8))') typat(i), dx(i), dy(i), dz(i)        
         enddo
         close(VLOG)
-
-        deallocate(dr_transformed_list)
-        deallocate(sad_transformed_list)
 
   endselect
 
@@ -1162,6 +1061,86 @@ subroutine guess_direction ( )
 
 END SUBROUTINE guess_direction 
 
+SUBROUTINE read_and_transform ( dr_transformed_list, sad_transformed_list, success_count )
+
+        use defs
+        
+        implicit none
+
+        real(kind=8), intent(out) :: dr_transformed_list(nsad_read,natoms,3)
+        real(kind=8), intent(out) :: sad_transformed_list(nsad_read,natoms,3)
+        integer, intent(out) :: success_count
+        
+        integer :: i, j, min_count, sad_count
+
+        real(kind=8) :: read_min(nmin_read,natoms,3)
+        real(kind=8) :: read_sad(nsad_read,natoms,3)
+        real(kind=8) :: read_dr(nsad_read,natoms,3)
+        real(kind=8) :: current_min(natoms,3)
+        real(kind=8) :: each_read_min(natoms,3)
+        real(kind=8) :: each_read_dr(natoms,3)
+        real(kind=8) :: each_read_sad(natoms,3)
+        real(kind=8) :: each_dr_transformed(natoms,3)
+        real(kind=8) :: each_sad_transformed(natoms,3)
+        logical :: align_well
+        character(len=20) :: keyword 
+
+
+        open(VREAD, file=VECREAD, status = 'old', action = 'read')
+
+        min_count = 0
+        sad_count = 0
+
+        do
+                read(VREAD,*,end = 100) keyword
+                if (keyword .eq. 'min') then
+                         min_count = min_count + 1
+                         do i = 1, natoms
+                                   read(VREAD,*) typat(i), read_min(min_count,i,1), read_min(min_count,i,2), read_min(min_count,i,3)
+                         enddo
+                endif
+                if (keyword .eq. 'sad') then
+                         sad_count = sad_count + 1
+                         do i = 1, natoms
+                                   read(VREAD,*) typat(i), read_sad(sad_count,i,1), read_sad(sad_count,i,2), read_sad(sad_count,i,3)
+                         enddo
+                endif
+        enddo
+        100 rewind(VREAD)
+
+        close(VREAD)
+
+        do j = 1, nsad_read
+                do i = 1, natoms
+                         read_dr(j,i,1:3) = read_sad(j,i,1:3) - read_min(j,i,1:3)
+                enddo
+        enddo
+
+        do i = 1, natoms
+                current_min(i,1) = x(i)
+                current_min(i,2) = y(i)
+                current_min(i,3) = z(i)
+        enddo
+        
+        success_count = 0
+        align_well = .false.
+        do j = 1, nsad_read
+                do i = 1, natoms
+                         each_read_min(i,1:3) = read_min(j,i,1:3)
+                         each_read_sad(i,1:3) = read_sad(j,i,1:3)
+                         each_read_dr(i,1:3) = read_dr(j,i,1:3)
+                enddo
+                call align ( each_read_min, current_min, align_well, each_read_sad, each_read_dr, each_dr_transformed, each_sad_transformed )
+                if ( align_well ) then                        
+                         success_count = success_count + 1
+                         do i = 1, natoms
+                                 dr_transformed_list(success_count,i,1:3) = each_dr_transformed(i,1:3)
+                                 sad_transformed_list(success_count,i,1:3) = each_sad_transformed(i,1:3)
+                         enddo
+                endif
+        enddo
+
+END SUBROUTINE read_and_transform
 
 SUBROUTINE align ( each_read_min, current_min, align_well, each_read_sad, each_read_dr, each_dr_transformed, each_sad_transformed )
 
