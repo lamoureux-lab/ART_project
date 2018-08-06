@@ -74,7 +74,7 @@ def min_input_file(min_file, header_elements):
 
     min_input_file = min_file + '.inp'
 
-    with open(input_file_for_submission, 'w') as f:
+    with open(min_input_file, 'w') as f:
         f.write(header_elements[0] + header_elements[1] + '\n' + min_file + '\n\n' + header_elements[3] + coords + '\n')
 
     return min_input_file
