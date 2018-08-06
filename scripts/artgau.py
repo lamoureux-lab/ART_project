@@ -24,12 +24,12 @@ parser.add_argument('-sym', '--sym_break', help = 'symmetry break distance, e.g.
 parser.add_argument('-pb', '--max_perp_basin', help = 'max perp steps in basin, e.g. 3', default ='3')
 parser.add_argument('-k', '--min_k', help = 'minimum number of k-steps, e.g. 3', default ='3')
 parser.add_argument('-bf', '--basin_factor', help = 'factor multiplying increment size for leaving the basin, e.g. 2.1', default ='2.1')
-parser.add_argument('-l', '--lanczos', help = 'number of iterations in the Lanczos loop, e.g. 5', default ='5')
-parser.add_argument('-am', '--activ_maxiter', help = 'max iterations during activation, e.g. 400', default ='400')
+parser.add_argument('-l', '--lanczos', help = 'number of ations in the Lanczos loop, e.g. 5', default ='5')
+parser.add_argument('-am', '--activ_max', help = 'max ations during activation, e.g. 400', default ='400')
 parser.add_argument('-d', '--delta_thresh', help = 'energy threshold during Lanczos e.g. 4.0', default ='4.0')
 parser.add_argument('-pa', '--max_perp_activ', help = 'max perp steps during activation e.g 5', default ='5')
 parser.add_argument('-fp', '--force_thresh_perp', help = 'force thresh perp relax, e.g. 0.5', default ='0.5')
-parser.add_argument('-bm', '--basin_maxiter', help = 'max iterations in basin, e.g. 20', default ='20')
+parser.add_argument('-bm', '--basin_max', help = 'max ations in basin, e.g. 20', default ='20')
 parser.add_argument('-xyz', '--write_xyz', help = 'write or not xyz files -- true or false', default ='true')
 parser.add_argument('-search', '--search_strat', help = 'search strategy, e.g. 0, 1 or 2', default ='0')
 parser.add_argument('-read', '--read_from', help = 'read from a specific file, e.g. vector20', default ='xxx')
@@ -63,7 +63,7 @@ for each_file in files_to_run:
     my_dict[each_file] = re.split(r'[.]', each_file)[0]
 
 def create_directory():
-    for directory in my_dict.itervalues():
+    for directory in my_dict.values():
         try:
             if not exists(directory):
                 makedirs(directory)
@@ -71,7 +71,7 @@ def create_directory():
             print ('Error: Creating directory. ' +  directory)
 
 def create_submission_file():
-    for directory in my_dict.itervalues():        
+    for directory in my_dict.values():        
         with open(submission_script_template) as f:
             with open(join(directory, submission_script), 'w+') as m:
                 for line in f:
@@ -88,14 +88,14 @@ def create_submission_file():
                     m.write(line)
                
 def create_exec_script():
-    for directory in my_dict.itervalues():
+    for directory in my_dict.values():
         with open(exec_script_template) as f:
             with open(join(directory, exec_script), 'w+') as m:
                 for line in f:
                     m.write(line)
 
 def create_header_script():
-    for each_file, directory in my_dict.iteritems():
+    for each_file, directory in my_dict.items():
         with open(create_header_template) as f:
             with open(join(directory, create_header),'w+') as m:
                     for line in f:
@@ -178,7 +178,7 @@ def create_gauss_art(zipped_atomic_list, min_sad_natoms_read):
                     if 'Lanczos_SCLoop' in line:
                         line = line.replace(line.split('#')[0].split()[2], args.lanczos, 1)
                     if 'Activation_MaxIter' in line:
-                        line = line.replace(line.split('#')[0].split()[2], args.activ_maxiter, 1)
+                        line = line.replace(line.split('#')[0].split()[2], args.activ_max, 1)
                     if 'delta_threshold' in line:
                         line = line.replace(line.split('#')[0].split()[2], args.delta_thresh, 1)
                     if 'Max_Perp_Moves_Activ' in line:
@@ -186,7 +186,7 @@ def create_gauss_art(zipped_atomic_list, min_sad_natoms_read):
                     if 'Force_Threshold_Perp_Rel' in line:
                         line = line.replace(line.split('#')[0].split()[2], args.force_thresh_perp, 1)
                     if 'Max_Iter_Basin' in line:
-                        line = line.replace(line.split('#')[0].split()[2], args.basin_maxiter, 1)
+                        line = line.replace(line.split('#')[0].split()[2], args.basin_max, 1)
                     if 'Write_xyz' in line:
                         line = line.replace(line.split('#')[0].split()[2], '.' + args.write_xyz + '.', 1)
                     if 'Strategy_of_Search' in line:
@@ -205,7 +205,7 @@ def create_gauss_art(zipped_atomic_list, min_sad_natoms_read):
                     m.write(line)
 
 def create_refconfig():
-    for each_file, directory in my_dict.iteritems():
+    for each_file, directory in my_dict.items():
         with open(each_file) as f: 
             with open (join(directory, refconfig), 'w+') as m:
                 m.write(' run_id:         1000\n')     
@@ -217,13 +217,13 @@ def create_refconfig():
                         m.write(coords)
 
 def create_filecounter():
-    for directory in my_dict.itervalues():
+    for directory in my_dict.values():
         with open(join(directory, filecounter),'w+') as f:
             f.write("Counter:      1000")
 
 
 def submitting_scripts():
-    for each_file, directory in my_dict.iteritems():
+    for each_file, directory in my_dict.items():
         print("Creating submission files for " + directory)
         work_directory = getcwd()
         chdir(join(work_directory, directory))
