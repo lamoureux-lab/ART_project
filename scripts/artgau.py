@@ -24,7 +24,7 @@ parser.add_argument('-sym', '--sym_break', help = 'symmetry break distance, e.g.
 parser.add_argument('-pb', '--max_perp_basin', help = 'max perp steps in basin, e.g. 3', default ='3')
 parser.add_argument('-k', '--min_k', help = 'minimum number of k-steps, e.g. 3', default ='3')
 parser.add_argument('-bf', '--basin_factor', help = 'factor multiplying increment size for leaving the basin, e.g. 2.1', default ='2.1')
-parser.add_argument('-l', '--lanczos', help = 'number of ations in the Lanczos loop, e.g. 5', default ='5')
+parser.add_argument('-l', '--lanczos', help = 'number of iterations in the Lanczos loop, e.g. 5', default ='5')
 parser.add_argument('-am', '--activ_max', help = 'max iterations during activation, e.g. 400', default ='400')
 parser.add_argument('-d', '--delta_thresh', help = 'energy threshold during Lanczos e.g. 4.0', default ='4.0')
 parser.add_argument('-pa', '--max_perp_activ', help = 'max perp steps during activation e.g 5', default ='5')
