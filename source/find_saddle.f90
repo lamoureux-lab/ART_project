@@ -1183,7 +1183,7 @@ SUBROUTINE align ( each_read_min, current_min, align_well, each_read_sad, each_r
         real(kind=8) :: each_read_sad_transformed_nat4(natoms,4)
         real(kind=8) :: transformation_vec(4,4)
 
-        real(kind=8) :: deviation_each_atom_before(natoms), deviation_each_atom_after(natoms)
+        real(kind=8) :: deviation_each_atom_after(natoms) ! deviation of each individual atom from current min after alignment
         real(kind=8) :: sum_deviations_before, rmsd_before, sum_deviations_after, rmsd_after
         real(kind=8) :: sum_read_x, sum_read_y, sum_read_z, cx_read, cy_read, cz_read
         real(kind=8) :: sum_current_x, sum_current_y, sum_current_z, cx_current, cy_current, cz_current
@@ -1191,14 +1191,12 @@ SUBROUTINE align ( each_read_min, current_min, align_well, each_read_sad, each_r
         real(kind=8) :: cov(3,3), U(3,3), S(3), VT(3,3), R(3,3), work(20)
         real(kind=8) :: U_transpose(3,3), V(3,3), det_U_transpose, det_V
        
-        integer :: i, j, info
+        integer :: i, j, dev_count, info
         
         
         sum_deviations_before = 0.0
 
-        do i = 1, natoms
-                deviation_each_atom_before(i) = sqrt((each_read_min(i,1)-current_min(i,1))**2 + (each_read_min(i,2) &
-                                            & - current_min(i,2))**2 + (each_read_min(i,3)-current_min(i,3))**2)       
+        do i = 1, natoms     
                 sum_deviations_before = sum_deviations_before + (each_read_min(i,1)-current_min(i,1))**2 + (each_read_min(i,2) &
                                     & - current_min(i,2))**2 + (each_read_min(i,3)-current_min(i,3))**2       
         enddo
@@ -1292,7 +1290,7 @@ SUBROUTINE align ( each_read_min, current_min, align_well, each_read_sad, each_r
         sum_deviations_after = 0.0
         do i = 1, natoms
                 each_read_min_transformed(i,1:3) = each_read_min_transformed_nat4(i,1:3)
-                deviation_each_atom_after = sqrt((each_read_min_transformed(i,1)-current_min(i,1))**2 + (each_read_min_transformed(i,2)-current_min(i,2))**2 + &
+                deviation_each_atom_after(i) = sqrt((each_read_min_transformed(i,1)-current_min(i,1))**2 + (each_read_min_transformed(i,2)-current_min(i,2))**2 + &
                                             & (each_read_min_transformed(i,3)-current_min(i,3))**2) 
                 sum_deviations_after = sum_deviations_after + (each_read_min_transformed(i,1)-current_min(i,1))**2 + (each_read_min_transformed(i,2) &
                                    & - current_min(i,2))**2 + (each_read_min_transformed(i,3)-current_min(i,3))**2 
@@ -1300,17 +1298,23 @@ SUBROUTINE align ( each_read_min, current_min, align_well, each_read_sad, each_r
 
         rmsd_after = sqrt(sum_deviations_after/natoms) !Calculating RMSD after structural alignment
         write(*,*) "This is rmsd after alignment: ", rmsd_after
-
-        do j = 1, natoms
-                if ( rmsd_after .LT. 0.1 .and. deviation_each_atom_after(j) .LT. 0.1 ) then
-                        align_well = .true.
-                        each_read_dr_transformed_nat4 = transpose(matmul(transformation_vec,transpose(each_read_dr_nat4)))
-                        each_read_sad_transformed_nat4 = transpose(matmul(transformation_vec,transpose(each_read_sad_nat4)))
-                        do i = 1, natoms
-                                each_dr_transformed(i,1:3) = each_read_dr_transformed_nat4(i,1:3)
-                                each_sad_transformed(i,1:3) = each_read_sad_transformed_nat4(i,1:3)
-                        enddo
+        
+        dev_count = 0
+        do i = 1, natoms
+                if ( deviation_each_atom_after(i) .LT. 0.1 ) then
+                        dev_count = dev_count + 1
                 endif
         enddo
+        each_dr_transformed = 0.0d0
+        each_sad_transformed = 0.0d0
+        if (rmsd_after .LT. 0.1 .and. dev_count == natoms) then
+                align_well = .true.
+                each_read_dr_transformed_nat4 = transpose(matmul(transformation_vec,transpose(each_read_dr_nat4)))
+                each_read_sad_transformed_nat4 = transpose(matmul(transformation_vec,transpose(each_read_sad_nat4)))
+                do i = 1, natoms
+                        each_dr_transformed(i,1:3) = each_read_dr_transformed_nat4(i,1:3)
+                        each_sad_transformed(i,1:3) = each_read_sad_transformed_nat4(i,1:3)
+                enddo
+        endif
         
 END SUBROUTINE align
