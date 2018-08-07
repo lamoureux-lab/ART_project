@@ -1305,8 +1305,7 @@ SUBROUTINE align ( each_read_min, current_min, align_well, each_read_sad, each_r
                         dev_count = dev_count + 1
                 endif
         enddo
-        each_dr_transformed = 0.0d0
-        each_sad_transformed = 0.0d0
+      
         if (rmsd_after .LT. 0.1 .and. dev_count == natoms) then
                 align_well = .true.
                 each_read_dr_transformed_nat4 = transpose(matmul(transformation_vec,transpose(each_read_dr_nat4)))
