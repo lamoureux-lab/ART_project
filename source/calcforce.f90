@@ -25,40 +25,18 @@ subroutine calcforce(nat, posa, boxl, forca, energy, evalf_number, conv )
    logical,      intent(in)                            :: conv
 
 
-   if(energy_type == "SWP")  then
-      call SWcalcforce(nat,posa,boxl,forca, energy)
-      evalf_number = evalf_number +1
-   else if (energy_type == "DFT")   then 
-      call calcforce_dft(nat,typat,posa,boxl,forca,energy)
-      evalf_number = evalf_number +1
-   else if (energy_type == "GAU")   then
-      !DEBUG starts Bhupinder     
-      write(*,*) 'DEBUG!!! Energy type is indeed GAU and the calcforce subroutine will now be called'
-      !DEBUG ends Bhupinder
-      call calcforce_gau(nat,typat,posa,boxl,forca,energy)
+   call calcforce_gau(nat,typat,posa,boxl,forca,energy)
 
-! debug starts
-write(*,*)
-write(*,*) 'nat: ',  nat
-write(*,*) 'typat: ', typat
-write(*,*)'posa:'
-do i=1,nat
+   write(*,*)
+   write(*,*) 'nat: ',  nat
+   write(*,*) 'typat: ', typat
+   write(*,*)'posa:'
+   do i=1,nat
         write(*,*) posa(i), posa(i+nat), posa(i+2*nat)
-end do
-!DEBUG starts Bhupinder
-!write(*,*) 'DEBUG!!! These coordinates are written by the calcforce_gau subroutine'
-!DEBUG ends Bhupinder
-!write(*,*) 'boxl: ', boxl
-write(*,*) 'forces: ', NEW_LINE('A'), forca
-!DEBUG starts Bhupinder
-write(*,*) 'DEBUG!!! These forces are written by the calcforce_gau subroutine'
-!DEBUG ends Bhupinder
-write(*,*) 'energy: ', energy
-!DEBUG starts Bhupinder
-write(*,*) 'DEBUG!!! This energy is written by the calcforce_gau subroutine'
-!DEBUG ends Bhupinder
+   end do
+   write(*,*) 'forces: ', NEW_LINE('A'), forca
+   write(*,*) 'energy: ', energy
 
-      evalf_number = evalf_number +1
-   endif
+   evalf_number = evalf_number +1
 
 END SUBROUTINE calcforce

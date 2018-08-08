@@ -63,7 +63,7 @@ subroutine initialize()
   open(unit=FREFCONFIG,file=REFCONFIG,status='old',action='read',iostat=ierror)
   read(FREFCONFIG,*) dummy, refcounter
   read(FREFCONFIG,*) dummy, ref_energy
-  read(FREFCONFIG,*) boundary, boxref_(1),boxref_(2),boxref_(3)
+  !read(FREFCONFIG,*) boundary, boxref_(1),boxref_(2),boxref_(3)
   do i = 1, NATOMS
     read(FREFCONFIG,*) typ_a(i), xa(i), ya(i), za(i)
   end do

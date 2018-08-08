@@ -16,20 +16,8 @@ subroutine initialize_potential( )
    !Local variables
    integer :: ierror
 
-   if (energy_type == "DFT") then
-      call init_potential_dft()
-      ! First force calculation.
-      call calcforce( NATOMS, pos, boxref, force, total_energy, evalf_number, .false. )
-   elseif (energy_type == "SWP") then
-      call init_potential_SW()
-      call calcforce( NATOMS, pos, boxref, force, total_energy, evalf_number, .false. )
-   elseif (energy_type == "GAU") then
-      call init_potential_gau()
-      call calcforce( NATOMS, pos, boxref, force, total_energy, evalf_number, .false. )
-   else
-      write(*,*) "You have not chosen a proper energy type. Choose SWP or DFT in ENERGY_CALC"
-      stop
-   endif
+   call init_potential_gau()
+   call calcforce( NATOMS, pos, boxref, force, total_energy, evalf_number, .false. )
 
 END SUBROUTINE initialize_potential
 

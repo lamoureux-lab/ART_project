@@ -24,13 +24,14 @@ module defs
                                      ! for doing lanczos. Four times Lanczos for the minimum, and 
                                      ! four for the inflection point.
 
-  real(kind=8) :: TEMPERATURE        ! Temperature in eV
-  integer      :: NATOMS             ! Number of atoms in the system
-  integer      :: NATOMS_READ             ! Number of atoms in the system
-  integer      :: NMIN_READ           ! Number of atoms in the system
-  integer      :: NSAD_READ             ! Number of atoms in the system
-  integer      :: MAXNEI             ! Maximum number of nearest neighbours
-  integer      :: VECSIZE            ! Length of the force and position vectors
+  real(kind=8) :: TEMPERATURE        !Temperature in eV
+  integer      :: NATOMS             !Number of atoms in the system
+  integer      :: NATOMS_READ        !Number of atoms in the system
+  integer      :: NATOMS_CORRESPOND  !Number of atoms in the system
+  integer      :: NMIN_READ          !Number of atoms in the system
+  integer      :: NSAD_READ          !Number of atoms in the system
+  integer      :: MAXNEI             !Maximum number of nearest neighbours
+  integer      :: VECSIZE            !Length of the force and position vectors
   integer      :: nbr_quantum        !Number of quantum atoms for BSW force_calc. These are the first atoms in the input file
   integer      :: nbr_quantum_trash  !Number of quantum atoms where the forces will be wrong (to close to the H bonds). The are the very first atoms in the file
                                      !Thus nbr_quantum = nbr_quantum_trash + nbr_quantum_good
@@ -63,6 +64,7 @@ module defs
   character(len=20) :: conf_initial, conf_saddle, conf_final
   
   character(len=3),  dimension(:), allocatable          :: typat    ! Atomic type
+  character(len=3),  dimension(:), allocatable          :: typat_read    ! Atomic type in the file ART is reading from
  ! integer,           dimension(:), allocatable          :: constr   ! Constraint over atoms
   real(kind=8),      dimension(:), allocatable, target  :: force    ! Working forces on the atoms
   real(kind=8),      dimension(:), allocatable, target  :: pos      ! Working positions of the atoms

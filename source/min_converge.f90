@@ -41,13 +41,7 @@ subroutine min_converge ( success )
    close(FLOG) 
 
    ! It is possible, here, to use a different minimization routine for each potential.
-   if (energy_type == "DFT" ) then
-      call min_converge_dft(success)
-   elseif (energy_type == "SWP") then
-      call min_converge_fire(success)
-   elseif (energy_type == "GAU") then
-      call min_converge_gau(success)
-   endif
+   call min_converge_gau(success)
 
    if ( .not. success ) then
       open( unit = FLOG, file = LOGFILE, status = 'unknown',&
@@ -118,8 +112,6 @@ subroutine check_min( stage )
       ! let's see the projection
       if ( setup_initial ) call print_proj ( i, stage, projection, eigenvalue, DEL_LANCZOS )
    end do
-
-   if (energy_type == "SWP") call reset_SW_potential()
 
    ! Report
    write(*,*) "BART: END  LANCZOS"  !debug

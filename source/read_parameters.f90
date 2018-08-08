@@ -617,6 +617,15 @@ subroutine read_parameters( )
   endif
 
   !!__________________
+  ! Name the shared history file to be read from
+  call getenv('natoms_correspond', temporary)
+  if (temporary .eq. '') then
+        temporary = '0'
+  else
+          read(temporary,*) natoms_correspond
+  endif
+
+  !!__________________
   ! Reference configuration for refine saddle. Without ext.
   call getenv('REFCONFIG', temporary)
   if (temporary .eq. '') then
@@ -782,6 +791,7 @@ subroutine read_parameters( )
 
   ! And we allocate the vectors
   allocate(typat(natoms))
+  allocate(typat_read(natoms))
  ! allocate(constr(natoms))
   allocate(force(vecsize))
   allocate(pos(vecsize))
