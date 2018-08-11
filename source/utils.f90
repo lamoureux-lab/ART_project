@@ -24,11 +24,11 @@ subroutine print_event( ievent_current, temperat )
   !Local variables
   integer :: ierror
 
-  write(*,*) 'BART: Simulation : ', ievent_current
-  write(*,*) 'BART: Attempt    : ', atp
-  write(*,*) 'BART: Starting from minconf : ', mincounter
-  write(*,*) 'BART: Reference Energy (eV) : ', ref_energy
-  write(*,*) 'BART: Temperature : ', temperat
+  write(*,*) 'ARTGAUSS: Simulation : ', ievent_current
+  write(*,*) 'ARTGAUSS: Attempt    : ', atp
+  write(*,*) 'ARTGAUSS: Starting from minconf : ', mincounter
+  write(*,*) 'ARTGAUSS: Reference Energy (eV) : ', ref_energy
+  write(*,*) 'ARTGAUSS: Temperature : ', temperat
 
   open(unit=FLOG,file=LOGFILE,status='unknown',action='write',position='append',iostat=ierror)
   write(FLOG,*) ' __________________________________________________'

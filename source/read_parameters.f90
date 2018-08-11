@@ -864,12 +864,10 @@ subroutine write_parameters( )
   ! We write down the various parameters for the simulation
   open(unit=FLOG,file=LOGFILE,status='unknown',action='write',position='rewind',iostat=ierror)  
   write(flog,*) '****************************** '
-  write(flog,*) 'WELCOME TO BART : BigDFT + ART '
+  write(flog,*) 'WELCOME TO ARTGAUSS : ART + Gaussian '
   write(flog,*) '****************************** '
   call timestamp ('Start')
   write(flog,'(1X,A39,f12.3)')  ' - Version number of  ART            : ', VERSION_NUMBER
-  write(flog,'(1X,A39,A14)')    ' - Version number of  BIGDFT         : ', BIGREVNO 
-  write(flog,*) ''
   write(flog,'(1X,A39,A16  )')  ' - Event type                        : ', trim(eventtype)
   write(flog,'(1X,A39,f12.4)')  ' - Temperature                       : ', temperature
   write(flog,'(1X,A39,I12  )')  ' - Number of atoms                   : ', natoms     

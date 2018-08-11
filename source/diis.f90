@@ -176,7 +176,7 @@ subroutine apply_diis( diter, saddle_energy, ret )
          rejected_step = .false.
       end if 
       if ( iproc == 0 ) then          ! REPORT DIIS 
-        write (*,'(a,3I5,1x,2F11.4,2x,(1p,e14.5,0p),1x,L1)') 'BART DIIS:',  &
+        write (*,'(a,3I5,1x,2F11.4,2x,(1p,e14.5,0p),1x,L1)') 'ARTGAUSS DIIS:',  &
         &  pas, diter, maxter, n_deltaGdiis, factor_diis*INCREMENT, solution(maxter+1), &
         &  rejected_step 
       end if
@@ -204,7 +204,7 @@ subroutine apply_diis( diter, saddle_energy, ret )
                ! If not ITERATIVE, we can not continue with this event. 
                end_activation = .true. 
                ret = 70000 + pas - 1
-               if ( iproc == 0 ) write(*,*) 'BART: DIIS Failed, no memory'
+               if ( iproc == 0 ) write(*,*) 'ARTGAUSS: DIIS Failed, no memory'
 
             else if ( diter > 1 ) then
 
@@ -387,7 +387,7 @@ subroutine get_solution( maxter, error_vector, solution )
   call dsysv('U', n, nrhs, matrice, n, interchanges, solution, n, work, lwork, i_err )
                    ! If something fails 
   if ( i_err /= 0 ) then
-     if ( iproc == 0 ) write(*,*) 'BART WARNING DIIS: info calculation of solution', i_err
+     if ( iproc == 0 ) write(*,*) 'ARTGAUSS WARNING DIIS: info calculation of solution', i_err
   end if
 
   deallocate(work)
@@ -691,14 +691,14 @@ subroutine lanczos_step ( current_energy, a1, liter, get_proj )
         new_projection = .false.      ! previous direction each time.
         call lanczos( NVECTOR_LANCZOS_C, new_projection, a1 )
         if ( iproc == 0 ) write(*,'(a,3I5,f12.6,f7.2)') &
-           & 'BART COLLINEAR:', pas, liter, i, eigenvalue, a1
+           & 'ARTGAUSS COLLINEAR:', pas, liter, i, eigenvalue, a1
         if ( a1 > collinear_factor ) exit 
      end do
   end if
                                       ! Debug
   !if ( iproc == 0 ) then                
-  ! write(*,*) 'BART: eigenvalue : ', eigenvalue
-  ! write(*,"(' ','BART: eigenvals: ',4f12.6)") (eigenvals(i),i=1,4)
+  ! write(*,*) 'ARTGAUSS: eigenvalue : ', eigenvalue
+  ! write(*,"(' ','ARTGAUSS: eigenvals: ',4f12.6)") (eigenvals(i),i=1,4)
   !end if
                                       ! Write 
   call write_step ( 'L', liter, a1, current_energy )

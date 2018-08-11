@@ -69,9 +69,9 @@ subroutine saddle_converge( ret, saddle_energy )
       restart = .false.
       ! Write
       if ( iproc == 0 ) then
-         write(*,*) 'BART: Restart  in harmonic well '
-         write(*,*) 'BART: kter : ', kter_init
-         write(*,*) 'BART: pos: ', pos(1), pos(2), pos(3)
+         write(*,*) 'ARTGAUSS: Restart  in harmonic well '
+         write(*,*) 'ARTGAUSS: kter : ', kter_init
+         write(*,*) 'ARTGAUSS: pos: ', pos(1), pos(2), pos(3)
          !DEBUG starts Bhupinder
          write(*,*) 'DEBUG!!! These "pos: values" are written by the saddle_converge subroutine'
          !DEBUG ends Bhupinder
@@ -155,7 +155,7 @@ subroutine saddle_converge( ret, saddle_energy )
                call lanczos( NVECTOR_LANCZOS_H, new_projection, a1 )
                new_projection = .false. 
                if ( iproc == 0 ) write(*,'(a,3I5,f12.6,f7.2)') &
-                  &   'BART COLLINEAR:', pas, kter, i, eigenvalue, a1
+                  &   'ARTGAUSS COLLINEAR:', pas, kter, i, eigenvalue, a1
             end do
 
          else if ( setup_initial .and. kter > KTER_MIN + 1 ) then 
@@ -234,19 +234,19 @@ subroutine saddle_converge( ret, saddle_energy )
       liter = iter_restart 
       diter = 1
       switchDIIS= .False.           ! We go to apply_lanczos.
-      if ( iproc == 0 ) write(*,*) "BART: Restart = 2"
+      if ( iproc == 0 ) write(*,*) "ARTGAUSS: Restart = 2"
       elseif ( state_restart == 4 ) then 
       diter = iter_restart 
       liter = 1
       switchDIIS= .True.            ! We go to apply_diis.
-      if ( iproc == 0 ) write(*,*) "BART: Restart = 4"
+      if ( iproc == 0 ) write(*,*) "ARTGAUSS: Restart = 4"
    else                             !DEBUG
-      if ( iproc == 0 ) write(*,*) "BART: HOUSTON, we've got a problem"
+      if ( iproc == 0 ) write(*,*) "ARTGAUSS: HOUSTON, we've got a problem"
       call end_art () 
    end if 
 
    call displacement( posref, pos, delr, npart )
-   if (iproc==0) write(*,*) "BART: delr npart", delr, npart
+   if (iproc==0) write(*,*) "ARTGAUSS: delr npart", delr, npart
    call force_projection( fpar, perp_force, fperp, ftot, force, projection )
    ! _________
 else if ( .not. new_event ) then    ! Else If_restart
@@ -260,7 +260,7 @@ else if ( .not. new_event ) then    ! Else If_restart
       call lanczos( NVECTOR_LANCZOS_H, new_projection, a1 )
       new_projection = .false.
       if ( iproc == 0 ) write(*,'(a,2I5,f12.6,f7.2)') &
-         &   'BART COLLINEAR:', pas, i, eigenvalue, a1
+         &   'ARTGAUSS COLLINEAR:', pas, i, eigenvalue, a1
       if ( a1 > collinear_factor ) exit
    end do
 
@@ -280,8 +280,8 @@ else if ( .not. new_event ) then    ! Else If_restart
    switchDIIS= .False.
    ! _________
 else                                ! Else If_restart
-   write(*,*) 'BART: Problem with restart and state_restart : '
-   write(*,*) 'BART: restart = ', restart, ' state_restart = ', state_restart
+   write(*,*) 'ARTGAUSS: Problem with restart and state_restart : '
+   write(*,*) 'ARTGAUSS: restart = ', restart, ' state_restart = ', state_restart
    stop
 end if If_restart
 ! _________ 
@@ -373,7 +373,7 @@ subroutine write_step ( stage, it, a1, energy )
       close( FLOG )
 
       write(*,'(a,i4,2x,a2,i4,1x,(1p,e17.10,0p),1x,2i3,4f12.6,1x,1f10.4,i4,i6)') &
-         &   " BART:", pas, etape, it, energy,  m_perp, try, ftot, fpar, fperp,   &
+         &   " ARTGAUSS:", pas, etape, it, energy,  m_perp, try, ftot, fpar, fperp,   &
          &   eigenvalue, delr, npart, evalf_number
    end if
 
@@ -512,7 +512,7 @@ subroutine end_report ( success, ret, saddle_energy )
          &       "i6, ' |')")                                          & 
          & mincounter, adjustr(converg), ret, delta_e, ftot,  &  
          & fpar, fperp, eigenvalue, npart, delr, evalf_number
-      write(*,"(/' ','BART: SADDLE',i5, a10,' |ret ',i6,' |delta energy= '," //  &
+      write(*,"(/' ','ARTGAUSS: SADDLE',i5, a10,' |ret ',i6,' |delta energy= '," //  &
          &    "f9.4, ' |force_(tot,par,perp)= ', 3f10.4," //       &
          &    "' |eigenval=',f9.4,' |npart= ', i4,' |delr= ', f8.3,' |evalf='," // &
          &    "i6, ' |')")                                          & 
@@ -521,7 +521,7 @@ subroutine end_report ( success, ret, saddle_energy )
 
       if ( success ) then  
          ! Write  
-         write(*,*) 'BART: Configuration stored in file ',fname
+         write(*,*) 'ARTGAUSS: Configuration stored in file ',fname
          write(FLOG,'(1X,A34,A17)') ' - Configuration stored in file : ', trim(fname)
          write(FLOG,'(1X,A34,(1p,e17.10,0p))') &
             &   ' - Total energy Saddle (eV)     : ', saddle_energy

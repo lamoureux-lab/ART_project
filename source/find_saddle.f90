@@ -320,7 +320,7 @@ subroutine local_move( )
   write(FLOG,*) ' '
   write(FLOG,'(1X,A34,I17)') ' - That atom                    : ', that
   close(FLOG)
-  write(*,*) 'BART: That atom = ', that
+  write(*,*) 'ARTGAUSS: That atom = ', that
 
 
                                       ! Square the cut-off
@@ -585,7 +585,7 @@ subroutine list_and_local ()
   write(FLOG,*) ' '
   write(FLOG,'(1X,A34,I17)') ' - That atom                    : ', that
   close(FLOG)
-  write(*,*) 'BART: That atom = ', that
+  write(*,*) 'ARTGAUSS: That atom = ', that
   
   
                                       ! Square the cut-off
@@ -749,7 +749,7 @@ subroutine center_and_norm ( step )
   write(*,*)'Initial direction is:'
   write(*,*) initial_direction
 
-  write(*,*) 'BART: Number of displaced atoms initially: ',natom_displaced
+  write(*,*) 'ARTGAUSS: Number of displaced atoms initially: ',natom_displaced
 
   deallocate(atom_displaced)
   deallocate(dr)
@@ -862,7 +862,7 @@ subroutine coord_based_move( )
   end do
  
   if ( that == 0 ) then
-     write(*,*)  'BART ERROR: There is no atom with lower coord than ', coord_number
+     write(*,*)  'ARTGAUSS ERROR: There is no atom with lower coord than ', coord_number
      stop
   end if
 
@@ -873,7 +873,7 @@ subroutine coord_based_move( )
   write(FLOG,*) ' '
   write(FLOG,'(1X,A34,I17)') ' - That atom                    : ', that
   close(FLOG)
-  write(*,*) 'BART: That atom = ', that
+  write(*,*) 'ARTGAUSS: That atom = ', that
 
   ! Square the cut-off
   lcutoff2 = LOCAL_CUTOFF * LOCAL_CUTOFF  

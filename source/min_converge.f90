@@ -48,7 +48,7 @@ subroutine min_converge ( success )
       close(FLOG)
    end if
 
-   write(*,"('',' BART: Relaxed energy : ',(1p,e17.10,0p))") total_energy
+   write(*,"('',' ARTGAUSS: Relaxed energy : ',(1p,e17.10,0p))") total_energy
 
    return
 END SUBROUTINE min_converge
@@ -89,7 +89,7 @@ subroutine check_min( stage )
       repetition = 3
    end if
 
-   write(*,*) "BART: INIT LANCZOS"  !debug
+   write(*,*) "ARTGAUSS: INIT LANCZOS"  !debug
    do i = 1, repetition
       call lanczos( NVECTOR_LANCZOS_H, new_projection , a1 )
       ! Report
@@ -102,7 +102,7 @@ subroutine check_min( stage )
       end if
       write(FLOG,'(I6,3X,(1p,e10.2,0p),4X,F12.6,1X,F7.4)') i, proj_energy-min_energy, eigenvalue, a1
       close(FLOG)
-      write(*,*) 'BART: Iter ', i, ' : ', lanc_energy, proj_energy,  eigenvalue, a1
+      write(*,*) 'ARTGAUSS: Iter ', i, ' : ', lanc_energy, proj_energy,  eigenvalue, a1
 
       ! Now we start from the previous direction.
       new_projection= .false.
@@ -111,7 +111,7 @@ subroutine check_min( stage )
    end do
 
    ! Report
-   write(*,*) "BART: END  LANCZOS"  !debug
+   write(*,*) "ARTGAUSS: END  LANCZOS"  !debug
    open( unit = FLOG, file = LOGFILE, status = 'unknown',&
         & action = 'write', position = 'append', iostat = ierror )
    write(FLOG,*) ' Done Lanczos'
