@@ -35,7 +35,6 @@ subroutine initialize()
   real(kind=8), pointer      :: pos_a(:)    ! Working positions of the atoms
   real(kind=8), dimension(:), pointer :: xa, ya, za
 
-  real(kind=8), dimension(3) :: boxref_
   !_______________________
   
   ! Read the counter in order to continue the run where it stopped or for refine
@@ -63,7 +62,6 @@ subroutine initialize()
   open(unit=FREFCONFIG,file=REFCONFIG,status='old',action='read',iostat=ierror)
   read(FREFCONFIG,*) dummy, refcounter
   read(FREFCONFIG,*) dummy, ref_energy
-  !read(FREFCONFIG,*) boundary, boxref_(1),boxref_(2),boxref_(3)
   do i = 1, NATOMS
     read(FREFCONFIG,*) typ_a(i), xa(i), ya(i), za(i)
   end do
@@ -73,12 +71,9 @@ subroutine initialize()
   if ( .not. restart ) then
      typat(:)   = typ_a(:)
      pos(:)     = pos_a(:)
-     boxref(:)  = boxref_(:)
      refcounter = mincounter
-     box = boxref
   else 
      posref(:) = pos_a(:)
-     boxref(:)  = boxref_(:)
   end if
 
      deallocate(typ_a)
@@ -96,8 +91,6 @@ subroutine initialize()
   close(FLOG)
 
   ! We rescale the coordinates. For what ?? 
-  scalaref = 1.0d0
-  scala = scalaref
 
   call initialize_potential()         ! Initialize Potential (CORE) 
 

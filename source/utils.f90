@@ -58,7 +58,6 @@ subroutine displacement( posa, posb, delr, npart )
 
   !Local variables
   integer :: i
-  real(kind=8),dimension(3) :: invbox
   real(kind=8), parameter :: THRESHOLD = 0.1d0  ! In Angstroems
   real(kind=8), dimension(:), pointer :: xa, ya, za, xb, yb, zb
   real(kind=8) :: delx, dely, delz, dr, dr2, delr2
@@ -75,28 +74,10 @@ subroutine displacement( posa, posb, delr, npart )
   delr2 = 0.0d0
   npart = 0
 
-  invbox = 1.0d0/box
   do i = 1, NATOMS
-     if ( boundary == 'P') then
-
-        delx = ( xa(i) - xb(i) ) - box(1) * nint(( xa(i) - xb(i) )*invbox(1))
-        dely = ( ya(i) - yb(i) ) - box(2) * nint(( ya(i) - yb(i) )*invbox(2))
-        delz = ( za(i) - zb(i) ) - box(3) * nint(( za(i) - zb(i) )*invbox(3))
-         
-     else if ( boundary == 'S') then
-
-        !be carefull with boundaries if surface: In bigdft the surface is 
-        !always perpendicular to "y"
-
-        delx = ( xa(i) - xb(i) ) - box(1) * nint(( xa(i) - xb(i) )*invbox(1))
-        dely = ( ya(i) - yb(i) )
-        delz = ( za(i) - zb(i) ) - box(3) * nint(( za(i) - zb(i) )*invbox(3))
-      else if ( boundary == 'F' ) then
-
         delx = ( xa(i) - xb(i) )
         dely = ( ya(i) - yb(i) )
         delz = ( za(i) - zb(i) )
-      end if
 
      dr2   = delx*delx + dely*dely + delz*delz
      delr2 = delr2 + dr2
@@ -115,7 +96,6 @@ END SUBROUTINE displacement
 
 !> ART store
 !!    This subroutine stores the configurations at minima and activated points
-!!    By definition, it uses pos, box and scala
 subroutine store( fname )
 
   use defs
@@ -126,84 +106,36 @@ subroutine store( fname )
 
   !Local variables
   integer :: i, ierror
-  real(kind=8),dimension(3) :: boxl
   character(len=*), parameter :: extension = ".xyz"
   character(len=20) :: fnamexyz
-  character(len=4), dimension(natoms) :: frzchain
-
-  boxl = box * scala                  ! Update the box size
 
   write(*,*) ' Writing to file : ', fname
    
   open(unit=FCONF,file=fname,status='unknown',action='write',iostat=ierror)
   write(FCONF,*) 'run_id: ', mincounter
   write(FCONF,*) 'total_energy: ', total_energy
-  !write(FCONF,*) boundary, boxl
   do i=1, NATOMS
      write(FCONF,'(1x,a,3(2x,f16.8))') typat(i), x(i), y(i), z(i)
   end do
   close(FCONF)
 
-  open(unit=VLOG, file = VECLOG, status = 'unknown', action='write', position='append')
-  write(VLOG,*) fname
-  do i=1,NATOMS
-        write(VLOG,'(1x,a,3(2x,f16.8))') typat(i), x(i), y(i), z(i)
+  open(unit=STRUCT, file='struct.xyz', status='unknown', action='write', position='append', iostat=ierror)
+  write(STRUCT,*) NATOMS 
+  write(STRUCT,*) fname
+  do i=1, NATOMS
+      write(STRUCT,'(1x,A2,3(2x,f16.8),2x,a4)')   Atom(i), x(i), y(i), z(i)
   end do
-  close(VLOG)
-  ! Added by Fedwa El-Mellouhi July 2002, writes the configuration in .xyz format. 
-  ! Modified by E. Machado-charry for v_sim and BigDFT.
-  if ( write_xyz ) then
+  close(STRUCT)
 
-     ! If there is a constraint over a given atom, is written in the geometry file.
-     do i = 1, NATOMS
-       ! if      ( constr(i)== 0) then
-           frzchain(i)='    '
-       ! else if (constr(i) == 1) then
-        !   frzchain(i)='   f'
-       ! else if (constr(i) == 2) then
-        !   frzchain(i)='  fy'
-       ! else if (constr(i) == 3) then
-        !   frzchain(i)=' fxz'
-       ! end if
-     end do
-
-     fnamexyz = trim(fname) // extension
-     write(*,*) ' Writing to file : ', fnamexyz
-     open(unit=XYZ,file=fnamexyz,status='unknown',action='write',iostat=ierror)
-     write(XYZ,*) NATOMS , 'angstroem'
-     if (boundary == 'P') then
-        write(XYZ,'(a,3(1x,1p,e24.17,0p))')'periodic', (boxl(i),i=1,3)
-     else if (boundary == 'S') then
-        write(XYZ,'(a,3(1x,1p,e24.17,0p))')'surface',(boxl(i),i=1,3)
-     else
-        write(XYZ,*)'free'
-     end if
-     do i=1, NATOMS
-        write(XYZ,'(1x,A2,3(2x,f16.8),2x,a4)')   Atom(i), x(i), y(i), z(i), frzchain(i)
-     end do
-     close(XYZ)
-  end if
+  open(PATH, file = 'pathway.xyz', action = 'write', position = 'append')
+  write(PATH,*) NATOMS
+  write(PATH,'(a10)') "ART_COORDS"
+  do i=1,NATOMS
+       write(PATH,'((1X,a),3(2X,f15.8))') typat(i), x(i), y(i), z(i)
+  enddo
+  close(PATH)
 
 END SUBROUTINE store
-
-subroutine store_failed ()
-
-  use defs
-  implicit none
-
-  !Arguments
-  !character(len=7 ), intent(in) :: fname
-
- ! Local variables
-  integer :: i
-  open(VLOG, file = VECLOG, status = 'unknown', action='write', position='append')
-  write(VLOG,*) "FAILED SADDLE: "
-  do i=1,NATOMS
-        write(VLOG,'(1x,a,3(2x,f16.8))') typat(i), x(i), y(i), z(i)
-  end do
-  close(VLOG)
-
-end subroutine store_failed
 
 !> ART save_intermediate
 !!    It saves the configuration at every step in xyz format.
@@ -223,14 +155,9 @@ subroutine save_intermediate( stage )
 
   !Local variables
   integer :: i, ierror
-  real(kind=8), dimension(3) :: boxl
   character(len=40) :: fname
   character(len=4)  :: scounter, rcounter, pcounter
-  character(len=4), dimension(natoms) :: frzchain
 
-  boxl = box * scala                  ! Update the box size
-
-                                      ! subroutines in utils.f90 
   if ( iproc == 0 ) then
                                       ! set up of xyz file.
      call convert_to_chain( mincounter, 4, scounter ) 
@@ -239,33 +166,14 @@ subroutine save_intermediate( stage )
      fname = 'p_'//trim(scounter)//'_'//trim(rcounter)//'_'//trim(pcounter)//'_'//stage//".xyz"
      fname = trim(fname)
 
-     ! If there is a constraint over a given atom, is written in the geometry file.
-     do i = 1, NATOMS
-       ! if      ( constr(i)== 0) then
-           frzchain(i)='    '
-       ! else if (constr(i) == 1) then
-       !    frzchain(i)='   f'
-      !  else if (constr(i) == 2) then
-       !    frzchain(i)='  fy'
-      !  else if (constr(i) == 3) then
-       !    frzchain(i)=' fxz'
-      !  end if
-     end do
-
      open(unit=XYZ,file=fname,status='unknown',action='write',iostat=ierror)
 
-     write(XYZ,*) NATOMS,  'angstroem' 
+     write(XYZ,*) NATOMS 
 
-     if (boundary == 'P') then
-        write(XYZ,'(a,3(1x,1p,e24.17,0p))') 'periodic', (boxl(i),i=1,3)
-     else if (boundary == 'S') then
-        write(XYZ,'(a,3(1x,1p,e24.17,0p))') 'surface',  (boxl(i),i=1,3)
-     else
-        write(XYZ,*)'free'
-     end if
+     write(XYZ,*)'free'
 
      do i= 1, NATOMS
-        write(XYZ,'(1x,A2,3(2x,f16.8),2x,a4)')   Atom(i), x(i), y(i), z(i), frzchain(i)
+        write(XYZ,'(1x,A2,3(2x,f16.8),2x,a4)')   Atom(i), x(i), y(i), z(i)
      end do
 
      write(XYZ,*) '# simulation ',scounter,", attempt ", atp,", step ", pas,", stage ", stage
@@ -355,15 +263,11 @@ subroutine write_refconfig( )
   
   !Local variables
   integer :: i, ierror
-  real(kind=8),dimension(3) :: boxl
-  
-  boxl = box * scala                  ! Update the box size 
   
   ! switch replace for unknown
   open(unit=FREFCONFIG,file=REFCONFIG,status='unknown',action='write',iostat=ierror) 
   write(FREFCONFIG,*) 'run_id: ', refcounter
   write(FREFCONFIG,*) 'total_energy: ', total_energy
-  !write(FREFCONFIG,*) boundary, boxl
   do i = 1, NATOMS
      write(FREFCONFIG,'(1x,a,3(2x,F16.8))') typat(i), x(i), y(i), z(i)
   end do
@@ -388,7 +292,6 @@ subroutine print_proj( repetitions, stage, vector, eigenvalue, stepsize )
 
   integer :: ierror
   integer :: i
-  real(kind=8), dimension(3) :: boxl
   real(kind=8), allocatable  :: pc(:,:)
   character(len=40) :: fname
   character(len=4)  :: rcounter
@@ -400,8 +303,6 @@ subroutine print_proj( repetitions, stage, vector, eigenvalue, stepsize )
 
   if ( iproc == 0 ) then
 
-     boxl = box * scala  ! Update the box size
-
      call convert_to_chain( repetitions, 2, rcounter )
      fname = 'proj_'//trim(rcounter)//'_'//stage//".xyz"
      fname = trim(fname)
@@ -410,13 +311,7 @@ subroutine print_proj( repetitions, stage, vector, eigenvalue, stepsize )
 
      write(XYZ,*) NATOMS,  'angstroem' 
 
-     if (boundary == 'P') then
-        write(XYZ,'(a,3(1x,1p,e24.17,0p),2x,a,2x,F12.6)')'periodic', (boxl(i),i=1,3),'#', eigenvalue
-     else if (boundary == 'S') then
-        write(XYZ,'(a,3(1x,1p,e24.17,0p),2x,a,2x,F12.6)')'surface',  (boxl(i),i=1,3),'#', eigenvalue
-     else
-        write(XYZ,*)'free ',' # ', eigenvalue
-     end if
+     write(XYZ,*)'free ',' # ', eigenvalue
 
      do i= 1, NATOMS
         write(XYZ,'(1x,A2,3(2x,f16.8),2x,A,2x,I3,3(2x,f12.8))') &
@@ -434,10 +329,10 @@ subroutine print_proj( repetitions, stage, vector, eigenvalue, stepsize )
 END SUBROUTINE print_proj 
 
 
-!> ART boundary_cond
-subroutine boundary_cond ( posr, posa, posb )
+!> ART pos_difference
+subroutine pos_difference ( posr, posa, posb )
 
-  use defs, only : natoms, vecsize, box, boundary
+  use defs, only : natoms, vecsize
   implicit none
 
   !Arguments
@@ -447,7 +342,6 @@ subroutine boundary_cond ( posr, posa, posb )
 
   !Local variables
   integer :: i
-  real(kind=8),dimension(3) :: invbox
   real(kind=8), dimension(:), pointer :: xr, yr, zr, xa, ya, za, xb, yb, zb
 
   ! We first set-up pointers for the x, y, z components for posr, posa and posb
@@ -464,29 +358,10 @@ subroutine boundary_cond ( posr, posa, posb )
   yb => posb(NATOMS+1:2*NATOMS)
   zb => posb(2*NATOMS+1:3*NATOMS)
 
-  invbox = 1.0d0/box
-
   do i = 1, natoms
-     if ( boundary == 'P') then
-
-        xr(i) = ( xa(i) - xb(i) ) - box(1) * nint(( xa(i) - xb(i) )*invbox(1))
-        yr(i) = ( ya(i) - yb(i) ) - box(2) * nint(( ya(i) - yb(i) )*invbox(2))
-        zr(i) = ( za(i) - zb(i) ) - box(3) * nint(( za(i) - zb(i) )*invbox(3))
-         
-     else if ( boundary == 'S') then
-
-        !be carefull with boundaries if surface: In bigdft the surface is 
-        !always perpendicular to "y"
-
-        xr(i) = ( xa(i) - xb(i) ) - box(1) * nint(( xa(i) - xb(i) )*invbox(1))
-        yr(i) = ( ya(i) - yb(i) )
-        zr(i) = ( za(i) - zb(i) ) - box(3) * nint(( za(i) - zb(i) )*invbox(3))
-      else if ( boundary == 'F' ) then
-
         xr(i) = ( xa(i) - xb(i) )
         yr(i) = ( ya(i) - yb(i) )
         zr(i) = ( za(i) - zb(i) )
-     end if
   enddo
 
-END SUBROUTINE boundary_cond
+END SUBROUTINE pos_difference

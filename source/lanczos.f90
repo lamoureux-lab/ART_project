@@ -56,7 +56,6 @@ subroutine lanczos( maxvec, new_projection, produit )
   real(kind=8) :: a1, a0, b2, b1, c1, norm, ran3
   real(kind=8) :: excited_energy, sum2, invsum
   real(kind=8) :: dr2
-  real(kind=8), dimension(3) :: boxl
   real(kind=8), dimension(VECSIZE)         :: newpos, newforce, ref_force
   real(kind=8), dimension(maxvec)          :: diag
   real(kind=8), dimension(maxvec-1)        :: offdiag
@@ -87,13 +86,11 @@ subroutine lanczos( maxvec, new_projection, produit )
   offdiag = 0.0d0
   lanc = 0.0d0
   
-  boxl = box * scala
-
   ! We now take the current position as the reference point and will
   ! make a displacement in a random direction or using the previous
   ! direction as the starting point.
 
-  call calcforce( NATOMS, pos, boxl, ref_force, lanc_energy, evalf_number, .true. )
+  call calcforce( NATOMS, pos, ref_force, lanc_energy, evalf_number, .true. )
 
   z0 => lanc(:,1)
 
@@ -131,7 +128,7 @@ subroutine lanczos( maxvec, new_projection, produit )
 
   newpos = pos + z0 * DEL_LANCZOS     ! New positions.
 
-  call calcforce( NATOMS, newpos, boxl, newforce, excited_energy, evalf_number, .true. )
+  call calcforce( NATOMS, newpos, newforce, excited_energy, evalf_number, .true. )
 
   ! We extract lanczos(1)
   newforce = newforce - ref_force  
@@ -153,7 +150,7 @@ subroutine lanczos( maxvec, new_projection, produit )
 
      z1 => lanc(:,ivec)
      newpos = pos + z1 * DEL_LANCZOS 
-     call calcforce( NATOMS, newpos, boxl, newforce, excited_energy, evalf_number, .true. )
+     call calcforce( NATOMS, newpos, newforce, excited_energy, evalf_number, .true. )
      newforce = newforce - ref_force
      newforce = newforce*(-1.0d0/DEL_LANCZOS)
 
@@ -184,7 +181,7 @@ subroutine lanczos( maxvec, new_projection, produit )
   z1 => lanc(:,maxvec)                ! our matrix  
 
   newpos = pos + z1 * DEL_LANCZOS  
-  call calcforce( NATOMS, newpos, boxl, newforce, excited_energy, evalf_number, .true. )
+  call calcforce( NATOMS, newpos, newforce, excited_energy, evalf_number, .true. )
   newforce = newforce - ref_force
   newforce = newforce*(-1.0d0/DEL_LANCZOS)
 
@@ -290,7 +287,7 @@ subroutine lanczos( maxvec, new_projection, produit )
   ! This is for analyzing the minimum. 
   if ( IN_MINIMUN .and. LANCZOS_MIN ) then 
      newpos = pos + projection * DEL_LANCZOS 
-     call calcforce( NATOMS, newpos, boxl, newforce, proj_energy, evalf_number, .true. )
+     call calcforce( NATOMS, newpos, newforce, proj_energy, evalf_number, .true. )
   else
      proj_energy = lanc_energy 
   end if

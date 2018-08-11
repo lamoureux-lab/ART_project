@@ -125,7 +125,7 @@ program art90
         ! that it falls back into its original state.
      
         allocate(del_pos(VECSIZE))       ! We compute the displacement.
-        call boundary_cond( del_pos, pos, posref )
+        call pos_difference( del_pos, pos, posref )
         difpos  = sqrt( dot_product(del_pos,del_pos) )
         del_pos = del_pos/difpos 
 
@@ -148,17 +148,9 @@ program art90
               prod = -1.0d0
            end if
         end if
-        !DEBUG Bhupinder
-
-        write(*,*) "This is dif_pos:", difpos
-        write(*,*) "This is projection:", projection
-
-        write(*,*) "This is pos_before", pos
 
         pos = pos + prod * PUSH_OVER * difpos * projection
         
-        write(*,*) "This is pos after push", pos
-
         call min_converge( success )     ! And we converge to the new minimum.
         delta_e = total_energy - ref_energy 
 
@@ -193,7 +185,6 @@ program art90
            write(FLIST,*) conf_initial, conf_saddle, conf_final,'    accepted'
            
            ! We now redefine the reference configuration
-           scalaref     = scala
            posref       = pos     
            conf_initial = conf_final
            ref_energy   = total_energy

@@ -44,15 +44,12 @@ subroutine restart_states( istatus, ieventcurrent, iterations, iatp )
      diis_norm_restart   = 0.0d0
   end if 
 
-  read(FRESTART,*) ieventcurrent, evalf_number, boundary, central_atom 
-  read(FRESTART,*) box(1), box(2), box(3), scala
-  read(FRESTART,*) boxref(1), boxref(2), boxref(3), scalaref
+  read(FRESTART,*) ieventcurrent, evalf_number, central_atom 
   read(FRESTART,*) total_energy, ref_energy
   read(FRESTART,*) ( typat(i), i = 1, NATOMS )
   read(FRESTART,*) ( xref(i), yref(i), zref(i), i = 1, NATOMS )
   read(FRESTART,*) ( x(i), y(i), z(i), i = 1, NATOMS )
   read(FRESTART,*) ( dx(i), dy(i), dz(i), i = 1, NATOMS )
-  !read(FRESTART,*) ( constr(i), i = 1, NATOMS )
 
   if ( istatus == 2 .or. istatus == 4 ) then 
      do j = 1, DIIS_MEMORY 
@@ -79,7 +76,6 @@ subroutine restart_states( istatus, ieventcurrent, iterations, iatp )
                                       ! DEBUG 
   if ( iproc == 0 ) then
      write(*,*) 'BART: restart file'
-     write(*,*) 'BART: box: ', box
      write(*,*) 'BART: central_atom ', central_atom  
      write(*,'(a,(1p,e17.10,0p))') ' BART: total energy: ', total_energy
      write(*,'(a,(1p,e17.10,0p))') ' BART: ref   energy: ', ref_energy 
@@ -120,15 +116,12 @@ subroutine save_state( istatus, iter, direction )
 
   open(unit=FRESTART,file=RESTARTFILE,status='unknown',action='write',iostat=ierror)
   write(FRESTART,*) istatus, iter, mincounter, refcounter, pas+1, atp
-  write(FRESTART,*) ievent, evalf_number, boundary, central_atom
-  write(FRESTART,*) box(1), box(2), box(3), scala
-  write(FRESTART,*) boxref(1), boxref(2), boxref(3), scalaref
+  write(FRESTART,*) ievent, evalf_number, central_atom
   write(FRESTART,*) total_energy, ref_energy
   write(FRESTART,'(2x,10i6)') ( typat(i), i = 1, NATOMS )
   write(FRESTART,'(2x,3f20.8)') ( xref(i), yref(i), zref(i), i = 1, NATOMS )
   write(FRESTART,'(2x,3f20.8)') ( x(i), y(i), z(i), i = 1, NATOMS )
   write(FRESTART,'(2x,3f20.8)') ( dx(i), dy(i), dz(i), i = 1, NATOMS )
-  !write(FRESTART,'(2x,10i6)') ( constr(i), i = 1, NATOMS )
   close(FRESTART)
 
 END SUBROUTINE save_state
@@ -164,15 +157,12 @@ subroutine save_state2( istatus, iter, direction, maxter, pf, px, pn, &
 
   open(unit=FRESTART,file=RESTARTFILE,status='unknown',action='write',iostat=ierror)
   write(FRESTART,*) istatus, iter, mincounter, refcounter, pas+1, atp
-  write(FRESTART,*) ievent, evalf_number, boundary, central_atom
-  write(FRESTART,*) box(1), box(2), box(3), scala
-  write(FRESTART,*) boxref(1), boxref(2), boxref(3), scalaref
+  write(FRESTART,*) ievent, evalf_number, central_atom
   write(FRESTART,*) total_energy, ref_energy
   write(FRESTART,'(2x,10i6)') ( typat(i), i = 1, NATOMS )
   write(FRESTART,'(2x,3f20.8)') ( xref(i), yref(i), zref(i), i = 1, NATOMS )
   write(FRESTART,'(2x,3f20.8)') ( x(i), y(i), z(i), i = 1, NATOMS )
   write(FRESTART,'(2x,3f20.8)') ( dx(i), dy(i), dz(i), i = 1, NATOMS )
- ! write(FRESTART,'(2x,10i6)') ( constr(i), i = 1, NATOMS )
  
   do j = 1, DIIS_MEMORY 
      dx => pf(j,1:NATOMS)

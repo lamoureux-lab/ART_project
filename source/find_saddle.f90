@@ -95,10 +95,7 @@ subroutine find_saddle( success, saddle_energy )
 
      nat = 3 * NATOMS                         
 
-     ! We copy the reference half box and scaling to the working ones.
      ! We start from the reference configuration.
-     scala = scalaref
-     box   = boxref
      pos   = posref  
 
   ! _______
@@ -111,22 +108,18 @@ subroutine find_saddle( success, saddle_energy )
      ! of length 1 indicating the direction of the random
      ! displacement.  There is not case default.
 
-     if ( eventtype == "GUESS_DIRECTION" ) then
-        call guess_direction ( )  
-     else
-        selectcase( type_events )
-          case( 'global' )
-              call global_move( )
-          case( 'local' )
-              call local_move( )
-          case( 'list_local' ) 
-              call list_and_local( )
-          case( 'list' )
-              call list_of_atoms( )
-          case( 'local_coord' )
-              call coord_based_move( )
-        end select
-     end if
+     selectcase( type_events )
+         case( 'global' )
+             call global_move( )
+         case( 'local' )
+             call local_move( )
+         case( 'list_local' ) 
+             call list_and_local( )
+         case( 'list' )
+             call list_of_atoms( )
+         case( 'local_coord' )
+             call coord_based_move( )
+     end select
 
   end if
 
@@ -226,7 +219,6 @@ subroutine global_move( )
                 write(VLOG,'(1X,a,3(2x,f16.8))') typat(i), dx(i), dy(i), dz(i)        
         enddo
         close(VLOG)
-        call end_art()
 
   case ( 2 ) ! "avoid" strategy
 
@@ -293,7 +285,6 @@ subroutine local_move( )
   real(kind=8) :: dr2
   real(kind=8) :: xi, yi, zi, xij, yij, zij
   real(kind=8) :: ran3
-  real(kind=8), dimension(3) :: boxl, invbox
   real(kind=8), dimension(:), pointer  :: dx, dy, dz
 
                                       ! Select an atom at random.
@@ -332,15 +323,6 @@ subroutine local_move( )
   write(*,*) 'BART: That atom = ', that
 
 
-  boxl = box*scala                    ! without periodic boundary conditions box
-                                      ! is zero so we set invbox to 1 
-  do i = 1, 3
-     if ( boxl(i) .lt. 1.d-08 ) then 
-        invbox(i) = 1.0d0
-     else
-        invbox(i) = 1.0d0 / boxl(i)
-     end if
-  end do
                                       ! Square the cut-off
   lcutoff2 = LOCAL_CUTOFF * LOCAL_CUTOFF  
 
@@ -361,10 +343,9 @@ subroutine local_move( )
   yi = y(that)
   zi = z(that)
   do j = 1, NATOMS
-    ! if ( constr(j) == 0 ) then
-        xij = x(j) - xi - boxl(1) * nint((x(j)-xi) * invbox(1))
-        yij = y(j) - yi - boxl(2) * nint((y(j)-yi) * invbox(2))
-        zij = z(j) - zi - boxl(3) * nint((z(j)-zi) * invbox(3))
+        xij = x(j) - xi 
+        yij = y(j) - yi
+        zij = z(j) - zi
         
         dr2 = xij*xij + yij*yij + zij*zij
         if ( dr2 < lcutoff2 ) then ! Close enough, give a random displacement.
@@ -524,7 +505,6 @@ subroutine list_and_local ()
   real(kind=8) :: lcutoff2    ! Cut-off for local moves, squared
   real(kind=8) :: ran3, dr2
   real(kind=8) :: xi, yi, zi, xij, yij, zij
-  real(kind=8), dimension(3) :: boxl, invbox
   real(kind=8), dimension(:), pointer :: dx, dy, dz
 
   found    = .false.
@@ -608,15 +588,6 @@ subroutine list_and_local ()
   write(*,*) 'BART: That atom = ', that
   
   
-  boxl = box*scala                    ! without periodic boundary conditions box
-                                      ! is zero so we set invbox to 1 
-  do i = 1, 3
-     if ( boxl(i) .lt. 1.d-08 ) then 
-        invbox(i) = 1.0d0
-     else
-        invbox(i) = 1.0d0 / boxl(i)
-     end if
-  end do
                                       ! Square the cut-off
   lcutoff2 = LOCAL_CUTOFF * LOCAL_CUTOFF  
 
@@ -637,10 +608,9 @@ subroutine list_and_local ()
   yi = y(that)
   zi = z(that)
   do j = 1, NATOMS
-   !  if ( constr(j) == 0 ) then
-        xij = x(j) - xi - boxl(1) * nint((x(j)-xi) * invbox(1))
-        yij = y(j) - yi - boxl(2) * nint((y(j)-yi) * invbox(2))
-        zij = z(j) - zi - boxl(3) * nint((z(j)-zi) * invbox(3))
+        xij = x(j) - xi
+        yij = y(j) - yi
+        zij = z(j) - zi
         
         dr2 = xij*xij + yij*yij + zij*zij
         if ( dr2 < lcutoff2 ) then ! Close enough, give a random displacement.
@@ -656,7 +626,6 @@ subroutine list_and_local ()
            natom_displaced = natom_displaced + 1
            atom_displaced(j) = 1
         end if
-    ! end if
   end do
 
   call center_and_norm ( INITSTEPSIZE )
@@ -760,7 +729,6 @@ subroutine center_and_norm ( step )
   ynorm = norm
   znorm = norm
   
-  ! The displacement is now in box units. 
   dx = dx * xnorm 
   dy = dy * ynorm
   dz = dz * znorm
@@ -773,8 +741,7 @@ subroutine center_and_norm ( step )
   ! DEBUG Bhupinder
   write(*,*) 'Updated position using random displacement' , pos  
   
-  ! Now, we normalize dr to get the initial_direction (note that this
-  ! had to be done after the transfer into box units.
+  ! Now, we normalize dr to get the initial_direction 
   initial_direction = dr 
   norm = dot_product( initial_direction, initial_direction ) 
   norm = 1.0d0 / sqrt(norm)
@@ -803,20 +770,10 @@ subroutine neighbours_local( )
   real(kind=8) :: lcutoff2    ! Cut-off for local moves, squared
   real(kind=8) :: dr2
   real(kind=8) :: xi, yi, zi, xij, yij, zij 
-  real(kind=8), dimension(3) :: boxl, invbox
 
   !_______________________
 
   lcutoff2 = size_system*size_system
-  boxl = box*scala                    ! without periodic boundary conditions box
-                                      ! is zero so we set invbox to 1 
-  do i = 1, 3
-     if ( boxl(i) .lt. 1.d-08 ) then 
-        invbox(i) = 1.0d0
-     else
-        invbox(i) = 1.0d0 / boxl(i)
-     end if
-  end do
 
   i = central_atom 
 
@@ -827,9 +784,9 @@ subroutine neighbours_local( )
   do j = 1, NATOMS
      if ( j == i ) cycle
 
-     xij = x(j) - xi - boxl(1) * nint((x(j)-xi) * invbox(1))
-     yij = y(j) - yi - boxl(2) * nint((y(j)-yi) * invbox(2))
-     zij = z(j) - zi - boxl(3) * nint((z(j)-zi) * invbox(3))
+     xij = x(j) - xi
+     yij = y(j) - yi
+     zij = z(j) - zi
 
      dr2 = xij*xij + yij*yij + zij*zij
   end do
@@ -851,7 +808,6 @@ subroutine coord_based_move( )
   real(kind=8) :: dr2
   real(kind=8) :: xi, yi, zi, xij, yij, zij 
   real(kind=8) :: ran3
-  real(kind=8), dimension(3) :: boxl, invbox
   real(kind=8), dimension(:), pointer  :: dx, dy, dz
 
   integer, dimension(natoms) :: in_list
@@ -859,15 +815,6 @@ subroutine coord_based_move( )
   !_______________________
 
   lcutoff2 = coord_length*coord_length
-  boxl = box*scala                    ! without periodic boundary conditions box
-                                      ! is zero so we set invbox to 1 
-  do i = 1, 3
-     if ( boxl(i) .lt. 1.d-08 ) then 
-        invbox(i) = 1.0d0
-     else
-        invbox(i) = 1.0d0 / boxl(i)
-     end if
-  end do
 
   in_list = 0                       ! Initial vectorial assignment
  
@@ -881,9 +828,9 @@ subroutine coord_based_move( )
      do j = 1, NATOMS
         if ( j == i ) cycle
 
-        xij = x(j) - xi - boxl(1) * nint((x(j)-xi) * invbox(1))
-        yij = y(j) - yi - boxl(2) * nint((y(j)-yi) * invbox(2))
-        zij = z(j) - zi - boxl(3) * nint((z(j)-zi) * invbox(3))
+        xij = x(j) - xi
+        yij = y(j) - yi
+        zij = z(j) - zi
 
         dr2 = xij*xij + yij*yij + zij*zij
 
@@ -949,10 +896,9 @@ subroutine coord_based_move( )
   yi = y(that)
   zi = z(that)
   do j = 1, NATOMS
-   !  if ( constr(j) == 0 ) then
-        xij = x(j) - xi - boxl(1) * nint((x(j)-xi) * invbox(1))
-        yij = y(j) - yi - boxl(2) * nint((y(j)-yi) * invbox(2))
-        zij = z(j) - zi - boxl(3) * nint((z(j)-zi) * invbox(3))
+        xij = x(j) - xi
+        yij = y(j) - yi
+        zij = z(j) - zi
 
         dr2 = xij*xij + yij*yij + zij*zij
         if ( dr2 < lcutoff2 ) then ! Close enough, give a random displacement.
@@ -968,100 +914,12 @@ subroutine coord_based_move( )
            natom_displaced = natom_displaced + 1
            atom_displaced(j) = 1
         end if
-    ! end if
   end do
 
   call center_and_norm ( INITSTEPSIZE )
 
 
 END SUBROUTINE coord_based_move 
-
-
-subroutine guess_direction ( )
-
-  use defs
-  use saddles
-
-  !Local variables
-  integer :: i, ierror
-  real(kind=8) :: ran3
-  real(kind=8), dimension(3) :: boxl, invbox
-  real(kind=8), dimension(:), pointer :: xa, ya, za
-  real(kind=8), dimension(:), pointer :: xb, yb, zb
-  real(kind=8), dimension(:), pointer :: dx, dy, dz
-  real(kind=8), dimension(:), allocatable, target :: posa
-  real(kind=8), dimension(:), allocatable, target :: posb
-  real(kind=8)  :: norm
-
-  open( unit = FLOG, file = LOGFILE, status = 'unknown',& 
-       & action = 'write', position = 'append', iostat = ierror )
-  write(FLOG,*) ' '
-  write(FLOG,'(1X,A47,A20)') ' -following a given initial direction in file: ', GUESSFILE
-  write(FLOG,'(1X,A20,F12.6)') '  Noise amplitude : ', guess_noise 
-  close(FLOG)
-
-  boxl = box*scala                    ! without periodic boundary conditions box
-                                      ! is zero so we set invbox to 1 
-  do i = 1, 3
-     if ( boxl(i) .lt. 1.d-08 ) then 
-        invbox(i) = 1.0d0
-     else
-        invbox(i) = 1.0d0 / boxl(i)
-     end if
-  end do
-
-  allocate(posa(3*natoms))
-  allocate(posb(3*natoms))
-  allocate(dr(3*natoms))
-  posa = 0.0d0
-  posb = 0.0d0
-  dr   = 0.0d0
-
-  posa(:) = pos(:)
-  posb(:) = g_pos(:)
-                                      ! maybe this is no neccesary.
-  call center( posa, 3*natoms )
-  call center( posb, 3*natoms )
-                                      ! We assign a few pointers. 
-  dx => dr(1:NATOMS)
-  dy => dr(NATOMS+1:2*NATOMS)
-  dz => dr(2*NATOMS+1:3*NATOMS)
-
-  xa => posa(1:NATOMS)
-  ya => posa(NATOMS+1:2*NATOMS)
-  za => posa(2*NATOMS+1:3*NATOMS)
-
-  xb => posb(1:NATOMS)
-  yb => posb(NATOMS+1:2*NATOMS)
-  zb => posb(2*NATOMS+1:3*NATOMS)
-
-  ! a small noise helps if we fail in the attempt
-  do i = 1, NATOMS
-    ! if ( constr(i) == 0 ) then
-        dx(i) = xb(i) - xa(i) - boxl(1) * nint((xb(i)-xa(i)) * invbox(1)) + guess_noise*(0.5d0-ran3()) 
-        dy(i) = yb(i) - ya(i) - boxl(2) * nint((yb(i)-ya(i)) * invbox(2)) + guess_noise*(0.5d0-ran3())
-        dz(i) = zb(i) - za(i) - boxl(3) * nint((zb(i)-za(i)) * invbox(3)) + guess_noise*(0.5d0-ran3())
-   !  end if
-  end do
- 
-  norm = dot_product( dr, dr ) 
-  norm = 1.0d0 / sqrt(norm) 
-  dr = dr*norm
-
-  call center( dr, 3*natoms )
-  norm = dot_product( dr, dr )     ! is it really necesary normalize again?
-  norm = 1.0d0 / sqrt(norm) 
-  dr = dr*norm
-  initial_direction = dr     
-
-  pos = pos + INITSTEPSIZE*initial_direction
-
-  deallocate(dr)
-  deallocate(posa)
-  deallocate(posb)
-  write(*,*) 'BART: Number of displaced atoms initially: ', natoms 
-
-END SUBROUTINE guess_direction 
 
 SUBROUTINE read_and_transform ( dr_transformed_list, sad_transformed_list, success_count )
 

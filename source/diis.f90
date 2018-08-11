@@ -76,7 +76,6 @@ subroutine apply_diis( diter, saddle_energy, ret )
   integer :: i
   real(kind=8) :: a1, smallest_error, invse
   real(kind=8) :: n_deltaGdiis
-  real(kind=8), dimension(3) :: boxl
   real(kind=8), dimension(VECSIZE) :: deltaGdiis
   real(kind=8), dimension(:),   allocatable :: solution
   real(kind=8), dimension(:,:), allocatable :: error_vector
@@ -85,7 +84,6 @@ subroutine apply_diis( diter, saddle_energy, ret )
   !real(kind=8) :: costheta, n_deltaref,  degtheta, sumpos, sumneg ! For Farkas' Tests.
   !real(kind=8), dimension(VECSIZE) :: deltaref ! For Farkas' Tests.
   !_______________________
-  boxl = box * scala
 
   allocate(error_vector(DIIS_MEMORY,VECSIZE))
   error_vector = 0.0d0
@@ -148,18 +146,18 @@ subroutine apply_diis( diter, saddle_energy, ret )
       pos(:) = pos(:) + force(:)
                                       ! Let's be sure about frozen atoms
       do i = 1, natoms
-         if ( constr(i) .ne. 0 ) then 
+         !if ( constr(i) .ne. 0 ) then 
             pos(i)          = previous_pos(1,i)
             pos(i+natoms)   = previous_pos(1,i+natoms)
             pos(i+2*natoms) = previous_pos(1,i+2*natoms)
-         end if
+         !end if
       end do  
       
       ! Can we accept this DIIS_step ?
       ! ----------------------
 
       ! Boundary conditions: Suggested by Laurent Karim Beland, UdeM 2011
-      call boundary_cond( deltaGdiis, pos, previous_pos(maxter,:) )   
+      call pos_difference( deltaGdiis, pos, previous_pos(maxter,:) )   
       n_deltaGdiis = sqrt(dot_product( deltaGdiis,deltaGdiis ))
 
       !deltaref(:) = DIIS_STEP* previous_forces(maxter,:)
@@ -243,7 +241,7 @@ subroutine apply_diis( diter, saddle_energy, ret )
       else ! else of If_rejected. The solution is accepted. 
          
          ! Now the force is evaluted for our new pos configuration. 
-         call calcforce( NATOMS, pos, boxl, force, total_energy, evalf_number, .false. )
+         call calcforce( NATOMS, pos, force, total_energy, evalf_number, .false. )
          ftot = sqrt(dot_product(force,force))
 
          maxter = maxter + 1          ! update of history 
@@ -613,7 +611,6 @@ subroutine lanczos_step ( current_energy, a1, liter, get_proj )
   real(kind=8), dimension(VECSIZE) :: perp_force   ! Perpendicular force...
   real(kind=8), dimension(VECSIZE) :: perp_force_b ! ...& for evaluation.  
 
-  real(kind=8), dimension(3) :: boxl
   real(kind=8) :: step                       ! This is the step in the hyperplane. 
   real(kind=8) :: ftot_b                     ! ...& for evaluation.
   real(kind=8) :: fpar_b                     ! ...& for evaluation. 
@@ -622,7 +619,6 @@ subroutine lanczos_step ( current_energy, a1, liter, get_proj )
 
   logical      :: new_projection,minimized 
   !_______________________
-  boxl = box * scala                  ! We compute at constant volume.
 
   ! We move the configuration along the eigendirection corresponding to the lowest
   ! eigenvalue. With sign(1.0d0,fpar) we orient the direction of the eigenvector 
@@ -633,7 +629,7 @@ subroutine lanczos_step ( current_energy, a1, liter, get_proj )
   pos = pos - sign(1.0d0,fpar) *projection* min(2.0d0*INCREMENT,abs(fpar)/max(abs(eigenvalue) , 0.5d0)) 
   
   ! Current energy and force.
-  call calcforce( NATOMS, pos, boxl, force, current_energy, evalf_number, .false. )
+  call calcforce( NATOMS, pos, force, current_energy, evalf_number, .false. )
   
   ! New force's components.
   call force_projection( fpar, perp_force, fperp, ftot, force, projection )
@@ -653,7 +649,7 @@ subroutine lanczos_step ( current_energy, a1, liter, get_proj )
 
     pos_b = pos + step * perp_force
 
-    call calcforce( NATOMS, pos_b, boxl, force_b, total_energy, evalf_number, .false. )
+    call calcforce( NATOMS, pos_b, force_b, total_energy, evalf_number, .false. )
     
     ! New force's components.
     call force_projection( fpar_b, perp_force_b, fperp_b, ftot_b, &

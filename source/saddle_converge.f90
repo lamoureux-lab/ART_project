@@ -34,7 +34,6 @@ subroutine saddle_converge( ret, saddle_energy )
    integer :: ierror, ierr                ! File and MPI control.
 
    real(kind=8) :: step                        ! This is the step in the hyperplane. 
-   real(kind=8),dimension(3) :: boxl
    real(kind=8) :: a1
    real(kind=8) :: current_energy              ! Accepted energy.
    real(kind=8) :: ftot_b                      ! ftot  for evaluation.
@@ -56,7 +55,6 @@ subroutine saddle_converge( ret, saddle_energy )
    end if
    ! initialization
    saddle_energy = 0.0d0
-   boxl = box * scala                  ! We compute at constant volume.
    cw_try_again = .True.               ! For clean_wf
 
    if ( .not. restart ) pas = 0
@@ -98,7 +96,7 @@ subroutine saddle_converge( ret, saddle_energy )
       ! lowest direction.
       Do_kter: do kter = kter_init, MAXKTER
          ! Reference energy and force.
-         call calcforce( NATOMS, pos, boxl, force, current_energy, evalf_number, .false. )
+         call calcforce( NATOMS, pos, force, current_energy, evalf_number, .false. )
 
          ! We now project out the direction of the initial displacement from the
          ! minimum from the force vector so that we can minimize the energy in
@@ -115,7 +113,7 @@ subroutine saddle_converge( ret, saddle_energy )
 
             pos_b = pos + step * perp_force
 
-            call calcforce( NATOMS, pos_b, boxl, force_b, total_energy, evalf_number, .false. )
+            call calcforce( NATOMS, pos_b, force_b, total_energy, evalf_number, .false. )
             ! New force's components.
             call force_projection( fpar_b, perp_force_b, fperp_b, ftot_b, &
                &   force_b, initial_direction ) 
@@ -552,7 +550,6 @@ subroutine clean_wavefunction( a1, call_fp )
 
    !Local variables
    real(kind=8) :: ftot2
-   real(kind=8), dimension(3) :: boxl
    real(kind=8), dimension(VECSIZE) :: perp_force   ! Perpendicular force...
    !_______________________ 
 
@@ -560,9 +557,8 @@ subroutine clean_wavefunction( a1, call_fp )
    ! we only clean the wave function. No calculation of the eigenvector. This is not
    ! going to be saved in the restart file.
 
-   boxl = box * scala     ! We compute at constant volume.
 
-   call calcforce( NATOMS, pos, boxl, force, total_energy, evalf_number, .false. )
+   call calcforce( NATOMS, pos, force, total_energy, evalf_number, .false. )
 
    delta_e = total_energy - ref_energy
 

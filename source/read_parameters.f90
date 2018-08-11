@@ -569,38 +569,22 @@ subroutine read_parameters( )
   !!__________________
   ! Choose the strategy of search.
   call getenv('Strategy_of_Search', temporary)
-  if (temporary .eq. '') then  
-        temporary = '0'
-  else
-        read(temporary,*) SEARCH_STRATEGY
-  endif
+  read(temporary,*) SEARCH_STRATEGY
 
   !!__________________
   ! Choose number of min read from log
   call getenv('nmin_read', temporary)
-  if (temporary .eq. '') then  
-        temporary = '0'
-  else
-        read(temporary,*) nmin_read
-  endif
+  read(temporary,*) nmin_read
 
   !!__________________
   ! Choose number of sad read from log
   call getenv('nsad_read', temporary)
-  if (temporary .eq. '') then  
-        temporary = '0'
-  else
-        read(temporary,*) nsad_read
-  endif
+  read(temporary,*) nsad_read
 
   !!__________________
   ! Choose number of atoms read from log
   call getenv('natoms_read', temporary)
-  if (temporary .eq. '') then  
-        temporary = '0'
-  else
-        read(temporary,*) natoms_read
-  endif
+  read(temporary,*) natoms_read
 
   !!__________________
   ! Name the shared history file 
@@ -619,11 +603,7 @@ subroutine read_parameters( )
   !!__________________
   ! Name the shared history file to be read from
   call getenv('natoms_correspond', temporary)
-  if (temporary .eq. '') then
-        temporary = '0'
-  else
-          read(temporary,*) natoms_correspond
-  endif
+  read(temporary,*) natoms_correspond
 
   !!__________________
   ! Reference configuration for refine saddle. Without ext.
@@ -855,7 +835,8 @@ subroutine write_parameters( )
   call date_and_time(values=values)
 
   if ( .not. setup_initial ) then
-     idum = -1 * mod( (1000 * values(7) + values(8))+iproc, 1024)
+     !idum = -1 * mod( (1000 * values(7) + values(8))+iproc, 1024)
+     idum = -742
   else
      idum = 0
   end if

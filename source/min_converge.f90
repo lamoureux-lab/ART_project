@@ -23,13 +23,10 @@ subroutine min_converge ( success )
 
    !Local variables
    integer :: i, ierror
-   real(kind=8),dimension(3) :: boxl
-
    real(kind=8), dimension(3*natoms)         :: pos_temp
    integer :: nat
    integer, dimension(natoms) :: numnei
    integer, dimension(natoms,maxnei) :: nei
-   real(kind=8), dimension(3) :: invbox
    integer :: j,k 
    logical, dimension(natoms) :: is_at_quantum
    real(kind=8) :: xij,yij,zij,rij2
@@ -153,7 +150,7 @@ subroutine min_converge_sd(minimized)
    conv = .false. !not sure about this variable
 
    ! We compute at constant volume
-   call calcforce(NATOMS, pos, box, force, total_energy, evalf_number, conv)
+   call calcforce(NATOMS, pos, force, total_energy, evalf_number, conv)
    ftot2 = 0.0d0
    do i=1, VECSIZE
       ftot2 = ftot2 + force(i) * force(i)
@@ -169,7 +166,7 @@ subroutine min_converge_sd(minimized)
       posb = pos + step * force
       tmp_pos = pos
       pos = posb
-      call calcforce(NATOMS, pos, box, forceb, total_energy, evalf_number, conv)
+      call calcforce(NATOMS, pos, forceb, total_energy, evalf_number, conv)
       pos = tmp_pos
       ftot2 = 0.0d0
       do i=1, VECSIZE
@@ -283,7 +280,7 @@ subroutine min_converge_fire(success)
    velcur=0.0d0
    poscur=pos
 
-   call calcforce(natoms,pos,box,fpred,total_energy,evalf_number,conv)
+   call calcforce(natoms,pos,fpred,total_energy,evalf_number,conv)
 
    fcur=force
    mass=1.0d0
@@ -309,7 +306,7 @@ subroutine min_converge_fire(success)
       enddo
 
       pos = pospred
-      call calcforce(natoms,pospred,box,fpred,total_energy,evalf_number,conv)
+      call calcforce(natoms,pospred,fpred,total_energy,evalf_number,conv)
       force=fpred
 
       !call fnrmmax_fire(fpred,fnrm,fmax,natoms)
@@ -490,7 +487,7 @@ subroutine perp_fire(success,max_iter)
    velcur=0.0d0
    poscur=pos
 
-   call calcforce(natoms,pos,box,fpred,total_energy,evalf_number,conv)
+   call calcforce(natoms,pos,fpred,total_energy,evalf_number,conv)
 
    fpar = dot_product(fpred, projection)
    perp_force = fpred - fpar * projection
@@ -521,7 +518,7 @@ subroutine perp_fire(success,max_iter)
       enddo
 
       pos = pospred
-      call calcforce(natoms,pos,box,fpred,total_energy,evalf_number,conv)
+      call calcforce(natoms,pos,fpred,total_energy,evalf_number,conv)
       force=fpred
       fpar = dot_product(fpred, projection)
       perp_force = fpred - fpar * projection
@@ -592,5 +589,65 @@ subroutine perp_fire(success,max_iter)
    return
 END SUBROUTINE perp_fire
 
+! In this routine, we interface between ART and GAUSSIAN
+subroutine min_converge_gau(success)
+  use defs
 
+  integer :: i, ret
 
+  logical :: success
+  integer, parameter :: FGAUSS = 21
+  real*8, parameter :: ZERO = 0.0d0
+  real*8, dimension(natoms) :: xx, yy, zz
+  character(len=20) :: GAUSS   = 'art2gaussian.inp'
+  character(len=20) :: GAUSSFORCE = 'gaussian2art'
+  character(len=70) :: line
+  character(len=10) :: string_natoms
+  logical :: read_coordinates_done,read_energy_done
+
+  open(unit=FLOG,file=LOGFILE,status='unknown',action='write',position='append',iostat=ierror)
+  write(flog,*) 'start minimization'
+  close(flog)
+
+  ! We first write to a file the format requested by GAUSS
+  call system('python create_header.py -k opt')
+
+  open(unit=FGAUSS,file=GAUSS,status='unknown',action='write', position = 'append', iostat=ierror)
+
+  ! Prepares gaussian input file coordinates
+  do i = 1,NATOMS
+  write(FGAUSS,"(a, f14.8, f14.8, f14.8)") typat(i),  x(i), y(i), z(i)
+  enddo
+  write(FGAUSS,*) !Blank line... Gaussian expects one blank line at the end of the input file.
+  close(FGAUSS)
+
+  ! We now call Gaussian do to the minimization
+
+  call system('python execute_gaussian.py')
+  
+  ! We must now read the energy and positions from gaussian's output file
+  open(unit=FGAUSS,file=GAUSSFORCE,status='old',action='read',iostat=ierror)
+  do 
+    !Gets the Gaussian output coordinates
+    read(FGAUSS,'(A40)') line
+    if ( line  == "outcoor:" ) then
+      do i = 1, NATOMS
+        read (FGAUSS,*) x(i), y(i), z(i)
+      end do
+    endif
+
+    if (line == 'energy:') then
+        read(FGAUSS,*) total_energy
+    endif
+    if (line == 'Stationary:') exit
+  end do
+
+  close(FGAUSS)
+
+  open(unit=FLOG,file=LOGFILE,status='unknown',action='write',position='append',iostat=ierror)
+  write(flog,*) 'End minimization'
+  close(flog)
+  success = .true.
+  return
+
+end subroutine min_converge_gau

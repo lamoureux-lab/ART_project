@@ -56,8 +56,10 @@ module defs
   integer, parameter :: XYZ         = 13  
   integer, parameter :: CRESTART    = 14
   integer, parameter :: ASCII       = 15
-  integer, parameter :: VLOG       = 17
+  integer, parameter :: VLOG        = 17
   integer, parameter :: VREAD       = 18
+  integer, parameter :: STRUCT      = 19
+  integer, parameter :: PATH        = 21
 
 
   ! Name of the file storing the current configurations
@@ -99,14 +101,6 @@ module defs
   real(kind=8), dimension(:), pointer :: fx, fy, fz        ! Pointers for working force
 
   real(kind=8) :: PUSH_OVER                                ! Fraction of displacement for pushing of saddle point.
-
-  character(len=1)          :: boundary
-  real(kind=8),dimension(3) :: boxref         ! Reference boxsize
-  real(kind=8),dimension(3) :: box            ! Working boxsize
-
-  real(kind=8) :: scalaref                    ! Reference volume scaling
-  real(kind=8) :: scala                       ! Working volume scaling
-  real(kind=8) :: fscala                      ! Working forces on volume
 
   real(kind=8) :: sym_break_dist              ! Distance atoms are pushed to
                                               ! break symmetry
