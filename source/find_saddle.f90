@@ -1163,7 +1163,7 @@ SUBROUTINE align ( read_min, current_min, align_well, read_sad, read_dr, dr_tran
         
         dev_count = 0
         do i = 1, natoms_correspond
-                if ( deviation_atom_after(i) .LT. 2.0 ) then
+                if ( deviation_atom_after(i) .LT. 0.2 ) then
                         write(*,*) deviation_atom_after(i)
                         dev_count = dev_count + 1
                 endif
@@ -1171,7 +1171,7 @@ SUBROUTINE align ( read_min, current_min, align_well, read_sad, read_dr, dr_tran
         
         align_well = .false.
 
-        if (rmsd_after .LT. 1.0 .and. dev_count == natoms_correspond) then
+        if (rmsd_after .LT. 0.2 .and. dev_count == natoms_correspond) then
                 align_well = .true.
                 read_dr_transformed_nat4 = transpose(matmul(transformation_vec,transpose(read_dr_nat4)))
                 read_sad_transformed_nat4 = transpose(matmul(transformation_vec,transpose(read_sad_nat4)))
