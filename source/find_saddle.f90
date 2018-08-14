@@ -172,7 +172,6 @@ subroutine global_move( )
   case ( 0 ) ! default 
 
         do i = 1, natoms
-        ! if ( constr(i) == 0 ) then
             do
                dx(i) = 0.5d0 - ran3()
                dy(i) = 0.5d0 - ran3()
@@ -183,7 +182,6 @@ subroutine global_move( )
             end do
             natom_displaced = natom_displaced + 1
             atom_displaced(i) = 1
-        ! end if
         end do
 
         open(VLOG, file=VECLOG, action = 'write', position = 'append')
@@ -205,7 +203,7 @@ subroutine global_move( )
         rand = ceiling(success_counter*ran3()) 
         write(*,*) "This is the random pick", rand
 
-        do i = 1, natoms_correspond
+        do i = 1, natoms
                 dx(i) = dr_transformed_list(rand,i,1)
                 dy(i) = dr_transformed_list(rand,i,2)
                 dz(i) = dr_transformed_list(rand,i,3)
@@ -219,6 +217,8 @@ subroutine global_move( )
                 write(VLOG,'(1X,a,3(2x,f16.8))') typat(i), dx(i), dy(i), dz(i)        
         enddo
         close(VLOG)
+
+        stop
 
   case ( 2 ) ! "avoid" strategy
 
@@ -290,19 +290,9 @@ subroutine local_move( )
                                       ! Select an atom at random.
   if ( preferred_atom < 0 ) then
      ! Only between totally free atoms 
-     do 
      that = int( NATOMS * ran3() + 1 ) 
-       ! if ( constr(that) == 0 ) exit 
-     end do
   else 
      that = preferred_atom
-     !do i = 1,NATOMS
-      !  write(*,*) 'CONSTR: ', i, constr(i)
-     !end do
-     !if ( constr(that) .ne. 0 ) then  ! die !
-      !  write(*,*) ' ERROR: choosen atom is blocked in the geometry file '
-       ! call end_art()                          
-     !end if 
   end if
 
   ! for dual_search:
@@ -459,7 +449,6 @@ subroutine list_of_atoms ( )
   
   ! Now we apply a random displacement 
   do j = 1, NATOMS
-   !  if ( constr(j) == 0 ) then
         do i = 1, sizelist 
            if ( j == list_atoms(i) ) then
               do
@@ -476,7 +465,6 @@ subroutine list_of_atoms ( )
               exit
            end if
         end do
-   !  end if
   end do
   
   deallocate(list_atoms)
@@ -567,7 +555,6 @@ subroutine list_and_local ()
   do 
      this = int( sizelist * ran3() + 1 ) 
      that = list_atoms(this)
-    ! if ( constr(that) == 0 ) exit 
   end do
 
 
@@ -660,7 +647,6 @@ subroutine symmetry_break( )
 
   ! Generate a random displacement. 
   do i = 1, NATOMS
-    ! if ( constr(i) == 0 ) then 
         do
            dx(i) = 0.5d0 - ran3()
            dy(i) = 0.5d0 - ran3()
@@ -672,7 +658,6 @@ subroutine symmetry_break( )
         end do
         natom_displaced = natom_displaced + 1
         atom_displaced(i) = 1
-   !  end if
   end do
 
   call center_and_norm ( sym_break_dist )
@@ -847,7 +832,7 @@ subroutine coord_based_move( )
   ! Only between totally free atoms 
   do 
   that = int( NATOMS * ran3() + 1 ) 
-     if ( in_list(that) == 1) then ! .and. constr(that) == 0 ) then
+     if ( in_list(that) == 1) then !
         if ( typat(that) == type_sel .and. type_sel/= '' ) then
            exit 
         else if ( type_sel == '' ) then 
@@ -933,13 +918,13 @@ SUBROUTINE read_and_transform ( dr_transformed_list, sad_transformed_list, succe
         
         integer :: i, j, min_count, sad_count
 
-        real(kind=8) :: read_min(nmin_read,natoms_correspond,3)
-        real(kind=8) :: read_sad(nsad_read,natoms_correspond,3)
-        real(kind=8) :: read_dr(nsad_read,natoms_correspond,3)
-        real(kind=8) :: current_min(natoms_correspond,3)
-        real(kind=8) :: each_read_min(natoms_correspond,3)
-        real(kind=8) :: each_read_dr(natoms_correspond,3)
-        real(kind=8) :: each_read_sad(natoms_correspond,3)
+        real(kind=8) :: read_min(nmin_read,natoms_read,3)
+        real(kind=8) :: read_sad(nsad_read,natoms_read,3)
+        real(kind=8) :: read_dr(nsad_read,natoms_read,3)
+        real(kind=8) :: current_min(natoms,3)
+        real(kind=8) :: each_read_min(natoms_read,3)
+        real(kind=8) :: each_read_dr(natoms_read,3)
+        real(kind=8) :: each_read_sad(natoms_read,3)
         real(kind=8) :: each_dr_transformed(natoms,3)
         real(kind=8) :: each_sad_transformed(natoms,3)
         logical :: align_well
@@ -955,13 +940,13 @@ SUBROUTINE read_and_transform ( dr_transformed_list, sad_transformed_list, succe
                 read(VREAD,*,end = 100) keyword
                 if (keyword .eq. 'min') then
                          min_count = min_count + 1
-                         do i = 1, natoms_correspond
+                         do i = 1, natoms_read
                                    read(VREAD,*) typat_read(i), read_min(min_count,i,1), read_min(min_count,i,2), read_min(min_count,i,3)
                          enddo
                 endif
                 if (keyword .eq. 'sad') then
                          sad_count = sad_count + 1
-                         do i = 1, natoms_correspond
+                         do i = 1, natoms_read
                                    read(VREAD,*) typat_read(i), read_sad(sad_count,i,1), read_sad(sad_count,i,2), read_sad(sad_count,i,3)
                          enddo
                 endif
@@ -971,25 +956,27 @@ SUBROUTINE read_and_transform ( dr_transformed_list, sad_transformed_list, succe
         close(VREAD)
 
         do j = 1, nsad_read
-                do i = 1, natoms_correspond
+                do i = 1, natoms_read
                          read_dr(j,i,1:3) = read_sad(j,i,1:3) - read_min(j,i,1:3)
                 enddo
         enddo
 
-        do i = 1, natoms_correspond
+        do i = 1, natoms
                 current_min(i,1) = x(i)
                 current_min(i,2) = y(i)
                 current_min(i,3) = z(i)
         enddo
         
         success_count = 0
-        align_well = .false.
         do j = 1, nsad_read
-                do i = 1, natoms_correspond
+        
+                do i = 1, natoms_read
                          each_read_min(i,1:3) = read_min(j,i,1:3)
                          each_read_sad(i,1:3) = read_sad(j,i,1:3)
                          each_read_dr(i,1:3) = read_dr(j,i,1:3)
                 enddo
+
+                align_well = .false.
                 call align ( each_read_min, current_min, align_well, each_read_sad, each_read_dr, each_dr_transformed, each_sad_transformed )
                 if ( align_well .eq. .true. ) then                        
                          success_count = success_count + 1
@@ -1023,28 +1010,37 @@ SUBROUTINE align ( read_min, current_min, align_well, read_sad, read_dr, dr_tran
 
         implicit none
         
-        real(kind=8), intent(in) :: read_min(natoms_correspond,3)
-        real(kind=8), intent(in) :: current_min(natoms_correspond,3)
-        real(kind=8), intent(in) :: read_dr(natoms_correspond,3)
-        real(kind=8), intent(in) :: read_sad(natoms_correspond,3)
+        real(kind=8), intent(in) :: read_min(natoms_read,3)
+        real(kind=8), intent(in) :: current_min(natoms,3)
+        real(kind=8), intent(in) :: read_dr(natoms_read,3)
+        real(kind=8), intent(in) :: read_sad(natoms_read,3)
+
+        real(kind=8) :: read_min_sliced(natoms_correspond,3)
+        real(kind=8) :: current_min_sliced(natoms_correspond,3)
+        real(kind=8) :: read_dr_sliced(natoms_correspond,3)
+        real(kind=8) :: read_sad_sliced(natoms_correspond,3)
 
         logical, intent(inout) :: align_well
 
         real(kind=8), intent(out) :: dr_transformed(natoms,3)
         real(kind=8), intent(out) :: sad_transformed(natoms,3)
 
-        real(kind=8) :: read_min_moved(natoms_correspond,3)
-        real(kind=8) :: read_min_transformed(natoms_correspond,3)
+        integer :: read_atoms_correspond(natoms_correspond)
+        integer :: current_atoms_correspond(natoms_correspond)
 
-        real(kind=8) :: read_min_nat4(natoms_correspond,4)
-        real(kind=8) :: read_dr_nat4(natoms_correspond,4)
-        real(kind=8) :: read_sad_nat4(natoms_correspond,4)
+        real(kind=8) :: read_min_sliced_moved(natoms_correspond,3)
+        real(kind=8) :: read_min_sliced_transformed(natoms_correspond,3)
 
-        real(kind=8) :: read_min_transformed_nat4(natoms_correspond,4)
-        real(kind=8) :: read_dr_transformed_nat4(natoms_correspond,4)
-        real(kind=8) :: read_sad_transformed_nat4(natoms_correspond,4)
+        real(kind=8) :: read_min_sliced_nat4(natoms_correspond,4)
+        real(kind=8) :: read_dr_sliced_nat4(natoms_correspond,4)
+        real(kind=8) :: read_sad_sliced_nat4(natoms_correspond,4)
+
+        real(kind=8) :: read_min_sliced_transformed_nat4(natoms_correspond,4)
+        real(kind=8) :: read_dr_sliced_transformed_nat4(natoms_correspond,4)
+        real(kind=8) :: read_sad_sliced_transformed_nat4(natoms_correspond,4)
         real(kind=8) :: transformation_vec(4,4)
 
+        real(kind=8) :: deviation_atom_before(natoms_correspond) ! deviation of each individual atom from current min before alignment
         real(kind=8) :: deviation_atom_after(natoms_correspond) ! deviation of each individual atom from current min after alignment
         real(kind=8) :: sum_deviations_before, rmsd_before, sum_deviations_after, rmsd_after
         real(kind=8) :: sum_read_x, sum_read_y, sum_read_z, cx_read, cy_read, cz_read
@@ -1055,14 +1051,36 @@ SUBROUTINE align ( read_min, current_min, align_well, read_sad, read_dr, dr_tran
        
         integer :: i, j, dev_count, info
         
+        open(ALI, file = 'alignment.txt', status = 'unknown', action = 'read')
+        do i = 1, natoms_correspond
+                read(ALI,*) current_atoms_correspond(i), read_atoms_correspond(i) 
+                write(*,*) current_atoms_correspond(i), read_atoms_correspond(i) 
+
+        enddo
+        close(ALI)
+        
+        do i = 1, natoms_correspond
+                read_min_sliced(i,1:3) = read_min(read_atoms_correspond(i),1:3)
+                read_sad_sliced(i,1:3) = read_sad(read_atoms_correspond(i),1:3)
+                read_dr_sliced(i,1:3) = read_dr(read_atoms_correspond(i),1:3)
+                current_min_sliced(i,1:3) = current_min(current_atoms_correspond(i),1:3)
+        enddo
+
         
         sum_deviations_before = 0.0
 
         do i = 1, natoms_correspond     
-                sum_deviations_before = sum_deviations_before + (read_min(i,1)-current_min(i,1))**2 + (read_min(i,2) &
-                                    & - current_min(i,2))**2 + (read_min(i,3)-current_min(i,3))**2       
-        enddo
+                deviation_atom_before(i) = sqrt((read_min_sliced(i,1) - current_min_sliced(i,1))**2 &
+                                      & + (read_min_sliced(i,2) - current_min_sliced(i,2))**2 &
+                                      & + (read_min_sliced(i,3) - current_min_sliced(i,3))**2) 
 
+                write(*,*) deviation_atom_before(i)
+                sum_deviations_before = sum_deviations_before + &
+                                    & + (read_min_sliced(i,1) - current_min_sliced(i,1))**2 & 
+                                    & + (read_min_sliced(i,2) - current_min_sliced(i,2))**2 & 
+                                    & + (read_min_sliced(i,3) - current_min_sliced(i,3))**2       
+        enddo
+        
         rmsd_before = sqrt(sum_deviations_before/natoms_correspond) !Calculating RMSD before structural alignment
         write(*,*) "This is rmsd before alignment: ", rmsd_before
 
@@ -1075,13 +1093,13 @@ SUBROUTINE align ( read_min, current_min, align_well, read_sad, read_dr, dr_tran
         sum_read_z = 0.0
 
         do i = 1, natoms_correspond
-                sum_read_x = sum_read_x + read_min(i,1)
-                sum_read_y = sum_read_y + read_min(i,2)
-                sum_read_z = sum_read_z + read_min(i,3)
+                sum_read_x = sum_read_x + read_min_sliced(i,1)
+                sum_read_y = sum_read_y + read_min_sliced(i,2)
+                sum_read_z = sum_read_z + read_min_sliced(i,3)
 
-                sum_current_x = sum_current_x + current_min(i,1)
-                sum_current_y = sum_current_y + current_min(i,2)
-                sum_current_z = sum_current_z + current_min(i,3)
+                sum_current_x = sum_current_x + current_min_sliced(i,1)
+                sum_current_y = sum_current_y + current_min_sliced(i,2)
+                sum_current_z = sum_current_z + current_min_sliced(i,3)
         enddo
 
         !Calculating the centroids for the two structures
@@ -1097,14 +1115,14 @@ SUBROUTINE align ( read_min, current_min, align_well, read_sad, read_dr, dr_tran
         !Recentering the structures so that their centroids coincide with each other.
 
         do i = 1, natoms_correspond
-                read_min_moved(i,1) = read_min(i,1) - (cx_read - cx_current)
-                read_min_moved(i,2) = read_min(i,2) - (cy_read - cy_current)
-                read_min_moved(i,3) = read_min(i,3) - (cz_read - cz_current)
+                read_min_sliced_moved(i,1) = read_min_sliced(i,1) - (cx_read - cx_current)
+                read_min_sliced_moved(i,2) = read_min_sliced(i,2) - (cy_read - cy_current)
+                read_min_sliced_moved(i,3) = read_min_sliced(i,3) - (cz_read - cz_current)
         enddo
                
         !Calculating the covariance matrix         
 
-        cov = matmul(transpose(read_min_moved),current_min)
+        cov = matmul(transpose(read_min_sliced_moved),current_min_sliced)
 
         !Invoking the LAPACK library subroutine "dgesvd" that calculates the SVD of the covariance matrix
 
@@ -1129,6 +1147,7 @@ SUBROUTINE align ( read_min, current_min, align_well, read_sad, read_dr, dr_tran
         do i = 1,3
                 transformation_vec(i,1:3) = R(i,1:3)
         enddo
+
         transformation_vec(4,1:3) = 0.0d0
         transformation_vec(4,4) = 1.0d0
 
@@ -1137,25 +1156,29 @@ SUBROUTINE align ( read_min, current_min, align_well, read_sad, read_dr, dr_tran
         transformation_vec(3,4) = -1.0*(cz_read - cz_current)
 
         do i = 1, natoms_correspond
-                read_min_nat4(i,1:3) = read_min(i,1:3)
-                read_min_nat4(i,4) = 1.0d0
+                read_min_sliced_nat4(i,1:3) = read_min_sliced(i,1:3)
+                read_min_sliced_nat4(i,4) = 1.0d0
 
-                read_dr_nat4(i,1:3) = read_dr(i,1:3)
-                read_dr_nat4(i,4) = 1.0d0
+                read_dr_sliced_nat4(i,1:3) = read_dr_sliced(i,1:3)
+                read_dr_sliced_nat4(i,4) = 1.0d0
 
-                read_sad_nat4(i,1:3) = read_sad(i,1:3)
-                read_sad_nat4(i,4) = 1.0d0
+                read_sad_sliced_nat4(i,1:3) = read_sad_sliced(i,1:3)
+                read_sad_sliced_nat4(i,4) = 1.0d0
         enddo
 
-        read_min_transformed_nat4 = transpose(matmul(transformation_vec,transpose(read_min_nat4)))
+        read_min_sliced_transformed_nat4 = transpose(matmul(transformation_vec,transpose(read_min_sliced_nat4)))
         
         sum_deviations_after = 0.0
         do i = 1, natoms_correspond
-                read_min_transformed(i,1:3) = read_min_transformed_nat4(i,1:3)
-                deviation_atom_after(i) = sqrt((read_min_transformed(i,1)-current_min(i,1))**2 + (read_min_transformed(i,2)-current_min(i,2))**2 + &
-                                            & (read_min_transformed(i,3)-current_min(i,3))**2) 
-                sum_deviations_after = sum_deviations_after + (read_min_transformed(i,1)-current_min(i,1))**2 + (read_min_transformed(i,2) &
-                                   & - current_min(i,2))**2 + (read_min_transformed(i,3)-current_min(i,3))**2 
+                read_min_sliced_transformed(i,1:3) = read_min_sliced_transformed_nat4(i,1:3)
+                deviation_atom_after(i) = sqrt((read_min_sliced_transformed(i,1) - current_min_sliced(i,1))**2 &
+                                      & + (read_min_sliced_transformed(i,2) - current_min_sliced(i,2))**2 &
+                                      & + (read_min_sliced_transformed(i,3) - current_min_sliced(i,3))**2) 
+
+                sum_deviations_after = sum_deviations_after &
+                                   & + (read_min_sliced_transformed(i,1) - current_min_sliced(i,1))**2 & 
+                                   & + (read_min_sliced_transformed(i,2) - current_min_sliced(i,2))**2 & 
+                                   & + (read_min_sliced_transformed(i,3) - current_min_sliced(i,3))**2 
         enddo
 
         rmsd_after = sqrt(sum_deviations_after/natoms_correspond) !Calculating RMSD after structural alignment
@@ -1163,28 +1186,23 @@ SUBROUTINE align ( read_min, current_min, align_well, read_sad, read_dr, dr_tran
         
         dev_count = 0
         do i = 1, natoms_correspond
-                if ( deviation_atom_after(i) .LT. 0.2 ) then
-                        write(*,*) deviation_atom_after(i)
+                write(*,*) deviation_atom_after(i)
+                if ( deviation_atom_after(i) .LT. 0.4 ) then
                         dev_count = dev_count + 1
                 endif
         enddo
         
-        align_well = .false.
-
         if (rmsd_after .LT. 0.2 .and. dev_count == natoms_correspond) then
-                align_well = .true.
-                read_dr_transformed_nat4 = transpose(matmul(transformation_vec,transpose(read_dr_nat4)))
-                read_sad_transformed_nat4 = transpose(matmul(transformation_vec,transpose(read_sad_nat4)))
-                do i = 1, natoms_correspond
-                        dr_transformed(i,1:3) = read_dr_transformed_nat4(i,1:3)
-                        sad_transformed(i,1:3) = read_sad_transformed_nat4(i,1:3)
-                enddo
 
-                do i = (natoms_correspond + 1), natoms
-                        dr_transformed(i,1:3) = 0.0
-                        sad_transformed(i,1:3) =  0.0
+                align_well = .true.
+                read_dr_sliced_transformed_nat4 = transpose(matmul(transformation_vec,transpose(read_dr_sliced_nat4)))
+                read_sad_sliced_transformed_nat4 = transpose(matmul(transformation_vec,transpose(read_sad_sliced_nat4)))
+
+                do i = 1, natoms_correspond
+                        dr_transformed(current_atoms_correspond(i),1:3) = read_dr_sliced_transformed_nat4(i,1:3)
+                        sad_transformed(current_atoms_correspond(i),1:3) = read_sad_sliced_transformed_nat4(i,1:3)
                 enddo
-                        
+                
         endif
         
 END SUBROUTINE align
