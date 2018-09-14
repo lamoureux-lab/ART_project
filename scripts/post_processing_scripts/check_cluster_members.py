@@ -5,7 +5,7 @@ from os.path import isfile
 
 parser = argparse.ArgumentParser(description = 'check member files of each cluster')
 parser.add_argument('-f','--files', nargs = '*', help = 'files_to_test')
-parser.add_argument('-tol','--tol_define_clusters', default = 0.1, help = 'distance_tolerance')
+parser.add_argument('-tol','--tol_define_clusters', default = 0.01, help = 'distance_tolerance')
 args = parser.parse_args()
 
 files_to_test = args.files

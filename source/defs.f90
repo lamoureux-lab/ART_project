@@ -60,6 +60,7 @@ module defs
   integer, parameter :: VREAD       = 18
   integer, parameter :: STRUCT      = 19
   integer, parameter :: PATH        = 21
+  integer, parameter :: ALI         = 24
 
 
   ! Name of the file storing the current configurations
@@ -67,7 +68,6 @@ module defs
   
   character(len=3),  dimension(:), allocatable          :: typat    ! Atomic type
   character(len=3),  dimension(:), allocatable          :: typat_read    ! Atomic type in the file ART is reading from
- ! integer,           dimension(:), allocatable          :: constr   ! Constraint over atoms
   real(kind=8),      dimension(:), allocatable, target  :: force    ! Working forces on the atoms
   real(kind=8),      dimension(:), allocatable, target  :: pos      ! Working positions of the atoms
   real(kind=8),      dimension(:), allocatable, target  :: posref   ! Reference position

@@ -2,32 +2,23 @@
 
 #Sets the environment variables for the molecules in question
 
-setenv ENERGY_CALC DFT      # Choose: DFT, SWP (Stillinger-Weber) or GAU
 setenv Temperature 0.4      # Temperature in kcal/mol, if negative always reject the event bharat 0.4 >> 0.1
+setenv ENERGY_CALC GAU      # Choose: DFT, SWP (Stillinger-Weber) or GAU
 setenv EVENT_TYPE  NEW      # Either 'NEW', 'REFINE_SADDLE' when further converging a saddle point
                             # Or "REFINE_AND_RELAX", to refine at the saddle and check the final minimum
-
-#setenv LABEL_SIESTA SIGA_INT
 
 setenv NATOMS     8         # Number of atoms in the problem
 
 setenv Prefactor_Push_Over_Saddle 0.3 # The prefactor for pushing over the saddle point, fraction of distance from initial minimum to saddle point 0.15 (default) 0.3 (siesta)
 
-# Name of the atomic types - used for writing out xmol-type file (Deprecated)
-#setenv type1      C
-#setenv type2      O
-#setenv type3      N
-#setenv type4      H
- 
-
 ######  ART ##############################################################################################
 
-setenv Max_Number_Events                     10   # Maximum number of events
+setenv Max_Number_Events                      2   # Maximum number of events
 setenv Type_of_Events                    global   # Initial move for events - global or local list_local
-#setenv Radius_Initial_Deformation          3.0   # Cutoff for local-move (in angstroems) bharat 3> 2 NOT NEEDED FOR "global"
-#setenv Central_Atom                         30   # Number of the atom # around which the initial move takes place NOT NEEDED FOR "global"
+setenv Radius_Initial_Deformation           3.0   # Cutoff for local-move (in angstroems) bharat 3> 2 NOT NEEDED FOR "global"
+setenv Central_Atom                           1   # Number of the atom # around which the initial move takes place NOT NEEDED FOR "global"
 
-setenv Eigenvalue_Threshold                -0.2   # Eigenvalue threshold for leaving basin
+setenv Eigenvalue_Threshold                -0.2   # Eigenvalue threshold for leaving basin (units eV/angstrom)
 setenv Exit_Force_Threshold                 0.1   # Threshold for convergence at saddle point
 
 setenv Increment_Size                       0.1   # Overall scale for the increment moves in activation 0.06 >> 0.01
@@ -45,32 +36,37 @@ setenv Lanczos_SCLoop                         5   # Number of iterations in the 
 setenv Activation_MaxIter                   400   # 400
 setenv delta_threshold                      4.0   # Energy threshold during Lanczos
 
-setenv Max_Perp_Moves_Activ                   8   # Maximum number of perpendicular steps during activation 12 (default) 8 (siesta)
+setenv Max_Perp_Moves_Activ                   5   # Maximum number of perpendicular steps during activation 12 (default) 8 (siesta)
 setenv Force_Threshold_Perp_Rel             0.5   # Threshold for perpendicular relaxation 0.5 (Siesta)
 setenv Max_Iter_Basin                        20   # Maximum number of iteraction for leaving the basin (kter) 100 (default) 200(Siesta)
 
 setenv Write_xyz                         .true.   # Generates .xyz files
 
-################## Direction inversion in iterative subspace
-#setenv Use_DIIS                        .false.   # Use DIIS for the final convergence to saddle
-#setenv DIIS_Force_Threshold               0.10   # Force threshold for convergence bharat 0.25 >>0.10
-#setenv DIIS_Memory                           5   # Number of vectors kepts in memory for algorithm
-#setenv DIIS_MaxIter                         50   # Maximum number of iteractions for the DIIS scheme bharat 200 >>50
-#setenv DIIS_Check_Eigenvector          .false.   # Check that the final state is indeed a saddle
-#setenv DIIS_Step_Size                    0.005   # Step size for the position
+
+###### Automation parameters #########
+
+setenv Strategy_of_Search                     0   # '0' --> Proceed randomly (as it was doing already), '1' --> Follow the vector, '2' --> Avoid the vector
+setenv Shared_History_Filename              ../shared_log/test.log # Name the shared history file
+setenv Shared_History_To_Read               ../shared_log/xxx.log # Shared vector file to read from
+setenv nmin_read			    0 # nmin read from vector file
+setenv nsad_read			    0 # nsad read from vector file
+setenv natoms_read			    0 # natoms read from vector file
+setenv natoms_correspond		    0 # natoms that correspond
 
 ############### Input              #######################################################################
+
 setenv FILECOUNTER      filecounter               # File tracking  the file (event) number - facultative
 setenv REFCONFIG        refconfig.dat             # Reference configuration (actual local minimum)
+
 ############### Output             #######################################################################
+
 setenv LOGFILE             log.file               # General output for message
 setenv EVENTSLIST       events.list               # list of events with success or failure
 setenv RESTART          restart.dat               # current data.sh for restarting event
 
 ############### Run the simulation #######################################################################
 
-#ensure that Gaussian is loaded prior to file execution (the location is set dynamically by run_gaussian_art.py
-set art_location = "../../../source/artdft"
+set art_location = "../../source/artgaussian"
 $art_location
 
 

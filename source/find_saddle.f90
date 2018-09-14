@@ -218,8 +218,6 @@ subroutine global_move( )
         enddo
         close(VLOG)
 
-        stop
-
   case ( 2 ) ! "avoid" strategy
 
         call read_and_transform ( dr_transformed_list, sad_transformed_list, success_counter )

@@ -74,6 +74,7 @@ def create_submission_file():
     for directory in my_dict.values():        
         with open(submission_script_template) as f:
             with open(join(directory, submission_script), 'w+') as m:
+                new_line = ''
                 for line in f:
                     if 'mem' in line:
                         line = line.replace(line.split('=')[1], args.mem + '\n')
@@ -85,7 +86,9 @@ def create_submission_file():
                         line = line.replace(line.split('=')[1], 'gpu:' + args.gpus + '\n')
                     if 'cpus' in line:
                         line = line.replace(line.split('=')[1], args.cpus + '\n')
-                    m.write(line)
+                    new_line = new_line + line
+                calling_art = 'csh ' + gauss_art + ' > ' + 'output.log'
+                m.write(new_line + calling_art)
                
 def create_exec_script():
     for directory in my_dict.values():
@@ -109,7 +112,7 @@ def calculate_atoms():
         natoms = 0
         with open(each_file) as f:
             for line in f:
-                if (re.findall(r'\s\d\s+[-]?\d[.]\d+\s+[-]?\d[.]\d+\s+[-]?\d[.]\d+\s+',line)):
+                if (re.findall(r'\S+\s+[-]?\d+[.]\d+\s+[-]?\d+[.]\d+\s+[-]?\d+[.]\d+\s+',line)):
                     natoms = natoms + 1
             
             atom_list.append(natoms)
@@ -132,10 +135,10 @@ def read_vec_log():
                     sad_count = sad_count + 1
                 if 'Displacement' in row:
                     disp_count = disp_count + 1
-                if (re.findall(r'\s\d\s+[-]?\d[.]\d+\s+[-]?\d[.]\d+\s+[-]?\d[.]\d+\s+',row)):
+                if (re.findall(r'\S+\s+[-]?\d+[.]\d+\s+[-]?\d+[.]\d+\s+[-]?\d+[.]\d+\s+',row)):
                     natoms_read = natoms_read + 1
 
-        natoms_read = natoms_read / (min_count + sad_count + disp_count)
+        natoms_read = int(natoms_read / (min_count + sad_count + disp_count)) 
 
         min_sad_natoms_read = (min_count, sad_count, natoms_read)
 
@@ -210,10 +213,9 @@ def create_refconfig():
             with open (join(directory, refconfig), 'w+') as m:
                 m.write(' run_id:         1000\n')     
                 m.write(' total_energy:   0 \n')     
-                m.write(' S   27.8481184348615        27.8481184348615        27.8481184348615 \n')     
                 for line in f:
-                    if (re.findall(r'\s\d\s+[-]?\d[.]\d+\s+[-]?\d[.]\d+\s+[-]?\d[.]\d+\s+',line)): 
-                        coords = re.findall(r'\s\d\s+[-]?\d[.]\d+\s+[-]?\d[.]\d+\s+[-]?\d[.]\d+\s+',line)[0]
+                    if (re.findall(r'\S+\s+[-]?\d+[.]\d+\s+[-]?\d+[.]\d+\s+[-]?\d+[.]\d+\s+',line)): 
+                        coords = re.findall(r'\S+\s+[-]?\d+[.]\d+\s+[-]?\d+[.]\d+\s+[-]?\d+[.]\d+\s+',line)[0]
                         m.write(coords)
 
 def create_filecounter():
@@ -227,7 +229,7 @@ def submitting_scripts():
         print("Creating submission files for " + directory)
         work_directory = getcwd()
         chdir(join(work_directory, directory))
-        #call(['sbatch', '-J', each_file.split('.')[0], submission_script], shell = False) 
+#        call(['sbatch', '-J', each_file.split('.')[0], submission_script], shell = False) 
         chdir(work_directory)
 
 

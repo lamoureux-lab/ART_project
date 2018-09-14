@@ -125,7 +125,7 @@ def compare_coords(initial_coords, optimized_coords):
 
         dist_matrix_map[program] = distance_matrix
 
-    if (np.allclose(dist_matrix_map['ART'], dist_matrix_map['Gaussian'], atol = 0.0)):
+    if (np.allclose(dist_matrix_map['ART'], dist_matrix_map['Gaussian'], atol = 0.1)):
         optimization_verdict = "ART structure is OK :)"
     else:
         optimization_verdict = "ART structure is not OK :("

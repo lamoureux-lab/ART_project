@@ -6,20 +6,20 @@
 '''
 
 def grep_activation_relaxation(preferred_event, non_preferred_event):
-	with open("output.log") as f:
-		occurence = False
-		new_line = ''
-		count = 0
-		for line in f:
-			count = count + 1
-          		line = str(count) + '\t' + line
-			if preferred_event in line:
-				occurence = True
-			if non_preferred_event in line:		
-				occurence = False
-			if occurence:
-				new_line = new_line + line
-                return new_line    
+    with open("output.log") as f:
+        occurence = False
+        new_line = ''
+        count = 0
+        for line in f:
+            count = count + 1
+            line = str(count) + '\t' + line
+            if preferred_event in line:
+                occurence = True
+            if non_preferred_event in line:		
+                occurence = False
+            if occurence:
+                new_line = new_line + line
+        return new_line    
 
 
 def add_saddle_line():
@@ -54,10 +54,10 @@ def demarcate_lanczos(sorted_coords,failed_sad_coords, converged_sad_coords):
     for line_number, line in enumerate(sorted_coords.splitlines()):
         for i in range(0,len(failed_sad_coords)):
             if line_number == failed_sad_coords[i]:
-                line = line.replace('lanczos', 'saddle_failed')
+                line = line.replace('L-Step (Activation)', 'saddle_failed')
         for i in range(0, len(converged_sad_coords)):
             if line_number == converged_sad_coords[i]:
-                line = line.replace('lanczos', 'saddle_converged')
+                line = line.replace('L-Step (Activation)', 'saddle_converged')
         new_line = new_line + line + '\n'
     return new_line
 
@@ -82,19 +82,19 @@ def coords_before_K0():
 
 
 def remove_junk_lines(event_type, event_name):
-	coords = False
-	new_line = ''
-	for line in event_type.splitlines():
-		if "posa" in line:
-			coords = True
-			line = line.replace("posa", event_name)
-		if "forces:" in line:
-			coords = False
-		if coords:
-			new_line = new_line + line + '\n'
-        return new_line
+    coords = False
+    new_line = ''
+    for line in event_type.splitlines():
+        if "posa" in line:
+            coords = True
+            line = line.replace("posa", event_name)
+        if "forces:" in line:
+            coords = False
+        if coords:
+            new_line = new_line + line + '\n'
+    return new_line
 
-	
+
 def sorting(coords):
     new_value = ''
     mydict = {}
@@ -127,7 +127,7 @@ def fetch_atomic_numbers():
                 break
         for i in range(1,len(atomic_list)):
             new_atomic_list.append(atomic_list[i])
-        
+
         return new_atomic_list
 
 def fetch_number_of_atoms():
@@ -144,46 +144,46 @@ def add_atomic_numbers(pre_final_coords, atomic_list, nat):
     count = 0
     new_line = ''
     for line in pre_final_coords.splitlines():
-        if 'activation' in line or 'lanczos' in line or 'saddle_converged' in line or 'saddle_failed' in line:
+        if 'K-Step (Harmonic Basin)' in line or 'L-Step (Activation)' in line or 'saddle_converged' in line or 'saddle_failed' in line:
             line = line.strip()
-            line = line.replace('activation', nat + '\n' + 'activation')
-            line = line.replace('lanczos', nat + '\n' + 'lanczos')
+            line = line.replace('K-Step (Harmonic Basin)', nat + '\n' + 'K-Step (Harmonic Basin)')
+            line = line.replace('L-Step (Activation)', nat + '\n' + 'L-Step (Activation)')
             line = line.replace('saddle_converged', nat + '\n' + 'saddle_converged')
             line = line.replace('saddle_failed', nat + '\n' + 'saddle_failed') 
 
-        if not 'activation' in line and not 'lanczos' in line and not 'saddle_converged' in line and not 'saddle_failed' in line:
+        if not 'K-Step (Harmonic Basin)' in line and not 'L-Step (Activation)' in line and not 'saddle_converged' in line and not 'saddle_failed' in line:
             line = atomic_list[count] + '\t' + line
             count = count + 1
 
-        if 'activation' in line or 'lanczos' in line  or 'saddle_converged' in line or 'saddle_failed' in line:
+        if 'K-Step (Harmonic Basin)' in line or 'L-Step (Activation)' in line  or 'saddle_converged' in line or 'saddle_failed' in line:
             count = 0
 
         new_line = new_line + line + '\n'
     return new_line
 
-		
+
 
 if __name__ == "__main__":
-        initial_activation = coords_before_K0()
-	activation = grep_activation_relaxation("SADDLE","K converged")
-	relaxation = grep_activation_relaxation("K converged","SADDLE")
+    initial_activation = coords_before_K0()
+    activation = grep_activation_relaxation("SADDLE","K converged")
+    relaxation = grep_activation_relaxation("K converged","SADDLE")
 
-        init = remove_junk_lines(initial_activation, 'activation')
-        act =  remove_junk_lines(activation, 'activation')
-	lanc = remove_junk_lines(relaxation, 'lanczos')
-        sad = add_saddle_line()
+    init = remove_junk_lines(initial_activation, 'K-Step (Harmonic Basin)')
+    act =  remove_junk_lines(activation, 'K-Step (Harmonic Basin)')
+    lanc = remove_junk_lines(relaxation, 'L-Step (Activation)')
+    sad = add_saddle_line()
 
-        nat = fetch_number_of_atoms()       
-        atomic_list = fetch_atomic_numbers()
+    nat = fetch_number_of_atoms()       
+    atomic_list = fetch_atomic_numbers()
 
-        coords = init + act + lanc + sad
-        sorted_coords = sorting(coords) 
-        failed_sad_coords = locate_sad_failed_lines(sorted_coords, nat)
-        converged_sad_coords = locate_sad_converged_lines(sorted_coords, nat)
-        demarcated_sad_coords = demarcate_lanczos(sorted_coords,failed_sad_coords,converged_sad_coords)
-        pre_final_coords = remove_line_numbers(demarcated_sad_coords)
-       
-        final_coords = add_atomic_numbers(pre_final_coords,atomic_list,nat)
-        print final_coords
-       
+    coords = init + act + lanc + sad
+    sorted_coords = sorting(coords) 
+    failed_sad_coords = locate_sad_failed_lines(sorted_coords, nat)
+    converged_sad_coords = locate_sad_converged_lines(sorted_coords, nat)
+    demarcated_sad_coords = demarcate_lanczos(sorted_coords,failed_sad_coords,converged_sad_coords)
+    pre_final_coords = remove_line_numbers(demarcated_sad_coords)
+
+    final_coords = add_atomic_numbers(pre_final_coords,atomic_list,nat)
+    print(final_coords)
+
 

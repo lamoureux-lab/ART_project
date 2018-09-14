@@ -79,7 +79,7 @@ subroutine calcforce_gau(nat,typa,posa,forca,energy)
   close(PATH)
 
   ! We first write to a file the format requested by Gaussian
-  call system('python create_header.py')
+  call system('python3.6 create_header.py')
   open(unit=FGAUSS,file=GAUSS,status='unknown',action='write', position = 'append', iostat=ierror)
 
   ! Prepares gaussian input file coordinates
@@ -90,7 +90,7 @@ subroutine calcforce_gau(nat,typa,posa,forca,energy)
      
   close(FGAUSS)
 
-  call system('python execute_gaussian.py')
+  call system('python3.6 execute_gaussian.py')
   open(unit=FGAUSS,file=GAUSSFORCE,status='old',action='read',iostat=ierror)
 
   read_force_done = .false.

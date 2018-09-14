@@ -146,11 +146,9 @@ subroutine apply_diis( diter, saddle_energy, ret )
       pos(:) = pos(:) + force(:)
                                       ! Let's be sure about frozen atoms
       do i = 1, natoms
-         !if ( constr(i) .ne. 0 ) then 
             pos(i)          = previous_pos(1,i)
             pos(i+natoms)   = previous_pos(1,i+natoms)
             pos(i+2*natoms) = previous_pos(1,i+2*natoms)
-         !end if
       end do  
       
       ! Can we accept this DIIS_step ?

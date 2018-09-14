@@ -106,7 +106,6 @@ subroutine lanczos( maxvec, new_projection, produit )
      dy = 0.0d0
      dz = 0.0d0
      do i = 1, natoms, 1
-       ! if ( constr(i) == 0 ) then
            do
               dx(i) = 0.5d0 - ran3()
               dy(i) = 0.5d0 - ran3()
@@ -301,7 +300,7 @@ END SUBROUTINE lanczos
 !! It places the center of mass of a 3D vector at (0,0,0). 
 subroutine center( vector, vecsize )
 
-  use defs, only : natoms!, constr
+  use defs, only : natoms!
   implicit none
 
   !Arguments

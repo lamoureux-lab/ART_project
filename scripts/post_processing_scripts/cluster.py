@@ -8,7 +8,7 @@ def mapping(files_to_test, tolerance):
         coords = []
         with open(each_file) as f:
             for line in f:
-                if (re.findall(r'\s\d+\s+[-]?\d[.]\d+\s+[-]?\d[.]\d+\s+[-]?\d[.]\d+\s+',line)):
+                if (re.findall(r'\S\s+[-]?\d[.]\d+\s+[-]?\d[.]\d+\s+[-]?\d[.]\d+\s+',line)):
                     coords.append((float(line.split()[1]), float(line.split()[2]), float(line.split()[3])))
         file_coords[each_file] = coords    
 
@@ -27,17 +27,15 @@ def mapping(files_to_test, tolerance):
     for every_file in sorted(file_matrix.keys()):
         member_list = []
         for every_other_file in sorted(file_matrix.keys()):
-            if (np.allclose(file_matrix[every_file], file_matrix[every_other_file], atol = tolerance)):
+            if (np.allclose(file_matrix[every_file], file_matrix[every_other_file], atol = float(tolerance))):
                     member_list.append(every_other_file)
                     cluster[every_file] = member_list
 
-        for member in member_list:
-            for each_test_file in files_to_test:
-                if member == each_test_file:
-                    count = count + 1
+    cluster_refined = {}
 
-        if count == len(files_to_test):
-            break
+    for rep, members in sorted(cluster.items()):
+        if members not in cluster_refined.values():
+            cluster_refined[rep] = members
 
-    return cluster
+    return cluster_refined
 

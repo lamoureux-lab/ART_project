@@ -1,39 +1,15 @@
 #!/bin/bash
 
-# Gaussian job submission script
-
-#************************************************************
-#
-# These are variables sent to the queueing system
-# Change them following your needs
 # NOTE: nodes=1 never changes for Gaussian jobs
-#
-#************************************************************
 
-# Cluster submission details
 #PBS -S /bin/bash
 #PBS -V
 
 #PBS -l mem=8000MB
 #PBS -l nodes=1:ppn=12
 #-q default
-#PBS -l walltime=010:00:00
+#PBS -l walltime=030:00:00
 
-#************************************************************
-# Run python setup script
-python run_gaussian_artdft.py -f $gaussian_input
-#************************************************************
-
-#*****DO NOT CHANGE 2 FOLLOWING LINES************************
 cd $PBS_O_WORKDIR
-#mkdir /state/partition1/$LOGNAME"_"$PBS_JOBID
-#export GAUSS_SCRDIR=/state/partition1/$LOGNAME"_"$PBS_JOBID
-#echo "Current working directory is `pwd`"
-#echo "Running on `hostname`"
-
-#echo "Starting run at: `date`"
-
-# Run g09, change name of input file
-#g09 H2N
-#rm -rf /state/partition1/$LOGNAME"_"$PBS_JOBID
-csh gaussian_art.sh >output.log
+g09 kobychev.com
+#csh gaussian_art.sh >output.log

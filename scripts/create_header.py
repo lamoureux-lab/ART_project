@@ -19,6 +19,6 @@ with open(input_file) as f:
                 i = i + 1
             if '#' in line:
                 if keyword == 'opt':
-                    line = line.replace('force', 'opt')
+                    line = line.replace('force', 'opt=(maxcycles=400)')
             if (index <= (i + 4)):
                 m.write(line)

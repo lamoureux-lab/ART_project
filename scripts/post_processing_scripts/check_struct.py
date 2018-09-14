@@ -69,7 +69,7 @@ def min_input_file(min_file, header_elements):
     with open (min_file) as f:
         coords = ''
         for line in f:
-            if (re.findall(r'\s\d+\s+[-]?\d[.]\d+\s+[-]?\d[.]\d+\s+[-]?\d[.]\d+\s+',line)):
+            if (re.findall(r'\S+\s+[-]?\d[.]\d+\s+[-]?\d[.]\d+\s+[-]?\d[.]\d+\s+',line)):
                 coords = coords + line
 
     min_input_file = min_file + '.inp'
@@ -92,7 +92,7 @@ def sad_input_file(sad_file, header_elements):
         with open(member_file) as f:
             coords = ''
             for line in f:
-                if (re.findall(r'\s\d+\s+[-]?\d[.]\d+\s+[-]?\d[.]\d+\s+[-]?\d[.]\d+\s+',line)):
+                if (re.findall(r'\S+\s+[-]?\d[.]\d+\s+[-]?\d[.]\d+\s+[-]?\d[.]\d+\s+',line)):
                     coords = coords + line
         member_coords[member_file] = coords
 
@@ -101,7 +101,7 @@ def sad_input_file(sad_file, header_elements):
                 initial_min + '\n\n' + header_elements[3] + member_coords[initial_min] + '\n' + 
                 final_min + '\n\n' + header_elements[3] + member_coords[final_min] + '\n' + 
                 sad_file + '\n\n' + header_elements[3] + member_coords[sad_file] + '\n')
-        
+
     return sad_input_file
 
 def write_submission_script(filename, file_string):
