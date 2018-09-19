@@ -36,23 +36,31 @@ for each_file in sorted(args.files):
     member_list = []
     for every_other_file in args.files:
         cov = np.matmul(np.transpose(coords_dict[each_file]), coords_dict[every_other_file])
-        u, s ,vt = (np.linalg.svd(cov))
-        if((np.linalg.det(np.transpose(u)))*(np.linalg.det(np.transpose(vt))) < 0):
-            np.transpose(vt)[:,-1]= -np.transpose(vt)[:,-1]
-        rot = (np.matmul(u, vt))
+        u, s ,v = (np.linalg.svd(cov))
+        v[:,-1]= -v[:,-1]
+        if(np.linalg.det(u)*np.linalg.det(v) < 0):
+            v[:,-1]= -v[:,-1]
+        rot = (np.matmul(u, v))
         
         rotated_coords = np.transpose(np.matmul(rot, np.transpose(coords_dict[every_other_file])))
 
+        atoms_align_well = 0 
+        for i in range(len(coords)):
+            rmsd_each_atom = np.sqrt(((rotated_coords[i][0] - coords_dict[each_file][i][0])**2    
+            + (rotated_coords[i][1] - coords_dict[each_file][i][1])**2  
+            + (rotated_coords[i][2] - coords_dict[each_file][i][2])**2)/natoms)
+
+            if rmsd_each_atom < 0.05:
+                atoms_align_well += 1
+
         sum_rmsd = 0
-    
         for i in range(len(coords)):
             sum_rmsd += ((rotated_coords[i][0] - coords_dict[each_file][i][0])**2    
             + (rotated_coords[i][1] - coords_dict[each_file][i][1])**2  
             + (rotated_coords[i][2] - coords_dict[each_file][i][2])**2)
 
         rmsd = np.sqrt((sum_rmsd/natoms))
-        print(rmsd)
-        if rmsd < 0.1:
+        if rmsd < 0.1 and atoms_align_well == natoms:
             member_list.append(every_other_file)
             cluster[each_file] = member_list
 
@@ -69,6 +77,6 @@ G = nx.Graph()
 
 G.add_nodes_from(cluster_refined.keys())
 
-nx.draw(G)
+nx.draw(G, with_labels = True)
 
 plt.show()
