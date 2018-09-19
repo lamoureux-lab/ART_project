@@ -48,9 +48,9 @@ for each_file in sorted(args.files):
         for i in range(len(coords)):
             rmsd_each_atom = np.sqrt(((rotated_coords[i][0] - coords_dict[each_file][i][0])**2    
             + (rotated_coords[i][1] - coords_dict[each_file][i][1])**2  
-            + (rotated_coords[i][2] - coords_dict[each_file][i][2])**2)/natoms)
+            + (rotated_coords[i][2] - coords_dict[each_file][i][2])**2))
 
-            if rmsd_each_atom < 0.05:
+            if rmsd_each_atom < 0.1:
                 atoms_align_well += 1
 
         sum_rmsd = 0
