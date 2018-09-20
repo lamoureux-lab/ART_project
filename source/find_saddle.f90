@@ -1113,9 +1113,9 @@ SUBROUTINE align ( read_min, current_min, align_well, read_sad, read_dr, dr_tran
         !Recentering the structures so that their centroids coincide with each other.
 
         do i = 1, natoms_correspond
-                read_min_sliced_moved(i,1) = read_min_sliced(i,1) - (cx_read - cx_current)
-                read_min_sliced_moved(i,2) = read_min_sliced(i,2) - (cy_read - cy_current)
-                read_min_sliced_moved(i,3) = read_min_sliced(i,3) - (cz_read - cz_current)
+                read_min_sliced_moved(i,1) = read_min_sliced(i,1) - cx_read 
+                read_min_sliced_moved(i,2) = read_min_sliced(i,2) - cy_read 
+                read_min_sliced_moved(i,3) = read_min_sliced(i,3) - cz_read 
         enddo
                
         !Calculating the covariance matrix         
@@ -1149,13 +1149,11 @@ SUBROUTINE align ( read_min, current_min, align_well, read_sad, read_dr, dr_tran
         transformation_vec(4,1:3) = 0.0d0
         transformation_vec(4,4) = 1.0d0
 
-        transformation_vec(1,4) = -1.0*(cx_read - cx_current)
-        transformation_vec(2,4) = -1.0*(cy_read - cy_current)
-        transformation_vec(3,4) = -1.0*(cz_read - cz_current)
+        transformation_vec(1,4) = -1.0*(cx_read) 
+        transformation_vec(2,4) = -1.0*(cy_read) 
+        transformation_vec(3,4) = -1.0*(cz_read) 
 
         do i = 1, natoms_correspond
-                read_min_sliced_nat4(i,1:3) = read_min_sliced(i,1:3)
-                read_min_sliced_nat4(i,4) = 1.0d0
 
                 read_dr_sliced_nat4(i,1:3) = read_dr_sliced(i,1:3)
                 read_dr_sliced_nat4(i,4) = 1.0d0
@@ -1164,11 +1162,10 @@ SUBROUTINE align ( read_min, current_min, align_well, read_sad, read_dr, dr_tran
                 read_sad_sliced_nat4(i,4) = 1.0d0
         enddo
 
-        read_min_sliced_transformed_nat4 = transpose(matmul(transformation_vec,transpose(read_min_sliced_nat4)))
+        read_min_sliced_transformed = transpose(matmul(R,transpose(read_min_sliced_moved)))
         
         sum_deviations_after = 0.0
         do i = 1, natoms_correspond
-                read_min_sliced_transformed(i,1:3) = read_min_sliced_transformed_nat4(i,1:3)
                 deviation_atom_after(i) = sqrt((read_min_sliced_transformed(i,1) - current_min_sliced(i,1))**2 &
                                       & + (read_min_sliced_transformed(i,2) - current_min_sliced(i,2))**2 &
                                       & + (read_min_sliced_transformed(i,3) - current_min_sliced(i,3))**2) 
@@ -1185,12 +1182,12 @@ SUBROUTINE align ( read_min, current_min, align_well, read_sad, read_dr, dr_tran
         dev_count = 0
         do i = 1, natoms_correspond
                 write(*,*) deviation_atom_after(i)
-                if ( deviation_atom_after(i) .LT. 0.4 ) then
+                if ( deviation_atom_after(i) .LT. 0.1 ) then
                         dev_count = dev_count + 1
                 endif
         enddo
         
-        if (rmsd_after .LT. 0.2 .and. dev_count == natoms_correspond) then
+        if (rmsd_after .LT. 0.1 .and. dev_count == natoms_correspond) then
 
                 align_well = .true.
                 read_dr_sliced_transformed_nat4 = transpose(matmul(transformation_vec,transpose(read_dr_sliced_nat4)))
