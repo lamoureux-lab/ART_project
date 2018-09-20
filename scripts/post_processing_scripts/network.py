@@ -36,8 +36,7 @@ for each_file in sorted(args.files):
     member_list = []
     for every_other_file in args.files:
         cov = np.matmul(np.transpose(coords_dict[each_file]), coords_dict[every_other_file])
-        u, s ,v = (np.linalg.svd(cov))
-        v[:,-1]= -v[:,-1]
+        u, s, v = (np.linalg.svd(cov))
         if(np.linalg.det(u)*np.linalg.det(v) < 0):
             v[:,-1]= -v[:,-1]
         rot = (np.matmul(u, v))
@@ -46,11 +45,11 @@ for each_file in sorted(args.files):
 
         atoms_align_well = 0 
         for i in range(len(coords)):
-            deviation_each_atom = np.sqrt(((rotated_coords[i][0] - coords_dict[each_file][i][0])**2    
+            rmsd_each_atom = np.sqrt(((rotated_coords[i][0] - coords_dict[each_file][i][0])**2    
             + (rotated_coords[i][1] - coords_dict[each_file][i][1])**2  
             + (rotated_coords[i][2] - coords_dict[each_file][i][2])**2))
 
-            if deviation_each_atom < 0.1:
+            if rmsd_each_atom < 0.1:
                 atoms_align_well += 1
 
         sum_rmsd = 0
