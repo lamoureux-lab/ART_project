@@ -8,11 +8,26 @@ parser = argparse.ArgumentParser()
 parser.add_argument('-f', '--files', help = 'add files for networking', nargs = '+')
 args = parser.parse_args()
 
+event_file = 'checked_events.list'
+
+event_list = []
+all_files = []
+with open(event_file) as e:
+    for line in e:
+        init_min = line.split()[0]
+        saddle = line.split()[1]
+        final_min = line.split()[2]
+        event_list.append((init_min, saddle, final_min))
+
+for each_event in event_list:
+    for each_file in each_event:
+        all_files.append(each_file)
+
 coords_dict = {}
 centroid_x = {}
 centroid_y = {}
 centroid_z = {}
-for each_file in sorted(args.files):
+for each_file in all_files:
     with open(each_file) as f:
         coords = []
         natoms = 0
@@ -30,11 +45,11 @@ for each_file in sorted(args.files):
             coords_dict[each_file][i][0] = coords_dict[each_file][i][0] - centroid_x[each_file] 
             coords_dict[each_file][i][1] = coords_dict[each_file][i][1] - centroid_y[each_file]
             coords_dict[each_file][i][2] = coords_dict[each_file][i][2] - centroid_z[each_file]
-cluster = {}
 
-for each_file in sorted(args.files):
+cluster = {}
+for each_file in all_files:
     member_list = []
-    for every_other_file in sorted(args.files):
+    for every_other_file in all_files:
         cov = np.matmul(np.transpose(coords_dict[each_file]), coords_dict[every_other_file])
         u, s, v = (np.linalg.svd(cov))
         if(np.linalg.det(u)*np.linalg.det(v) < 0):
@@ -74,8 +89,20 @@ print(cluster_refined)
 
 G = nx.Graph()
 
-G.add_nodes_from(cluster_refined.keys())
+for (init_min, saddle, final_min) in event_list:
+    edge_dict = {}
+    for key, value in cluster_refined.items():
+        if init_min in value:
+            init_node = key
+        if final_min in value:
+            final_node = key
+        if saddle in value:
+            saddle_edge = key
+    G.add_nodes_from([init_node, final_node])
+    G.add_edge(init_node, final_node, title = saddle_edge)
+    edge_name= nx.get_edge_attributes(G, 'title')
 
-nx.draw(G, with_labels = True)
-
+pos = nx.spring_layout(G)
+nx.draw(G, pos, with_labels = True)
+nx.draw_networkx_edge_labels(G,pos,edge_labels=edge_name)
 plt.show()
