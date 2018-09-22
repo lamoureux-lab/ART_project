@@ -90,7 +90,6 @@ print(cluster_refined)
 G = nx.Graph()
 
 for (init_min, saddle, final_min) in event_list:
-    edge_dict = {}
     for key, value in cluster_refined.items():
         if init_min in value:
             init_node = key
