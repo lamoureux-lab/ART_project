@@ -603,7 +603,7 @@ subroutine min_converge_gau(success)
   character(len=20) :: GAUSSFORCE = 'gaussian2art'
   character(len=70) :: line
   character(len=10) :: string_natoms
-  logical :: read_coordinates_done,read_energy_done
+  logical :: opt_coords_read, opt_energy_read
 
   open(unit=FLOG,file=LOGFILE,status='unknown',action='write',position='append',iostat=ierror)
   write(flog,*) 'start minimization'
@@ -627,6 +627,8 @@ subroutine min_converge_gau(success)
   
   ! We must now read the energy and positions from gaussian's output file
   open(unit=FGAUSS,file=GAUSSFORCE,status='old',action='read',iostat=ierror)
+  opt_coords_read = .false.
+  opt_energy_read = .false.
   do 
     !Gets the Gaussian output coordinates
     read(FGAUSS,'(A40)') line
@@ -634,12 +636,14 @@ subroutine min_converge_gau(success)
       do i = 1, NATOMS
         read (FGAUSS,*) x(i), y(i), z(i)
       end do
+        opt_coords_read = .true.
     endif
 
     if (line == 'energy:') then
         read(FGAUSS,*) total_energy
+        opt_energy_read = .true.
     endif
-    if (line == 'Stationary:') exit
+    if (opt_coords_read .and. opt_energy_read) exit    
   end do
 
   close(FGAUSS)
