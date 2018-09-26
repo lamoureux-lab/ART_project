@@ -191,6 +191,8 @@ subroutine global_move( )
         enddo
         close(VLOG)
 
+        call center_and_norm ( INITSTEPSIZE )
+
   case ( 1 ) ! "follow" strategy
 
         call read_and_transform ( dr_transformed_list, sad_transformed_list, success_counter )
@@ -217,6 +219,8 @@ subroutine global_move( )
                 write(VLOG,'(1X,a,3(2x,f16.8))') typat(i), dx(i), dy(i), dz(i)        
         enddo
         close(VLOG)
+
+        call center_and_norm ( INITSTEPSIZE )
 
   case ( 2 ) ! "avoid" strategy
 
@@ -259,9 +263,10 @@ subroutine global_move( )
         enddo
         close(VLOG)
 
+        call center_and_norm ( INITSTEPSIZE )
+
   endselect
 
-  call center_and_norm ( INITSTEPSIZE )
 
 END SUBROUTINE global_move
 
@@ -691,15 +696,12 @@ subroutine center_and_norm ( step )
      ysum = sum(dy) / natom_displaced
      zsum = sum(dz) / natom_displaced
 
-     write(*,*) "This is the centroid", xsum, ysum, zsum
-     
      dx = dx - xsum * atom_displaced
      dy = dy - ysum * atom_displaced
      dz = dz - zsum * atom_displaced
+     
   end if
 
-  write(*,*) 'This is dr:'
-  write(*,*) dr
   
   ! And normalize the total random displacement effected to the value
   ! desired.
@@ -721,16 +723,12 @@ subroutine center_and_norm ( step )
 
   ! Update the position using this random displacement
   pos = pos + dr
-  ! DEBUG Bhupinder
-  write(*,*) 'Updated position using random displacement' , pos  
   
   ! Now, we normalize dr to get the initial_direction 
   initial_direction = dr 
   norm = dot_product( initial_direction, initial_direction ) 
   norm = 1.0d0 / sqrt(norm)
   initial_direction  = initial_direction * norm
-  write(*,*)'Initial direction is:'
-  write(*,*) initial_direction
 
   write(*,*) 'ARTGAUSS: Number of displaced atoms initially: ',natom_displaced
 
@@ -1017,6 +1015,10 @@ SUBROUTINE align ( read_min, current_min, align_well, read_sad, read_dr, dr_tran
         real(kind=8) :: current_min_sliced(natoms_correspond,3)
         real(kind=8) :: read_dr_sliced(natoms_correspond,3)
         real(kind=8) :: read_sad_sliced(natoms_correspond,3)
+        real(kind=8) :: read_dr_translated(natoms_correspond,3)
+        real(kind=8) :: read_sad_translated(natoms_correspond,3)
+        real(kind=8) :: read_dr_translated_rotated(natoms_correspond,3)
+        real(kind=8) :: read_sad_translated_rotated(natoms_correspond,3)
 
         logical, intent(inout) :: align_well
 
@@ -1026,17 +1028,9 @@ SUBROUTINE align ( read_min, current_min, align_well, read_sad, read_dr, dr_tran
         integer :: read_atoms_correspond(natoms_correspond)
         integer :: current_atoms_correspond(natoms_correspond)
 
-        real(kind=8) :: read_min_sliced_moved(natoms_correspond,3)
+        real(kind=8) :: read_min_sliced_centered(natoms_correspond,3)
+        real(kind=8) :: current_min_sliced_centered(natoms_correspond,3)
         real(kind=8) :: read_min_sliced_transformed(natoms_correspond,3)
-
-        real(kind=8) :: read_min_sliced_nat4(natoms_correspond,4)
-        real(kind=8) :: read_dr_sliced_nat4(natoms_correspond,4)
-        real(kind=8) :: read_sad_sliced_nat4(natoms_correspond,4)
-
-        real(kind=8) :: read_min_sliced_transformed_nat4(natoms_correspond,4)
-        real(kind=8) :: read_dr_sliced_transformed_nat4(natoms_correspond,4)
-        real(kind=8) :: read_sad_sliced_transformed_nat4(natoms_correspond,4)
-        real(kind=8) :: transformation_vec(4,4)
 
         real(kind=8) :: deviation_atom_before(natoms_correspond) ! deviation of each individual atom from current min before alignment
         real(kind=8) :: deviation_atom_after(natoms_correspond) ! deviation of each individual atom from current min after alignment
@@ -1113,14 +1107,20 @@ SUBROUTINE align ( read_min, current_min, align_well, read_sad, read_dr, dr_tran
         !Recentering the structures so that their centroids coincide with each other.
 
         do i = 1, natoms_correspond
-                read_min_sliced_moved(i,1) = read_min_sliced(i,1) - cx_read 
-                read_min_sliced_moved(i,2) = read_min_sliced(i,2) - cy_read 
-                read_min_sliced_moved(i,3) = read_min_sliced(i,3) - cz_read 
+                read_min_sliced_centered(i,1) = read_min_sliced(i,1) - cx_read 
+                read_min_sliced_centered(i,2) = read_min_sliced(i,2) - cy_read
+                read_min_sliced_centered(i,3) = read_min_sliced(i,3) - cz_read 
+        enddo
+
+        do i = 1, natoms_correspond
+                current_min_sliced_centered(i,1) = current_min_sliced(i,1) - cx_current
+                current_min_sliced_centered(i,2) = current_min_sliced(i,2) - cy_current
+                current_min_sliced_centered(i,3) = current_min_sliced(i,3) - cz_current 
         enddo
                
         !Calculating the covariance matrix         
 
-        cov = matmul(transpose(read_min_sliced_moved),current_min_sliced)
+        cov = matmul(transpose(read_min_sliced_centered), current_min_sliced_centered)
 
         !Invoking the LAPACK library subroutine "dgesvd" that calculates the SVD of the covariance matrix
 
@@ -1142,27 +1142,14 @@ SUBROUTINE align ( read_min, current_min, align_well, read_sad, read_dr, dr_tran
 
         R = matmul(V,U_transpose)  !This is the optimal rotation matrix 
 
-        do i = 1,3
-                transformation_vec(i,1:3) = R(i,1:3)
+
+        read_min_sliced_transformed = transpose(matmul(R,transpose(read_min_sliced_centered)))
+
+        do i = 1,natoms_correspond
+                read_min_sliced_transformed(i,1) = read_min_sliced_transformed(i,1) + cx_current
+                read_min_sliced_transformed(i,2) = read_min_sliced_transformed(i,2) + cy_current
+                read_min_sliced_transformed(i,3) = read_min_sliced_transformed(i,3) + cz_current
         enddo
-
-        transformation_vec(4,1:3) = 0.0d0
-        transformation_vec(4,4) = 1.0d0
-
-        transformation_vec(1,4) = -1.0*(cx_read) 
-        transformation_vec(2,4) = -1.0*(cy_read) 
-        transformation_vec(3,4) = -1.0*(cz_read) 
-
-        do i = 1, natoms_correspond
-
-                read_dr_sliced_nat4(i,1:3) = read_dr_sliced(i,1:3)
-                read_dr_sliced_nat4(i,4) = 1.0d0
-
-                read_sad_sliced_nat4(i,1:3) = read_sad_sliced(i,1:3)
-                read_sad_sliced_nat4(i,4) = 1.0d0
-        enddo
-
-        read_min_sliced_transformed = transpose(matmul(R,transpose(read_min_sliced_moved)))
         
         sum_deviations_after = 0.0
         do i = 1, natoms_correspond
@@ -1190,12 +1177,28 @@ SUBROUTINE align ( read_min, current_min, align_well, read_sad, read_dr, dr_tran
         if (rmsd_after .LT. 0.1 .and. dev_count == natoms_correspond) then
 
                 align_well = .true.
-                read_dr_sliced_transformed_nat4 = transpose(matmul(transformation_vec,transpose(read_dr_sliced_nat4)))
-                read_sad_sliced_transformed_nat4 = transpose(matmul(transformation_vec,transpose(read_sad_sliced_nat4)))
 
-                do i = 1, natoms_correspond
-                        dr_transformed(current_atoms_correspond(i),1:3) = read_dr_sliced_transformed_nat4(i,1:3)
-                        sad_transformed(current_atoms_correspond(i),1:3) = read_sad_sliced_transformed_nat4(i,1:3)
+                do i = 1,natoms_correspond
+                        read_dr_translated(i,1) = read_dr_sliced(i,1) - cx_read
+                        read_dr_translated(i,2) = read_dr_sliced(i,2) - cy_read
+                        read_dr_translated(i,3) = read_dr_sliced(i,3) - cz_read
+
+                        read_sad_translated(i,1) = read_sad_sliced(i,1) - cx_read
+                        read_sad_translated(i,2) = read_sad_sliced(i,2) - cy_read
+                        read_sad_translated(i,3) = read_sad_sliced(i,3) - cz_read
+                enddo
+
+                read_dr_translated_rotated = transpose(matmul(R,transpose(read_dr_translated)))
+                read_sad_translated_rotated = transpose(matmul(R,transpose(read_sad_translated)))
+                
+                do i = 1,natoms_correspond
+                        dr_transformed(i,1) = read_dr_translated_rotated(i,1) + cx_current
+                        dr_transformed(i,2) = read_dr_translated_rotated(i,2) + cy_current
+                        dr_transformed(i,3) = read_dr_translated_rotated(i,3) + cz_current
+
+                        sad_transformed(i,1) = read_sad_translated_rotated(i,1) + cx_current
+                        sad_transformed(i,2) = read_sad_translated_rotated(i,2) + cy_current
+                        sad_transformed(i,3) = read_sad_translated_rotated(i,3) + cz_current
                 enddo
                 
         endif
