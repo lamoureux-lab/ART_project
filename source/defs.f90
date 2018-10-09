@@ -154,11 +154,11 @@ module defs
   logical           :: dual_search              
   integer           :: central_atom
   real(kind=8)      :: size_system
+  real(kind=8)      :: prob
   character(len=3)  :: type_sel
   !__________________
   
   character(len=20) :: LOGFILE
- ! character(len=20), parameter :: VECLOG = "../vec.log"
   character(len=20) :: EVENTSLIST
   character(len=200) :: VECLOG
   character(len=200) :: VECREAD
