@@ -144,13 +144,20 @@ subroutine global_move( )
   implicit none
 
   !Local variables
-  integer :: i, j, success_counter, rand, similar
+  integer :: i, j, k, success_counter, rand, similar, explore_count
   real(kind=8) :: dr2
   real(kind=8) :: ran3
   real(kind=8), dimension(:), pointer :: dx, dy, dz
   real(kind=8) :: dr_transformed_list(nsad_read,natoms,3)
   real(kind=8) :: sad_transformed_list(nsad_read,natoms,3)
+  real(kind=8) :: read_min(nmin_read,natoms,3)
+  real(kind=8), allocatable :: min_explored(:,:,:)
+  integer :: min_that_aligned(nmin_read)
+  real(kind=8) :: read_min_final(natoms,3)
   real(kind=8) :: cos_theta
+  real(kind=8) :: dummy
+  character(len=10) :: file_key
+  logical :: already_explored
 
   allocate(dr(3*natoms)) 
   allocate(atom_displaced(natoms))
@@ -195,7 +202,7 @@ subroutine global_move( )
 
   case ( 1 ) ! "follow" strategy
 
-        call read_and_transform ( dr_transformed_list, sad_transformed_list, success_counter )
+        call read_and_transform ( read_min, min_that_aligned, dr_transformed_list, sad_transformed_list, success_counter )
 
         if (success_counter .eq. 0) then
                 write(*,*) "None of the read min align well with the current min"
@@ -224,12 +231,14 @@ subroutine global_move( )
 
   case ( 2 ) ! "avoid" strategy
 
-        call read_and_transform ( dr_transformed_list, sad_transformed_list, success_counter )
+        call read_and_transform ( read_min, min_that_aligned, dr_transformed_list, sad_transformed_list, success_counter )
 
         if (success_counter .eq. 0) then
                 write(*,*) "None of the read min align well with the current min"
                 call end_art()
         endif
+
+        rand = ceiling(success_counter*ran3()) 
 
         do
             do i = 1, natoms 
@@ -244,16 +253,11 @@ subroutine global_move( )
                 atom_displaced(i) = 1
             end do
 
-            similar = 0
-            do j = 1, success_counter
-                        cos_theta = dot_product(dr,reshape(dr_transformed_list(j,1:natoms,1:3),(/natoms*3/))) / &
-                                    & sqrt(dot_product(dr,dr)*dot_product(reshape(dr_transformed_list(j,1:natoms,1:3),(/natoms*3/)),&
-                                    & reshape(dr_transformed_list(j,1:natoms,1:3),(/natoms*3/))))
-                        if (cos_theta .GT. 0.8) then
-                                similar = similar + 1
-                        endif
-            enddo
-            if (similar .eq. 0) exit
+            cos_theta = dot_product(dr,reshape(dr_transformed_list(rand,1:natoms,1:3),(/natoms*3/))) / &
+                      & sqrt(dot_product(dr,dr)*dot_product(reshape(dr_transformed_list(rand,1:natoms,1:3),(/natoms*3/)),&
+                      & reshape(dr_transformed_list(rand,1:natoms,1:3),(/natoms*3/))))
+            if (cos_theta .LT. 0.8) exit
+
         enddo
 
         open(VLOG, file=VECLOG, action='write', position='append', status='unknown')
@@ -262,6 +266,98 @@ subroutine global_move( )
                 write(VLOG,'(1X,a,3(2x,f16.8))') typat(i), dx(i), dy(i), dz(i)        
         enddo
         close(VLOG)
+
+        call center_and_norm ( INITSTEPSIZE )
+
+  case ( 3 ) ! "exploit_and_explore" strategy
+
+        call read_and_transform ( read_min, min_that_aligned, dr_transformed_list, sad_transformed_list, success_counter )
+
+        if (success_counter .eq. 0) then
+                write(*,*) "None of the read min align well with the current min"
+                call end_art()
+        endif
+
+        rand = ceiling(success_counter*ran3()) 
+        write(*,*) "This is the random pick", rand
+        write(*,*) "This is the random min", min_that_aligned(rand)
+        
+        read_min_final = read_min(min_that_aligned(rand) + 1, 1:natoms, 1:3)
+        
+        write(*,*) "Final read min"
+        write(*,*) read_min_final(1:natoms,1:3)
+        write(*,*) "final min ends"
+        open(STRUCT, file='struct.xyz', action='read', status='old')
+        
+        explore_count = 0
+        do 
+                read(STRUCT,*,end=600) file_key(1:3)
+                if (file_key(1:3) .eq. 'min') then
+                        explore_count = explore_count + 1
+                endif
+        enddo
+        600 rewind(STRUCT)
+        close(STRUCT)
+        allocate(min_explored(explore_count,natoms,3))
+
+        open(STRUCT, file='struct.xyz', action='read', status='old')
+        explore_count = 0
+        do
+                read(STRUCT,*,end=700) file_key(1:3)
+                if (file_key(1:3) .eq. 'min') then
+                        explore_count = explore_count + 1
+                        do i = 1, natoms
+                                read(STRUCT,*) typat(i), min_explored(explore_count,i,1:3)
+                        enddo
+                endif
+        enddo
+        700 rewind(STRUCT)
+        close(STRUCT)
+
+        do k = 1, explore_count
+                already_explored = .false.
+                call align(read_min_final, min_explored(k,1:natoms,1:3), already_explored, dummy , dummy, dummy, dummy)
+                if (already_explored .eq. .true.) exit
+        enddo
+        
+        if (already_explored .eq. .true.) then !avoid (explore)
+            do
+                do i = 1, natoms 
+                    do
+                        dx(i) = 0.5d0 - ran3()
+                        dy(i) = 0.5d0 - ran3()
+                        dz(i) = 0.5d0 - ran3()                             
+                        dr2 = dx(i)**2 + dy(i)**2 + dz(i)**2
+                        if ( dr2 < 0.25d0 ) exit 
+                    end do
+                    natom_displaced = natom_displaced + 1
+                    atom_displaced(i) = 1
+                end do
+
+                cos_theta = dot_product(dr,reshape(dr_transformed_list(rand,1:natoms,1:3),(/natoms*3/))) / &
+                          & sqrt(dot_product(dr,dr)*dot_product(reshape(dr_transformed_list(rand,1:natoms,1:3),(/natoms*3/)),&
+                          & reshape(dr_transformed_list(rand,1:natoms,1:3),(/natoms*3/))))
+                if (cos_theta .LT. 0.8) exit
+            enddo
+
+        else !follow (exploit)
+            do i = 1, natoms
+                dx(i) = dr_transformed_list(rand,i,1)
+                dy(i) = dr_transformed_list(rand,i,2)
+                dz(i) = dr_transformed_list(rand,i,3)
+                natom_displaced = natom_displaced + 1
+                atom_displaced(i) = 1
+            enddo
+        endif
+        
+        open(VLOG, file=VECLOG, action='write', position='append', status='unknown')
+        write(VLOG,*) "Displacement vector"
+        do i = 1, natoms
+                write(VLOG,'(1X,a,3(2x,f16.8))') typat(i), dx(i), dy(i), dz(i)        
+        enddo
+        close(VLOG)
+
+        deallocate(min_explored)
 
         call center_and_norm ( INITSTEPSIZE )
 
@@ -902,19 +998,20 @@ subroutine coord_based_move( )
 
 END SUBROUTINE coord_based_move 
 
-SUBROUTINE read_and_transform ( dr_transformed_list, sad_transformed_list, success_count )
+SUBROUTINE read_and_transform ( read_min, min_that_aligned, dr_transformed_list, sad_transformed_list, success_count )
 
         use defs
         
         implicit none
 
+        real(kind=8), intent(out) :: read_min(nmin_read,natoms_read,3)
+        integer, intent(out) :: min_that_aligned(nmin_read)
         real(kind=8), intent(out) :: dr_transformed_list(nsad_read,natoms,3)
         real(kind=8), intent(out) :: sad_transformed_list(nsad_read,natoms,3)
         integer, intent(out) :: success_count
         
         integer :: i, j, min_count, sad_count
 
-        real(kind=8) :: read_min(nmin_read,natoms_read,3)
         real(kind=8) :: read_sad(nsad_read,natoms_read,3)
         real(kind=8) :: read_dr(nsad_read,natoms_read,3)
         real(kind=8) :: current_min(natoms,3)
@@ -965,7 +1062,6 @@ SUBROUTINE read_and_transform ( dr_transformed_list, sad_transformed_list, succe
         
         success_count = 0
         do j = 1, nsad_read
-        
                 do i = 1, natoms_read
                          each_read_min(i,1:3) = read_min(j,i,1:3)
                          each_read_sad(i,1:3) = read_sad(j,i,1:3)
@@ -976,6 +1072,7 @@ SUBROUTINE read_and_transform ( dr_transformed_list, sad_transformed_list, succe
                 call align ( each_read_min, current_min, align_well, each_read_sad, each_read_dr, each_dr_transformed, each_sad_transformed )
                 if ( align_well .eq. .true. ) then                        
                          success_count = success_count + 1
+                         min_that_aligned(success_count) = j
                          do i = 1, natoms
                                  dr_transformed_list(success_count,i,1:3) = each_dr_transformed(i,1:3)
                                  sad_transformed_list(success_count,i,1:3) = each_sad_transformed(i,1:3)
