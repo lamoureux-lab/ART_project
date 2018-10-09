@@ -511,6 +511,10 @@ subroutine read_parameters( )
      read(temporary,*) COUNTER
   end if
 
+  ! Get probability
+  call getenv('PROBABILITY', temporary)
+     read(temporary,*) prob
+
   !!__________________
   ! General output for message
   call getenv('LOGFILE', temporary)
