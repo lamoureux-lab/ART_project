@@ -58,6 +58,18 @@ module saddles
 
 END MODULE saddles
 
+module search_params
+
+  implicit none
+
+  integer :: i, j, k, success_counter, rand
+  real(kind=8) :: dr2
+  real(kind=8), dimension(:), pointer :: dx, dy, dz
+  real(kind=8) :: cos_theta
+  real(kind=8) :: p
+
+END MODULE search_params
+
 !END MODULE search
 
 !> ART find_saddle
@@ -142,7 +154,12 @@ subroutine global_move()
   use defs
   use random
   use saddles
+  use search_params
 
+  implicit none 
+   
+  real(kind=8) :: ran3
+  
   selectcase ( search_strategy )
 
   case ( 0 ) ! default 
@@ -158,17 +175,27 @@ subroutine global_move()
         call set_move_avoid()
 
   case ( 3 ) ! "follow_and_avoid" strategy
-        write(*,*) "This is user defined probability ", prob
- 
-        p = ran3()
 
-        if (p > prob) then
+        write(*,*) "This is user defined probability ", odds_follow_or_avoid
+        p = ran3()
+        write(*,*) "This is p", p
+
+        if (p > odds_follow_or_avoid) then
                 call set_move_follow()
         else
                 call set_move_avoid()
 
         endif
   endselect
+
+  open(VLOG, file=VECLOG, action='write', position='append', status='unknown')
+  write(VLOG,*) "Displacement vector"
+  do i = 1, natoms
+          write(VLOG,'(1X,a,3(2x,f16.8))') typat(i), dx(i), dy(i), dz(i)        
+  enddo
+  close(VLOG)
+
+  call center_and_norm ( INITSTEPSIZE )
 
 END SUBROUTINE global_move
 
@@ -809,28 +836,18 @@ SUBROUTINE set_move_random()
   use defs
   use random
   use saddles
+  use search_params
+
   implicit none
 
   !Local variables
-  integer :: i, j, k, success_counter, rand, similar, explore_count
-  real(kind=8) :: dr2
   real(kind=8) :: ran3
-  real(kind=8), dimension(:), pointer :: dx, dy, dz
   real(kind=8) :: dr_transformed_list(nsad_read,natoms,3)
   real(kind=8) :: sad_transformed_list(nsad_read,natoms,3)
-  real(kind=8) :: read_min(nmin_read,natoms,3)
-  real(kind=8), allocatable :: min_explored(:,:,:)
-  real(kind=8) :: read_min_final(natoms,3)
-  real(kind=8) :: cos_theta
-  real(kind=8) :: p
-  character(len=10) :: file_key
-  logical :: already_explored
 
   allocate(dr(3*natoms)) 
   allocate(atom_displaced(natoms))
                                       ! We assign a few pointers. 
-  
-
   dx => dr(1:NATOMS)
   dy => dr(NATOMS+1:2*NATOMS)
   dz => dr(2*NATOMS+1:3*NATOMS)
@@ -838,6 +855,7 @@ SUBROUTINE set_move_random()
   atom_displaced = 0 
   natom_displaced = 0 
   dr = 0.0d0
+
   do i = 1, natoms
       do
          dx(i) = 0.5d0 - ran3()
@@ -851,15 +869,6 @@ SUBROUTINE set_move_random()
       atom_displaced(i) = 1
   end do
 
-  open(VLOG, file=VECLOG, action = 'write', position = 'append')
-  write(VLOG,*) "Displacement vector"
-  do i = 1, natoms
-          write(VLOG,'((1X,a),3(2x,f16.8))') typat(i), dx(i), dy(i), dz(i)
-  enddo
-  close(VLOG)
-
-  call center_and_norm ( INITSTEPSIZE )
-
 END SUBROUTINE set_move_random
 
 
@@ -868,28 +877,19 @@ SUBROUTINE set_move_follow()
   use defs
   use random
   use saddles
+  use search_params
+
   implicit none
 
   !Local variables
-  integer :: i, j, k, success_counter, rand, similar, explore_count
-  real(kind=8) :: dr2
   real(kind=8) :: ran3
-  real(kind=8), dimension(:), pointer :: dx, dy, dz
   real(kind=8) :: dr_transformed_list(nsad_read,natoms,3)
   real(kind=8) :: sad_transformed_list(nsad_read,natoms,3)
-  real(kind=8) :: read_min(nmin_read,natoms,3)
-  real(kind=8), allocatable :: min_explored(:,:,:)
-  real(kind=8) :: read_min_final(natoms,3)
-  real(kind=8) :: cos_theta
-  real(kind=8) :: p
-  character(len=10) :: file_key
-  logical :: already_explored
 
   allocate(dr(3*natoms)) 
   allocate(atom_displaced(natoms))
                                       ! We assign a few pointers. 
   
-
   dx => dr(1:NATOMS)
   dy => dr(NATOMS+1:2*NATOMS)
   dz => dr(2*NATOMS+1:3*NATOMS)
@@ -899,12 +899,10 @@ SUBROUTINE set_move_follow()
   dr = 0.0d0
 
   call read_and_transform ( dr_transformed_list, sad_transformed_list, success_counter )
-
   if (success_counter .eq. 0) then
           write(*,*) "None of the read min align well with the current min"
           call end_art()
   endif
-
   rand = ceiling(success_counter*ran3()) 
   write(*,*) "This is the random pick", rand
 
@@ -916,15 +914,6 @@ SUBROUTINE set_move_follow()
           atom_displaced(i) = 1
   enddo
 
-  open(VLOG, file = VECLOG, status = 'unknown', action = 'write', position = 'append')                
-  write(VLOG,*) "Displacement vector"
-  do i = 1, natoms
-          write(VLOG,'(1X,a,3(2x,f16.8))') typat(i), dx(i), dy(i), dz(i)        
-  enddo
-  close(VLOG)
-
-  call center_and_norm ( INITSTEPSIZE )
-
 END SUBROUTINE set_move_follow
 
 SUBROUTINE set_move_avoid()
@@ -932,28 +921,18 @@ SUBROUTINE set_move_avoid()
   use defs
   use random
   use saddles
+  use search_params
+
   implicit none
 
   !Local variables
-  integer :: i, j, k, success_counter, rand, similar, explore_count
-  real(kind=8) :: dr2
   real(kind=8) :: ran3
-  real(kind=8), dimension(:), pointer :: dx, dy, dz
   real(kind=8) :: dr_transformed_list(nsad_read,natoms,3)
   real(kind=8) :: sad_transformed_list(nsad_read,natoms,3)
-  real(kind=8) :: read_min(nmin_read,natoms,3)
-  real(kind=8), allocatable :: min_explored(:,:,:)
-  real(kind=8) :: read_min_final(natoms,3)
-  real(kind=8) :: cos_theta
-  real(kind=8) :: p
-  character(len=10) :: file_key
-  logical :: already_explored
 
   allocate(dr(3*natoms)) 
   allocate(atom_displaced(natoms))
                                       ! We assign a few pointers. 
-  
-
   dx => dr(1:NATOMS)
   dy => dr(NATOMS+1:2*NATOMS)
   dz => dr(2*NATOMS+1:3*NATOMS)
@@ -963,14 +942,11 @@ SUBROUTINE set_move_avoid()
   dr = 0.0d0
 
   call read_and_transform ( dr_transformed_list, sad_transformed_list, success_counter )
-
   if (success_counter .eq. 0) then
           write(*,*) "None of the read min align well with the current min"
           call end_art()
   endif
-
   rand = ceiling(success_counter*ran3()) 
-
   do
       do i = 1, natoms 
           do
@@ -983,22 +959,11 @@ SUBROUTINE set_move_avoid()
           natom_displaced = natom_displaced + 1
           atom_displaced(i) = 1
       end do
-
       cos_theta = dot_product(dr,reshape(dr_transformed_list(rand,1:natoms,1:3),(/natoms*3/))) / &
                 & sqrt(dot_product(dr,dr)*dot_product(reshape(dr_transformed_list(rand,1:natoms,1:3),(/natoms*3/)),&
                 & reshape(dr_transformed_list(rand,1:natoms,1:3),(/natoms*3/))))
             if (cos_theta .LT. 0.8) exit
-
   enddo
-
-  open(VLOG, file=VECLOG, action='write', position='append', status='unknown')
-  write(VLOG,*) "Displacement vector"
-  do i = 1, natoms
-          write(VLOG,'(1X,a,3(2x,f16.8))') typat(i), dx(i), dy(i), dz(i)        
-  enddo
-  close(VLOG)
-
-  call center_and_norm ( INITSTEPSIZE )
 
 END SUBROUTINE set_move_avoid
 
@@ -1025,7 +990,6 @@ SUBROUTINE read_and_transform ( dr_transformed_list, sad_transformed_list, succe
         real(kind=8) :: each_sad_transformed(natoms,3)
         logical :: align_well
         character(len=20) :: keyword 
-
 
         open(VREAD, file=VECREAD, status = 'old', action = 'read')
 
