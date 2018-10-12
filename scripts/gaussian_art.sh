@@ -2,7 +2,7 @@
 
 #Sets the environment variables for the molecules in question
 
-setenv Temperature 0.4      # Temperature in kcal/mol, if negative always reject the event bharat 0.4 >> 0.1
+setenv Temperature 0.4      # Temperature in kcal/mol, if negative always reject the event  0.4 >> 0.1
 setenv ENERGY_CALC GAU      # Choose: DFT, SWP (Stillinger-Weber) or GAU
 setenv EVENT_TYPE  NEW      # Either 'NEW', 'REFINE_SADDLE' when further converging a saddle point
                             # Or "REFINE_AND_RELAX", to refine at the saddle and check the final minimum
@@ -15,7 +15,7 @@ setenv Prefactor_Push_Over_Saddle 0.3 # The prefactor for pushing over the saddl
 
 setenv Max_Number_Events                      2   # Maximum number of events
 setenv Type_of_Events                    global   # Initial move for events - global or local list_local
-setenv Radius_Initial_Deformation           3.0   # Cutoff for local-move (in angstroems) bharat 3> 2 NOT NEEDED FOR "global"
+setenv Radius_Initial_Deformation           3.0   # Cutoff for local-move (in angstroems)  3> 2 NOT NEEDED FOR "global"
 setenv Central_Atom                           1   # Number of the atom # around which the initial move takes place NOT NEEDED FOR "global"
 
 setenv Eigenvalue_Threshold                -0.2   # Eigenvalue threshold for leaving basin (units eV/angstrom)
@@ -24,12 +24,12 @@ setenv Exit_Force_Threshold                 0.1   # Threshold for convergence at
 setenv Increment_Size                       0.1   # Overall scale for the increment moves in activation 0.06 >> 0.01
 setenv Initial_Step_Size                    0.1   # Size of initial displacement, in A 0.1 >>> 0.001(default) 0.8 from Siesta
 
-setenv sym_break_dist                       0.2   # Breaks the symmetry of the bharat 0.1 >>> 0.3 (Siesta) 0(default)
+setenv sym_break_dist                       0.2   # Breaks the symmetry of the  0.1 >>> 0.3 (Siesta) 0(default)
                                                   # crystal by randomly displacing all atoms by this distance
 
-setenv Max_Perp_Moves_Basin                   3   # Maximum number of perpendicular steps leaving basin bharat 2>>3
-setenv Min_Number_KSteps                      3   # Min. number of ksteps before calling lanczos  bharat 2>>3
-setenv Basin_Factor                         2.1   # Factor multiplying Increment_Size for leaving the basin bharat 3.0 >>2.1
+setenv Max_Perp_Moves_Basin                   3   # Maximum number of perpendicular steps leaving basin  2>>3
+setenv Min_Number_KSteps                      3   # Min. number of ksteps before calling lanczos   2>>3
+setenv Basin_Factor                         2.1   # Factor multiplying Increment_Size for leaving the basin  3.0 >>2.1
 
 #setenv Lanczos_of_minimum               .true.   # Calculation of the Hessian for each minimum
 setenv Lanczos_SCLoop                         5   # Number of iterations in the lanczos Self consistent loop default 20 >> 1 (default)
@@ -46,6 +46,7 @@ setenv Write_xyz                         .true.   # Generates .xyz files
 ###### Automation parameters #########
 
 setenv Strategy_of_Search                     0   # '0' --> Proceed randomly (as it was doing already), '1' --> Follow the vector, '2' --> Avoid the vector
+setenv Odds_follow_avoid		      0   # Odds that ART will either 'follow' or 'avoid'
 setenv Shared_History_Filename              ../shared_log/test.log # Name the shared history file
 setenv Shared_History_To_Read               ../shared_log/xxx.log # Shared vector file to read from
 setenv nmin_read			    0 # nmin read from vector file
