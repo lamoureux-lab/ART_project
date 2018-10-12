@@ -512,8 +512,8 @@ subroutine read_parameters( )
   end if
 
   ! Get probability
-  call getenv('PROBABILITY', temporary)
-     read(temporary,*) prob
+  call getenv('Odds_follow_avoid', temporary)
+     read(temporary,*) odds_follow_or_avoid
 
   !!__________________
   ! General output for message
