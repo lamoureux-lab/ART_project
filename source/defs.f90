@@ -61,6 +61,7 @@ module defs
   integer, parameter :: STRUCT      = 19
   integer, parameter :: PATH        = 21
   integer, parameter :: ALI         = 24
+  integer, parameter :: COVR        = 25
 
 
   ! Name of the file storing the current configurations
@@ -154,7 +155,7 @@ module defs
   logical           :: dual_search              
   integer           :: central_atom
   real(kind=8)      :: size_system
-  real(kind=8)      :: prob
+  real(kind=8)      :: odds_follow_or_avoid
   character(len=3)  :: type_sel
   !__________________
   
