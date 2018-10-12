@@ -58,20 +58,6 @@ module saddles
 
 END MODULE saddles
 
-module search_params
-
-  implicit none
-
-  integer :: i, j, k, success_counter, rand
-  real(kind=8) :: dr2
-  real(kind=8), dimension(:), pointer :: dx, dy, dz
-  real(kind=8) :: cos_theta
-  real(kind=8) :: p
-
-END MODULE search_params
-
-!END MODULE search
-
 !> ART find_saddle
 !!   This subroutine initiates the random displacement at the start
 !!   of the ART algorithm. 
@@ -154,17 +140,19 @@ subroutine global_move()
   use defs
   use random
   use saddles
-  use search_params
 
   implicit none 
    
   real(kind=8) :: ran3
+  real(kind=8) :: p
   
   selectcase ( search_strategy )
 
   case ( 0 ) ! default 
 
         call set_move_random()
+        call detect_fragments()
+        call end_art()
 
   case ( 1 ) ! "follow" strategy
 
@@ -176,7 +164,7 @@ subroutine global_move()
 
   case ( 3 ) ! "follow_and_avoid" strategy
 
-        write(*,*) "This is user defined probability ", odds_follow_or_avoid
+        write(*,*) "This is the user defined probability ", odds_follow_or_avoid
         p = ran3()
         write(*,*) "This is p", p
 
@@ -188,12 +176,6 @@ subroutine global_move()
         endif
   endselect
 
-  open(VLOG, file=VECLOG, action='write', position='append', status='unknown')
-  write(VLOG,*) "Displacement vector"
-  do i = 1, natoms
-          write(VLOG,'(1X,a,3(2x,f16.8))') typat(i), dx(i), dy(i), dz(i)        
-  enddo
-  close(VLOG)
 
   call center_and_norm ( INITSTEPSIZE )
 
@@ -630,7 +612,7 @@ subroutine center_and_norm ( step )
      dz = dz - zsum * atom_displaced
      
   end if
-
+        write(*,*) "This is sum_coords", xsum, ysum, zsum
   
   ! And normalize the total random displacement effected to the value
   ! desired.
@@ -836,11 +818,14 @@ SUBROUTINE set_move_random()
   use defs
   use random
   use saddles
-  use search_params
 
   implicit none
 
   !Local variables
+  integer :: i, j, k, success_counter, rand
+  real(kind=8) :: dr2
+  real(kind=8), dimension(:), pointer :: dx, dy, dz
+  real(kind=8) :: cos_theta
   real(kind=8) :: ran3
   real(kind=8) :: dr_transformed_list(nsad_read,natoms,3)
   real(kind=8) :: sad_transformed_list(nsad_read,natoms,3)
@@ -877,11 +862,14 @@ SUBROUTINE set_move_follow()
   use defs
   use random
   use saddles
-  use search_params
 
   implicit none
 
   !Local variables
+  integer :: i, j, k, success_counter, rand
+  real(kind=8) :: dr2
+  real(kind=8), dimension(:), pointer :: dx, dy, dz
+  real(kind=8) :: cos_theta
   real(kind=8) :: ran3
   real(kind=8) :: dr_transformed_list(nsad_read,natoms,3)
   real(kind=8) :: sad_transformed_list(nsad_read,natoms,3)
@@ -921,11 +909,14 @@ SUBROUTINE set_move_avoid()
   use defs
   use random
   use saddles
-  use search_params
 
   implicit none
 
   !Local variables
+  integer :: i, j, k, success_counter, rand
+  real(kind=8) :: dr2
+  real(kind=8), dimension(:), pointer :: dx, dy, dz
+  real(kind=8) :: cos_theta
   real(kind=8) :: ran3
   real(kind=8) :: dr_transformed_list(nsad_read,natoms,3)
   real(kind=8) :: sad_transformed_list(nsad_read,natoms,3)
@@ -1050,6 +1041,82 @@ SUBROUTINE read_and_transform ( dr_transformed_list, sad_transformed_list, succe
 
 END SUBROUTINE read_and_transform
 
+SUBROUTINE detect_fragments()
+        
+        use defs
+        
+        implicit none
+
+        integer :: i, j
+        real(kind=8) :: dist(natoms,natoms), adj(natoms,natoms), cov_rad(4), cov_radius_current(natoms), bond_length_matrix(natoms,natoms)
+        character :: dummy, atomic_kind(4)
+
+        do i = 1, natoms
+                do j = 1, natoms
+                      dist(i,j) = sqrt((x(i) - x(j))**2 + (y(i) - y(j))**2 + (z(i) - z(j))**2)
+                enddo
+        enddo
+
+        write(*,*)"Distance matrix"
+        do i = 1, natoms
+                write(*,'(8(f14.8))') dist(i,1:natoms)
+        enddo
+        
+        open(COVR, file='cov_radii', action='read', status='old')
+        read(COVR,*) dummy, dummy
+        do i = 1, 4
+                read(COVR,*) atomic_kind(i), cov_rad(i)
+        enddo
+        close(COVR)
+
+        do i = 1, natoms
+                do j = 1, 4
+                        if (typat(i) == atomic_kind(j)) then
+                                cov_radius_current(i) = cov_rad(j)
+                        endif
+                enddo
+        enddo
+
+        do i = 1, natoms
+                write(*,*) cov_radius_current(i)
+        enddo
+
+        do i = 1, natoms
+                do j = 1, natoms
+                        if ( i .ne. j ) then
+                                bond_length_matrix(i,j) = cov_radius_current(i) + cov_radius_current(j)
+                        else
+                                bond_length_matrix(i,j) = 0.0
+                        endif
+                enddo
+        enddo
+
+        write(*,*)"Bond length matrix"
+        do i = 1, natoms
+                write(*,'(8(f14.8))') bond_length_matrix(i,1:natoms)
+        enddo
+
+        do i = 1, natoms
+                do j = 1, natoms
+                        if ( i .ne. j ) then
+                                if (abs(dist(i,j) - bond_length_matrix(i,j)) < 0.1) then
+                                        adj(i,j) = 1.0
+                                else
+                                        adj(i,j) = 0.0
+                                endif
+                        else
+                                adj(i,j) = 0.0
+                        endif
+                enddo
+        enddo
+
+        write(*,*)"Adjacency matrix"
+        do i = 1, natoms
+                write(*,'(8(f14.8))') adj(i,1:natoms)
+        enddo
+                                
+END SUBROUTINE detect_fragments
+
 SUBROUTINE align ( read_min, current_min, align_well, read_sad, read_dr, dr_transformed, sad_transformed )
 
         ! This subroutine calculates a transformation matrix that minimizes the RMSD between two sets of coordinates.
@@ -1090,6 +1157,7 @@ SUBROUTINE align ( read_min, current_min, align_well, read_sad, read_dr, dr_tran
 
         integer :: read_atoms_correspond(natoms_correspond)
         integer :: current_atoms_correspond(natoms_correspond)
+        character :: dummy1, dummy2
 
         real(kind=8) :: read_min_sliced_centered(natoms_correspond,3)
         real(kind=8) :: current_min_sliced_centered(natoms_correspond,3)
@@ -1107,6 +1175,7 @@ SUBROUTINE align ( read_min, current_min, align_well, read_sad, read_dr, dr_tran
         integer :: i, j, dev_count, info
         
         open(ALI, file = 'alignment.txt', status = 'unknown', action = 'read')
+        read(ALI,*) dummy1, dummy2
         do i = 1, natoms_correspond
                 read(ALI,*) current_atoms_correspond(i), read_atoms_correspond(i) 
                 write(*,*) current_atoms_correspond(i), read_atoms_correspond(i) 
