@@ -511,9 +511,15 @@ subroutine read_parameters( )
      read(temporary,*) COUNTER
   end if
 
-  ! Get probability
+  !!__________________
+  ! Get probability follow or avoid
   call getenv('Odds_follow_avoid', temporary)
      read(temporary,*) odds_follow_or_avoid
+
+  !!__________________
+  ! Get probability roll or attack
+  call getenv('Odds_roll_or_attack', temporary)
+     read(temporary,*) odds_roll_or_attack
 
   !!__________________
   ! General output for message
