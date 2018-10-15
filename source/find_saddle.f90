@@ -1149,34 +1149,36 @@ SUBROUTINE detect_fragments ( fragment_to_move, shortest_vec )
                 enddo
         enddo
 
-        do i = 1, natoms
+        ! Breadth-first search (BFS) algorithm for finding fragments
+
+        do i = 1, natoms                        !Mark all nodes as unvisited
                 visited(i) = .false.
         enddo
         
         queue = 0.0d0
-        visited(1) = .true.
-        queue(1) = 1
-        node = queue(1)
+        visited(1) = .true.                     !Visit the source node (could be any node, I chose number 1)
+        queue(1) = 1                            !Enqueue the visited node 
+        node = queue(1)                         !The variable "node" holds the first element of the queue     
         queue(1) = 0
 
         do
                 do j = 1, natoms
-                        if (adj_matrix(node,j) .eq. 1 .and. visited(j) .eq. .false.) then
-                                visited(j) = .true.
+                        if (adj_matrix(node,j) .eq. 1 .and. visited(j) .eq. .false.) then   !Check if the vertex adjacent to the first element in the queue is visited
+                                visited(j) = .true.                         !if not, visit it
                                 do k = 1, size(queue)
-                                        if (queue(k) .eq. 0) then 
-                                                queue(k) = j
+                                        if (queue(k) .eq. 0) then           
+                                                queue(k) = j                !Once visited, enqueue it.
                                                 exit
                                         endif
                                 enddo
                         endif
                 enddo
 
-                node = queue(1)
-                queue(1) = 0.0
-                queue = cshift(queue, 1)
+                node = queue(1)                                             !"Node" holds the first element of the queue
+                queue(1) = 0.0                                              !Dump the first element (since it has been visited)
+                queue = cshift(queue, 1)                                    !Shift the queue one place to the left (so that the second element becomes the first and the process continues)
 
-                if (queue(1) .eq. 0.0) exit
+                if (queue(1) .eq. 0.0) exit                                 !Exit when the queue is "empty" (in this instance "all zeroes" is an empty queue)
 
         enddo
         
@@ -1232,6 +1234,8 @@ SUBROUTINE detect_fragments ( fragment_to_move, shortest_vec )
         write(*,*) "fragment_to_move", fragment_to_move
         write(*,*) "larger_fragment", larger_fragment
         write(*,*) "smaller_fragment", smaller_fragment
+
+        !Find the two closest atoms (between the two fragments) and the vector connecting them
 
         allocate(dist_between_frag(size(smaller_fragment), size(larger_fragment)))
 
