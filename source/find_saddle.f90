@@ -1038,7 +1038,7 @@ SUBROUTINE read_and_transform ( dr_transformed_list, sad_transformed_list, succe
 
                 align_well = .false.
                 call align ( each_read_min, current_min, align_well, each_read_sad, each_read_dr, each_dr_transformed, each_sad_transformed )
-                if ( align_well .eqv. .true. ) then                        
+                if ( align_well .eq. .true. ) then                        
                          success_count = success_count + 1
                          do i = 1, natoms
                                  dr_transformed_list(success_count,i,1:3) = each_dr_transformed(i,1:3)
@@ -1163,7 +1163,7 @@ SUBROUTINE detect_fragments ( fragment_to_move, shortest_vec )
 
         do
                 do j = 1, natoms                !Check if the vertex adjacent to the first element in the queue is visited
-                        if (adj_matrix(node,j) .eq. 1 .and. visited(j) .eqv. .false.) then  
+                        if (adj_matrix(node,j) .eq. 1 .and. visited(j) .eq. .false.) then  
                                 visited(j) = .true.                         !if not, visit it
                                 do k = 1, size(queue)
                                         if (queue(k) .eq. 0) then           
@@ -1185,7 +1185,7 @@ SUBROUTINE detect_fragments ( fragment_to_move, shortest_vec )
         size_fragment = 0
         size_the_other_fragment = 0
         do i = 1, natoms
-                if (visited(i) .eqv. .true.) then
+                if (visited(i) .eq. .true.) then
                         size_fragment = size_fragment + 1
                 else
                         size_the_other_fragment = size_the_other_fragment + 1
@@ -1198,7 +1198,7 @@ SUBROUTINE detect_fragments ( fragment_to_move, shortest_vec )
         size_fragment = 0
         size_the_other_fragment = 0
         do i = 1, natoms
-                if (visited(i) .eqv. .true.) then
+                if (visited(i) .eq. .true.) then
                         size_fragment = size_fragment + 1
                         fragment(size_fragment) = i
                 else
