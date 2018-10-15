@@ -33,6 +33,9 @@ module defs
   integer      :: MAXNEI             !Maximum number of nearest neighbours
   integer      :: VECSIZE            !Length of the force and position vectors
   integer      :: nbr_quantum        !Number of quantum atoms for BSW force_calc. These are the first atoms in the input file
+  integer      :: SEARCH_STRATEGY    !Option to select which search strategy to use (eg. follow, avoid, etc.)
+  real(kind=8) :: odds_follow_or_avoid !probabilistic approach to follow or avoid
+  real(kind=8) :: odds_roll_or_attack  !probabilistic approach to roll or attack
   integer      :: nbr_quantum_trash  !Number of quantum atoms where the forces will be wrong (to close to the H bonds). The are the very first atoms in the file
                                      !Thus nbr_quantum = nbr_quantum_trash + nbr_quantum_good
   integer      :: nbr_to_fit         !number of atoms where we fit SW to the hybrid computation
@@ -61,7 +64,7 @@ module defs
   integer, parameter :: STRUCT      = 19
   integer, parameter :: PATH        = 21
   integer, parameter :: ALI         = 24
-  integer, parameter :: COVR        = 25
+  integer, parameter :: ADJ         = 25
 
 
   ! Name of the file storing the current configurations
@@ -155,7 +158,6 @@ module defs
   logical           :: dual_search              
   integer           :: central_atom
   real(kind=8)      :: size_system
-  real(kind=8)      :: odds_follow_or_avoid
   character(len=3)  :: type_sel
   !__________________
   
