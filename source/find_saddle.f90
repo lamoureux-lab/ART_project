@@ -28,9 +28,6 @@ module saddles
 
   character(len=20) :: TYPE_EVENTS
 
-  integer :: SEARCH_STRATEGY 
-
-
   real(kind=8) :: delta_e  ! current_energy - ref_energy
   integer :: m_perp   ! Accepted perpendicular iterations.
 
@@ -151,9 +148,7 @@ subroutine global_move()
   case ( 0 ) ! default 
 
         call set_move_random()
-        call detect_fragments()
-        call end_art()
-
+  
   case ( 1 ) ! "follow" strategy
 
         call set_move_follow()
@@ -164,18 +159,37 @@ subroutine global_move()
 
   case ( 3 ) ! "follow_and_avoid" strategy
 
-        write(*,*) "This is the user defined probability ", odds_follow_or_avoid
         p = ran3()
-        write(*,*) "This is p", p
 
         if (p > odds_follow_or_avoid) then
                 call set_move_follow()
         else
                 call set_move_avoid()
-
         endif
-  endselect
 
+  case ( 4 ) ! "noncovalent"
+         
+        call noncovalent()
+
+  case ( 5 ) ! "noncovalent_roll"
+         
+        call noncovalent_roll()
+
+  case ( 6 ) ! "noncovalent_attack"
+         
+        call noncovalent_attack()
+
+  case ( 7 ) ! "noncovalent_roll_and_attack"
+         
+        p = ran3()
+
+        if (p > odds_roll_or_attack) then
+                call noncovalent_roll()
+        else
+                call noncovalent_attack()
+        endif
+
+  endselect
 
   call center_and_norm ( INITSTEPSIZE )
 
@@ -822,13 +836,10 @@ SUBROUTINE set_move_random()
   implicit none
 
   !Local variables
-  integer :: i, j, k, success_counter, rand
+  integer :: i
   real(kind=8) :: dr2
   real(kind=8), dimension(:), pointer :: dx, dy, dz
-  real(kind=8) :: cos_theta
   real(kind=8) :: ran3
-  real(kind=8) :: dr_transformed_list(nsad_read,natoms,3)
-  real(kind=8) :: sad_transformed_list(nsad_read,natoms,3)
 
   allocate(dr(3*natoms)) 
   allocate(atom_displaced(natoms))
@@ -866,10 +877,9 @@ SUBROUTINE set_move_follow()
   implicit none
 
   !Local variables
-  integer :: i, j, k, success_counter, rand
+  integer :: i, success_counter, rand
   real(kind=8) :: dr2
   real(kind=8), dimension(:), pointer :: dx, dy, dz
-  real(kind=8) :: cos_theta
   real(kind=8) :: ran3
   real(kind=8) :: dr_transformed_list(nsad_read,natoms,3)
   real(kind=8) :: sad_transformed_list(nsad_read,natoms,3)
@@ -1041,33 +1051,52 @@ SUBROUTINE read_and_transform ( dr_transformed_list, sad_transformed_list, succe
 
 END SUBROUTINE read_and_transform
 
-SUBROUTINE detect_fragments()
+SUBROUTINE detect_fragments ( fragment_to_move, shortest_vec )
         
         use defs
         
         implicit none
 
-        integer :: i, j
-        real(kind=8) :: dist(natoms,natoms), adj(natoms,natoms), cov_rad(4), cov_radius_current(natoms), bond_length_matrix(natoms,natoms)
-        character :: dummy, atomic_kind(4)
+        !Arguments
+        integer, intent(out) :: fragment_to_move(natoms)
+        real(kind=8), intent(out) :: shortest_vec(1,3)
+
+        !Local variables
+        integer :: i, j, k
+        real(kind=8), dimension(natoms, natoms) :: dist_matrix 
+        real(kind=8), dimension(natoms, natoms) :: bond_length_matrix 
+        real(kind=8), dimension(natoms, natoms) :: adj_matrix 
+        character(len=1), dimension(4) :: atomic_kind
+        real(kind=8), dimension(4) :: cov_rad
+        real(kind=8), dimension(natoms) :: cov_radius_current
+        logical, dimension(natoms) :: visited
+        integer, dimension(natoms) :: queue
+        integer :: node
+        integer :: size_fragment
+        integer :: size_the_other_fragment
+        integer, allocatable, dimension(:) :: fragment
+        integer, allocatable, dimension(:) :: the_other_fragment
+        integer, allocatable, dimension(:) :: smaller_fragment
+        integer, allocatable, dimension(:) :: larger_fragment
+        real(kind=8), allocatable, dimension(:,:) :: dist_between_frag
+
+        fragment_to_move = 0
 
         do i = 1, natoms
                 do j = 1, natoms
-                      dist(i,j) = sqrt((x(i) - x(j))**2 + (y(i) - y(j))**2 + (z(i) - z(j))**2)
+                      dist_matrix(i,j) = sqrt((x(i) - x(j))**2 + (y(i) - y(j))**2 + (z(i) - z(j))**2)
                 enddo
         enddo
 
         write(*,*)"Distance matrix"
         do i = 1, natoms
-                write(*,'(8(f14.8))') dist(i,1:natoms)
+                write(*,'(<natoms>(f14.8))') dist_matrix(i,1:natoms)
         enddo
         
-        open(COVR, file='cov_radii', action='read', status='old')
-        read(COVR,*) dummy, dummy
-        do i = 1, 4
-                read(COVR,*) atomic_kind(i), cov_rad(i)
-        enddo
-        close(COVR)
+        atomic_kind = [ 'C',  'H',  'N',  'O' ]            !Theoretical covalent radii of the
+        cov_rad     = [ 0.76, 0.31, 0.71, 0.66 ]           !four most common organic elements 
+
+        !Every atom in the current structure is assigned a covalent radius
 
         do i = 1, natoms
                 do j = 1, 4
@@ -1080,6 +1109,11 @@ SUBROUTINE detect_fragments()
         do i = 1, natoms
                 write(*,*) cov_radius_current(i)
         enddo
+        
+        ! if every atom in the current structure was bonded to every other atom,
+        ! we calculate the "theoretical" bond length between them (by adding the
+        ! covalent radii of the two atoms) and populate the bond_length matrix
+        ! with it        
 
         do i = 1, natoms
                 do j = 1, natoms
@@ -1093,29 +1127,298 @@ SUBROUTINE detect_fragments()
 
         write(*,*)"Bond length matrix"
         do i = 1, natoms
-                write(*,'(8(f14.8))') bond_length_matrix(i,1:natoms)
+                write(*,'(<natoms>(f14.8))') bond_length_matrix(i,1:natoms)
         enddo
+
+        ! Each element of the bond length matrix is then compared with each
+        ! element of the distance matrix. If they are more or less equal, then
+        ! the atoms are bonded and the pair (i,j) gets a value of 1.0 in the adjacency matrix
+        ! else not (and get a value of 0.0 in the adjacency matrix)
 
         do i = 1, natoms
                 do j = 1, natoms
                         if ( i .ne. j ) then
-                                if (abs(dist(i,j) - bond_length_matrix(i,j)) < 0.1) then
-                                        adj(i,j) = 1.0
+                                if (abs(dist_matrix(i,j) - bond_length_matrix(i,j)) < 0.30) then
+                                        adj_matrix(i,j) = 1.0
                                 else
-                                        adj(i,j) = 0.0
+                                        adj_matrix(i,j) = 0.0
                                 endif
                         else
-                                adj(i,j) = 0.0
+                                adj_matrix(i,j) = 0.0
                         endif
                 enddo
         enddo
 
-        write(*,*)"Adjacency matrix"
         do i = 1, natoms
-                write(*,'(8(f14.8))') adj(i,1:natoms)
+                visited(i) = .false.
         enddo
-                                
+        
+        queue = 0.0d0
+        visited(1) = .true.
+        queue(1) = 1
+        node = queue(1)
+        queue(1) = 0
+
+        do
+                do j = 1, natoms
+                        if (adj_matrix(node,j) .eq. 1 .and. visited(j) .eq. .false.) then
+                                visited(j) = .true.
+                                do k = 1, size(queue)
+                                        if (queue(k) .eq. 0) then 
+                                                queue(k) = j
+                                                exit
+                                        endif
+                                enddo
+                        endif
+                enddo
+
+                node = queue(1)
+                queue(1) = 0.0
+                queue = cshift(queue, 1)
+
+                if (queue(1) .eq. 0.0) exit
+
+        enddo
+        
+        size_fragment = 0
+        size_the_other_fragment = 0
+        do i = 1, natoms
+                if (visited(i) .eq. .true.) then
+                        size_fragment = size_fragment + 1
+                else
+                        size_the_other_fragment = size_the_other_fragment + 1
+                endif
+        enddo      
+
+        allocate(fragment(size_fragment))
+        allocate(the_other_fragment(size_the_other_fragment))
+
+        size_fragment = 0
+        size_the_other_fragment = 0
+        do i = 1, natoms
+                if (visited(i) .eq. .true.) then
+                        size_fragment = size_fragment + 1
+                        fragment(size_fragment) = i
+                else
+                        size_the_other_fragment = size_the_other_fragment + 1
+                        the_other_fragment(size_the_other_fragment) = i 
+                endif
+        enddo
+
+        if (size(fragment) .lt. size(the_other_fragment)) then
+                allocate(smaller_fragment(size_fragment))
+                allocate(larger_fragment(size_the_other_fragment))
+                do i = 1, size(fragment)
+                        smaller_fragment(i) = fragment(i)
+                enddo
+                do i = 1, size(the_other_fragment)
+                        larger_fragment(i) = the_other_fragment(i)
+                enddo
+        else
+                allocate(larger_fragment(size_fragment))
+                allocate(smaller_fragment(size_the_other_fragment))
+                do i = 1, size(fragment)
+                        larger_fragment(i) = fragment(i)
+                enddo
+                do i = 1, size(the_other_fragment)
+                        smaller_fragment(i) = the_other_fragment(i)
+                enddo
+        endif
+        
+        do i = 1, size(smaller_fragment)
+                fragment_to_move(i) = smaller_fragment(i)
+        enddo
+
+        write(*,*) "fragment_to_move", fragment_to_move
+        write(*,*) "larger_fragment", larger_fragment
+        write(*,*) "smaller_fragment", smaller_fragment
+
+        allocate(dist_between_frag(size(smaller_fragment), size(larger_fragment)))
+
+        do i = 1, size(smaller_fragment)
+                do j = 1, size(larger_fragment)
+                        dist_between_frag(i,j) = sqrt((x(smaller_fragment(i)) - x(larger_fragment(j)))**2 &
+                                                  & + (y(smaller_fragment(i)) - y(larger_fragment(j)))**2 &
+                                                  & + (z(smaller_fragment(i)) - z(larger_fragment(j)))**2) 
+                enddo
+        enddo
+
+        write(*,*) "min_val", minval(dist_between_frag)
+
+        do i = 1, size(smaller_fragment)
+                do j = 1, size(larger_fragment)
+                        if (minval(dist_between_frag) .eq. dist_between_frag(i,j)) then
+                                shortest_vec(i,1) = x(smaller_fragment(i)) - x(larger_fragment(j))
+                                shortest_vec(i,2) = y(smaller_fragment(i)) - y(larger_fragment(j))
+                                shortest_vec(i,3) = z(smaller_fragment(i)) - z(larger_fragment(j))
+                        endif
+                enddo
+        enddo
+        
+        write(*,*) "shortest_vec", shortest_vec
+
+        deallocate(fragment)
+        deallocate(the_other_fragment)
+        deallocate(smaller_fragment)
+        deallocate(larger_fragment)
+        deallocate(dist_between_frag)
+
 END SUBROUTINE detect_fragments
+
+SUBROUTINE noncovalent()
+                
+  use defs
+  use random
+  use saddles
+
+  implicit none
+
+  !Local variables
+  integer :: i, j
+  real(kind=8) :: dr2
+  real(kind=8), dimension(:), pointer :: dx, dy, dz
+  real(kind=8) :: ran3
+  integer, dimension(natoms) :: fragment_to_move
+  real(kind=8), dimension(1,3) :: shortest_vec 
+
+  allocate(dr(3*natoms)) 
+  allocate(atom_displaced(natoms))
+                                      ! We assign a few pointers. 
+  dx => dr(1:NATOMS)
+  dy => dr(NATOMS+1:2*NATOMS)
+  dz => dr(2*NATOMS+1:3*NATOMS)
+  
+  atom_displaced = 0 
+  natom_displaced = 0 
+  dr = 0.0d0
+
+  call detect_fragments ( fragment_to_move, shortest_vec )
+  
+  write(*,*) "This is fragment to move", fragment_to_move
+
+  do i = 1, natoms
+      do j = 1, natoms
+              if (i .eq. fragment_to_move(j)) then
+                do
+                        dx(i) = 0.5d0 - ran3()
+                        dy(i) = 0.5d0 - ran3()
+                        dz(i) = 0.5d0 - ran3()                             
+                        ! Ensures that the random displacement is isotropic
+                        dr2 = dx(i)**2 + dy(i)**2 + dz(i)**2
+                        if ( dr2 < 0.25d0 ) exit 
+                end do
+                natom_displaced = natom_displaced + 1
+                atom_displaced(i) = 1
+              endif
+      enddo
+  enddo
+
+  write(*,*) "This is dr_noncovalent"
+  do i = 1, natoms
+          write(*,*) dx(i), dy(i), dz(i)
+  enddo
+
+  write(*,*) "Atoms displaced", natom_displaced
+        
+END SUBROUTINE noncovalent
+
+SUBROUTINE noncovalent_roll()
+
+  use defs
+  use random
+  use saddles
+
+  implicit none
+
+  !Local variables
+  integer :: i, j
+  real(kind=8) :: dr2
+  real(kind=8), dimension(:), pointer :: dx, dy, dz
+  real(kind=8) :: ran3
+  integer, dimension(natoms) :: fragment_to_move
+  real(kind=8), dimension(1,3) :: shortest_vec 
+
+  allocate(dr(3*natoms)) 
+  allocate(atom_displaced(natoms))
+                                      ! We assign a few pointers. 
+  dx => dr(1:NATOMS)
+  dy => dr(NATOMS+1:2*NATOMS)
+  dz => dr(2*NATOMS+1:3*NATOMS)
+  
+  atom_displaced = 0 
+  natom_displaced = 0 
+  dr = 0.0d0
+
+  call detect_fragments ( fragment_to_move, shortest_vec )
+  
+  do i = 1, natoms
+      do j = 1, natoms
+              if (i .eq. fragment_to_move(j)) then
+                dx(i) = 0.5d0 - ran3()
+                dy(i) = 0.5d0 - ran3()
+                dz(i) = -1.0*(shortest_vec(1,1) * dx(i) + shortest_vec(1,2) * dy(i)) / shortest_vec(1,3)                             
+                natom_displaced = natom_displaced + 1
+                atom_displaced(i) = 1
+              endif
+      enddo
+  enddo
+
+  write(*,*) "This is dr_noncovalent_roll"
+  do i = 1, natoms
+          write(*,*) dx(i), dy(i), dz(i)
+  enddo
+
+END SUBROUTINE noncovalent_roll
+
+SUBROUTINE noncovalent_attack()
+
+  use defs
+  use random
+  use saddles
+
+  implicit none
+
+  !Local variables
+  integer :: i, j
+  real(kind=8) :: dr2
+  real(kind=8), dimension(:), pointer :: dx, dy, dz
+  real(kind=8) :: ran3
+  integer, dimension(natoms) :: fragment_to_move
+  real(kind=8), dimension(1,3) :: shortest_vec 
+
+  allocate(dr(3*natoms)) 
+  allocate(atom_displaced(natoms))
+                                      ! We assign a few pointers. 
+  dx => dr(1:NATOMS)
+  dy => dr(NATOMS+1:2*NATOMS)
+  dz => dr(2*NATOMS+1:3*NATOMS)
+  
+  atom_displaced = 0 
+  natom_displaced = 0 
+  dr = 0.0d0
+
+  call detect_fragments ( fragment_to_move, shortest_vec )
+
+  write(*,*) "shortest_vec in attack", shortest_vec(1,1)
+  
+  do i = 1, natoms
+      do j = 1, natoms
+              if (i .eq. fragment_to_move(j)) then
+                dx(i) = shortest_vec(1,1)
+                dy(i) = shortest_vec(1,2)
+                dz(i) = shortest_vec(1,3)
+                natom_displaced = natom_displaced + 1
+                atom_displaced(i) = 1
+              endif
+      enddo
+  enddo
+
+  write(*,*) "This is dr_noncovalent_attack"
+  do i = 1, natoms
+          write(*,*) dx(i), dy(i), dz(i)
+  enddo
+
+END SUBROUTINE noncovalent_attack
 
 SUBROUTINE align ( read_min, current_min, align_well, read_sad, read_dr, dr_transformed, sad_transformed )
 
