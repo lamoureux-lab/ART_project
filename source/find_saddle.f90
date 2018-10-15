@@ -1038,7 +1038,7 @@ SUBROUTINE read_and_transform ( dr_transformed_list, sad_transformed_list, succe
 
                 align_well = .false.
                 call align ( each_read_min, current_min, align_well, each_read_sad, each_read_dr, each_dr_transformed, each_sad_transformed )
-                if ( align_well .eq. .true. ) then                        
+                if ( align_well .eqv. .true. ) then                        
                          success_count = success_count + 1
                          do i = 1, natoms
                                  dr_transformed_list(success_count,i,1:3) = each_dr_transformed(i,1:3)
@@ -1155,15 +1155,15 @@ SUBROUTINE detect_fragments ( fragment_to_move, shortest_vec )
                 visited(i) = .false.
         enddo
         
-        queue = 0.0d0
+        queue = 0
         visited(1) = .true.                     !Visit the source node (could be any node, I chose number 1)
         queue(1) = 1                            !Enqueue the visited node 
         node = queue(1)                         !The variable "node" holds the first element of the queue     
         queue(1) = 0
 
         do
-                do j = 1, natoms
-                        if (adj_matrix(node,j) .eq. 1 .and. visited(j) .eq. .false.) then   !Check if the vertex adjacent to the first element in the queue is visited
+                do j = 1, natoms                !Check if the vertex adjacent to the first element in the queue is visited
+                        if (adj_matrix(node,j) .eq. 1 .and. visited(j) .eqv. .false.) then  
                                 visited(j) = .true.                         !if not, visit it
                                 do k = 1, size(queue)
                                         if (queue(k) .eq. 0) then           
@@ -1174,18 +1174,18 @@ SUBROUTINE detect_fragments ( fragment_to_move, shortest_vec )
                         endif
                 enddo
 
-                node = queue(1)                                             !"Node" holds the first element of the queue
-                queue(1) = 0.0                                              !Dump the first element (since it has been visited)
-                queue = cshift(queue, 1)                                    !Shift the queue one place to the left (so that the second element becomes the first and the process continues)
+                node = queue(1)            !"Node" holds the first element of the queue
+                queue(1) = 0               !Dump the first element (since it has been visited)
+                queue = cshift(queue, 1)   !Shift the queue one place to the left (so that the second element becomes the first and the process continues)
 
-                if (queue(1) .eq. 0.0) exit                                 !Exit when the queue is "empty" (in this instance "all zeroes" is an empty queue)
+                if (queue(1) .eq. 0) exit  !Exit when the queue is "empty" (in this instance "all zeroes" is an empty queue)
 
         enddo
         
         size_fragment = 0
         size_the_other_fragment = 0
         do i = 1, natoms
-                if (visited(i) .eq. .true.) then
+                if (visited(i) .eqv. .true.) then
                         size_fragment = size_fragment + 1
                 else
                         size_the_other_fragment = size_the_other_fragment + 1
@@ -1198,7 +1198,7 @@ SUBROUTINE detect_fragments ( fragment_to_move, shortest_vec )
         size_fragment = 0
         size_the_other_fragment = 0
         do i = 1, natoms
-                if (visited(i) .eq. .true.) then
+                if (visited(i) .eqv. .true.) then
                         size_fragment = size_fragment + 1
                         fragment(size_fragment) = i
                 else
