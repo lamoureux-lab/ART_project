@@ -1159,15 +1159,15 @@ SUBROUTINE detect_fragments ( fragment_to_move, shortest_vec )
         visited(1) = .true.                     !Visit the source node (could be any node, I chose number 1)
         queue(1) = 1                            !Enqueue the visited node 
         node = queue(1)                         !The variable "node" holds the first element of the queue     
-        queue(1) = 0
+        queue(1) = 0                            !Dequeue the visited node
 
         do
-                do j = 1, natoms                !Check if the vertex adjacent to the first element in the queue is visited
+                do j = 1, natoms                !Check if the nodes adjacent to the dequeued node are visited
                         if (adj_matrix(node,j) .eq. 1 .and. visited(j) .eq. .false.) then  
-                                visited(j) = .true.                         !if not, visit it
+                                visited(j) = .true.                         !if not, visit them
                                 do k = 1, size(queue)
                                         if (queue(k) .eq. 0) then           
-                                                queue(k) = j                !Once visited, enqueue it.
+                                                queue(k) = j                !Once visited, enqueue them.
                                                 exit
                                         endif
                                 enddo
@@ -1175,8 +1175,8 @@ SUBROUTINE detect_fragments ( fragment_to_move, shortest_vec )
                 enddo
 
                 node = queue(1)            !"Node" holds the first element of the queue
-                queue(1) = 0               !Dump the first element (since it has been visited)
-                queue = cshift(queue, 1)   !Shift the queue one place to the left (so that the second element becomes the first and the process continues)
+                queue(1) = 0               !Dump (dequeue) the first element (since it has been visited)
+                queue = cshift(queue, 1)   !Shift the queue one place to the left
 
                 if (queue(1) .eq. 0) exit  !Exit when the queue is "empty" (in this instance "all zeroes" is an empty queue)
 
