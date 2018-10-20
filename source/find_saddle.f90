@@ -1051,48 +1051,37 @@ SUBROUTINE read_and_transform ( dr_transformed_list, sad_transformed_list, succe
 
 END SUBROUTINE read_and_transform
 
-SUBROUTINE detect_fragments ( fragment_to_move, shortest_vec )
+SUBROUTINE detect_fragments ( number_of_fragments, fragment_list )
         
         use defs
         
         implicit none
 
         !Arguments
-        integer, intent(out) :: fragment_to_move(natoms)
-        real(kind=8), intent(out) :: shortest_vec(1,3)
+        integer, intent(out) :: number_of_fragments 
+        integer, dimension(natoms, natoms), intent(out) :: fragment_list
 
         !Local variables
         integer :: i, j, k
         real(kind=8), dimension(natoms, natoms) :: dist_matrix 
-        real(kind=8), dimension(natoms, natoms) :: bond_length_matrix 
-        real(kind=8), dimension(natoms, natoms) :: adj_matrix 
+        logical, dimension(natoms, natoms) :: adj_matrix 
         character(len=1), dimension(4) :: atomic_kind
         real(kind=8), dimension(4) :: cov_rad
         real(kind=8), dimension(natoms) :: cov_radius_current
         logical, dimension(natoms) :: visited
         integer, dimension(natoms) :: queue
-        integer :: node
-        integer :: size_fragment
-        integer :: size_the_other_fragment
-        integer, allocatable, dimension(:) :: fragment
-        integer, allocatable, dimension(:) :: the_other_fragment
-        integer, allocatable, dimension(:) :: smaller_fragment
-        integer, allocatable, dimension(:) :: larger_fragment
-        real(kind=8), allocatable, dimension(:,:) :: dist_between_frag
+        integer :: node, q_index, unvisited
 
-        fragment_to_move = 0
+        fragment_list = 0      !initializing fragment list
 
         do i = 1, natoms
                 do j = 1, natoms
                       dist_matrix(i,j) = sqrt((x(i) - x(j))**2 + (y(i) - y(j))**2 + (z(i) - z(j))**2)
                 enddo
-        enddo
-
-        write(*,*)"Distance matrix"
-        do i = 1, natoms
                 write(*,'(<natoms>(f14.8))') dist_matrix(i,1:natoms)
         enddo
-        
+
+
         atomic_kind = [ 'C',  'H',  'N',  'O' ]            !Theoretical covalent radii of the
         cov_rad     = [ 0.76, 0.31, 0.71, 0.66 ]           !four most common organic elements 
 
@@ -1107,44 +1096,15 @@ SUBROUTINE detect_fragments ( fragment_to_move, shortest_vec )
         enddo
 
         do i = 1, natoms
-                write(*,*) cov_radius_current(i)
-        enddo
-        
-        ! if every atom in the current structure was bonded to every other atom,
-        ! we calculate the "theoretical" bond length between them (by adding the
-        ! covalent radii of the two atoms) and populate the bond_length matrix
-        ! with it        
-
-        do i = 1, natoms
                 do j = 1, natoms
                         if ( i .ne. j ) then
-                                bond_length_matrix(i,j) = cov_radius_current(i) + cov_radius_current(j)
-                        else
-                                bond_length_matrix(i,j) = 0.0
-                        endif
-                enddo
-        enddo
-
-        write(*,*)"Bond length matrix"
-        do i = 1, natoms
-                write(*,'(<natoms>(f14.8))') bond_length_matrix(i,1:natoms)
-        enddo
-
-        ! Each element of the bond length matrix is then compared with each
-        ! element of the distance matrix. If they are more or less equal, then
-        ! the atoms are bonded and the pair (i,j) gets a value of 1.0 in the adjacency matrix
-        ! else not (and get a value of 0.0 in the adjacency matrix)
-
-        do i = 1, natoms
-                do j = 1, natoms
-                        if ( i .ne. j ) then
-                                if (abs(dist_matrix(i,j) - bond_length_matrix(i,j)) < 0.30) then
-                                        adj_matrix(i,j) = 1.0
+                                if (abs(dist_matrix(i,j) - (cov_radius_current(i) + cov_radius_current(j)) < 0.30)) then
+                                        adj_matrix(i,j) = .true.
                                 else
-                                        adj_matrix(i,j) = 0.0
+                                        adj_matrix(i,j) = .false.
                                 endif
                         else
-                                adj_matrix(i,j) = 0.0
+                                adj_matrix(i,j) = .false.
                         endif
                 enddo
         enddo
@@ -1159,11 +1119,11 @@ SUBROUTINE detect_fragments ( fragment_to_move, shortest_vec )
         visited(1) = .true.                     !Visit the source node (could be any node, I chose number 1)
         queue(1) = 1                            !Enqueue the visited node 
         node = queue(1)                         !The variable "node" holds the first element of the queue     
-        queue(1) = 0                            !Dequeue the visited node
-
+        q_index = 1
+        number_of_fragments = 0
         do
                 do j = 1, natoms                !Check if the nodes adjacent to the dequeued node are visited
-                        if (adj_matrix(node,j) .eq. 1 .and. visited(j) .eq. .false.) then  
+                        if (adj_matrix(node,j) .eq. .true. .and. visited(j) .eq. .false.) then  
                                 visited(j) = .true.                         !if not, visit them
                                 do k = 1, size(queue)
                                         if (queue(k) .eq. 0) then           
@@ -1173,101 +1133,125 @@ SUBROUTINE detect_fragments ( fragment_to_move, shortest_vec )
                                 enddo
                         endif
                 enddo
+                q_index = q_index + 1
+                node = queue(q_index)            
+                if (q_index .eq. natoms) then
+                        number_of_fragments = number_of_fragments + 1
+                        fragment_list(number_of_fragments, 1:natoms) = queue(1:natoms)
+                        exit
+                endif
+                if (queue(q_index) .eq. 0) then  
+                        number_of_fragments = number_of_fragments + 1
+                        fragment_list(number_of_fragments, 1:natoms) = queue(1:natoms)
+                        queue(1:natoms) = 0
+                        
+                        unvisited = 0
+                        do i = 1, natoms
+                                if (visited(i) .eq. .false.) then
+                                        unvisited = unvisited + 1
+                                endif
+                        enddo
+                        if (unvisited .eq. 0) exit
 
-                node = queue(1)            !"Node" holds the first element of the queue
-                queue(1) = 0               !Dump (dequeue) the first element (since it has been visited)
-                queue = cshift(queue, 1)   !Shift the queue one place to the left
+                        do i = 1, natoms
+                                if (visited(i) .eq. .false.) then
+                                        visited(i) = .true.
+                                        queue(1) = i 
+                                        node = queue(1)
+                                        q_index = 1
+                                        exit
+                                endif
+                        enddo
 
-                if (queue(1) .eq. 0) exit  !Exit when the queue is "empty" (in this instance "all zeroes" is an empty queue)
+                        unvisited = 0
 
+                endif
+
+                write(*,'(<natoms>(1X, I2))') queue
         enddo
         
-        size_fragment = 0
-        size_the_other_fragment = 0
+        write(*,*) "fragment"
         do i = 1, natoms
-                if (visited(i) .eq. .true.) then
-                        size_fragment = size_fragment + 1
-                else
-                        size_the_other_fragment = size_the_other_fragment + 1
-                endif
-        enddo      
-
-        allocate(fragment(size_fragment))
-        allocate(the_other_fragment(size_the_other_fragment))
-
-        size_fragment = 0
-        size_the_other_fragment = 0
-        do i = 1, natoms
-                if (visited(i) .eq. .true.) then
-                        size_fragment = size_fragment + 1
-                        fragment(size_fragment) = i
-                else
-                        size_the_other_fragment = size_the_other_fragment + 1
-                        the_other_fragment(size_the_other_fragment) = i 
-                endif
+                write(*,'(<natoms>(2X, I2))') fragment_list(i, 1:natoms)
         enddo
 
-        if (size(fragment) .lt. size(the_other_fragment)) then
-                allocate(smaller_fragment(size_fragment))
-                allocate(larger_fragment(size_the_other_fragment))
-                do i = 1, size(fragment)
-                        smaller_fragment(i) = fragment(i)
-                enddo
-                do i = 1, size(the_other_fragment)
-                        larger_fragment(i) = the_other_fragment(i)
-                enddo
-        else
-                allocate(larger_fragment(size_fragment))
-                allocate(smaller_fragment(size_the_other_fragment))
-                do i = 1, size(fragment)
-                        larger_fragment(i) = fragment(i)
-                enddo
-                do i = 1, size(the_other_fragment)
-                        smaller_fragment(i) = the_other_fragment(i)
-                enddo
-        endif
+END SUBROUTINE detect_fragments
+
+SUBROUTINE fragment_utility ( fragment_to_move, shortest_vec )
         
-        do i = 1, size(smaller_fragment)
-                fragment_to_move(i) = smaller_fragment(i)
-        enddo
+        use defs
 
-        write(*,*) "fragment_to_move", fragment_to_move
-        write(*,*) "larger_fragment", larger_fragment
-        write(*,*) "smaller_fragment", smaller_fragment
+        implicit none
 
-        !Find the two closest atoms (between the two fragments) and the vector connecting them
+        !Arguments
 
-        allocate(dist_between_frag(size(smaller_fragment), size(larger_fragment)))
+        real(kind=8), dimension(1,3), intent(out) :: shortest_vec
+        integer, dimension(natoms), intent(out) :: fragment_to_move
+        
+        !Local variables
+        integer :: i, j        
+        integer :: number_of_fragments
+        integer, dimension(natoms, natoms) :: fragment_list
+        integer, allocatable, dimension(:) :: frag_size_list
+        real(kind=8), allocatable, dimension(:,:) :: dist_between_frag
+        integer :: each_frag_size, smallest_fragment, largest_fragment
 
-        do i = 1, size(smaller_fragment)
-                do j = 1, size(larger_fragment)
-                        dist_between_frag(i,j) = sqrt((x(smaller_fragment(i)) - x(larger_fragment(j)))**2 &
-                                                  & + (y(smaller_fragment(i)) - y(larger_fragment(j)))**2 &
-                                                  & + (z(smaller_fragment(i)) - z(larger_fragment(j)))**2) 
+        fragment_list = 0
+
+        call detect_fragments ( number_of_fragments, fragment_list )
+        
+        allocate(frag_size_list(number_of_fragments))
+
+        do i = 1, number_of_fragments
+                each_frag_size = 0
+                do j = 1, natoms
+                        if (fragment_list(i,j) .ne. 0) then
+                                each_frag_size = each_frag_size + 1
+                        endif
                 enddo
+
+                frag_size_list(i) = each_frag_size
+
         enddo
 
-        write(*,*) "min_val", minval(dist_between_frag)
+        do i = 1, number_of_fragments
+                if (minval(frag_size_list) .eq. frag_size_list(i)) then
+                        smallest_fragment = i 
+                elseif (maxval(frag_size_list) .eq. frag_size_list(i)) then
+                        largest_fragment = i
+                endif
+        enddo
+        
+        fragment_to_move(1:natoms) = fragment_list(smallest_fragment, 1:natoms)
+        
+        allocate(dist_between_frag(frag_size_list(smallest_fragment), frag_size_list(largest_fragment)))        
 
-        do i = 1, size(smaller_fragment)
-                do j = 1, size(larger_fragment)
+        do i = 1, frag_size_list(smallest_fragment)
+            do j = 1, frag_size_list(largest_fragment)
+                dist_between_frag(i, j) = sqrt((x(fragment_list(smallest_fragment, i)) - x(fragment_list(largest_fragment, j)))**2 &
+                                           & + (y(fragment_list(smallest_fragment, i)) - y(fragment_list(largest_fragment, j)))**2 &
+                                           & + (z(fragment_list(smallest_fragment, i)) - z(fragment_list(largest_fragment, j)))**2) 
+            enddo
+        enddo
+
+        do i = 1, frag_size_list(smallest_fragment)
+                do j = 1, frag_size_list(largest_fragment)
                         if (minval(dist_between_frag) .eq. dist_between_frag(i,j)) then
-                                shortest_vec(i,1) = x(smaller_fragment(i)) - x(larger_fragment(j))
-                                shortest_vec(i,2) = y(smaller_fragment(i)) - y(larger_fragment(j))
-                                shortest_vec(i,3) = z(smaller_fragment(i)) - z(larger_fragment(j))
+                                shortest_vec(1,1) = x(fragment_list(smallest_fragment, i)) - x(fragment_list(largest_fragment, j))
+                                shortest_vec(1,2) = y(fragment_list(smallest_fragment, i)) - y(fragment_list(largest_fragment, j))
+                                shortest_vec(1,3) = z(fragment_list(smallest_fragment, i)) - z(fragment_list(largest_fragment, j))
                         endif
                 enddo
         enddo
         
-        write(*,*) "shortest_vec", shortest_vec
+        do i = 1, frag_size_list(smallest_fragment)
+                write(*,'(<frag_size_list(largest_fragment)>(f14.3))') dist_between_frag(i, 1:frag_size_list(largest_fragment)) 
+        enddo
 
-        deallocate(fragment)
-        deallocate(the_other_fragment)
-        deallocate(smaller_fragment)
-        deallocate(larger_fragment)
+        deallocate(frag_size_list)
         deallocate(dist_between_frag)
 
-END SUBROUTINE detect_fragments
+END SUBROUTINE fragment_utility
 
 SUBROUTINE noncovalent()
                 
@@ -1296,7 +1280,7 @@ SUBROUTINE noncovalent()
   natom_displaced = 0 
   dr = 0.0d0
 
-  call detect_fragments ( fragment_to_move, shortest_vec )
+  call fragment_utility ( fragment_to_move, shortest_vec )
   
   write(*,*) "This is fragment to move", fragment_to_move
 
@@ -1319,7 +1303,7 @@ SUBROUTINE noncovalent()
 
   write(*,*) "This is dr_noncovalent"
   do i = 1, natoms
-          write(*,*) dx(i), dy(i), dz(i)
+          write(*,'(3(f14.6))') dx(i), dy(i), dz(i)
   enddo
 
   write(*,*) "Atoms displaced", natom_displaced
@@ -1353,7 +1337,7 @@ SUBROUTINE noncovalent_roll()
   natom_displaced = 0 
   dr = 0.0d0
 
-  call detect_fragments ( fragment_to_move, shortest_vec )
+  call fragment_utility ( fragment_to_move, shortest_vec )
   
   do i = 1, natoms
       do j = 1, natoms
@@ -1369,7 +1353,7 @@ SUBROUTINE noncovalent_roll()
 
   write(*,*) "This is dr_noncovalent_roll"
   do i = 1, natoms
-          write(*,*) dx(i), dy(i), dz(i)
+          write(*,'(3(f14.6))') dx(i), dy(i), dz(i)
   enddo
 
 END SUBROUTINE noncovalent_roll
@@ -1401,28 +1385,27 @@ SUBROUTINE noncovalent_attack()
   natom_displaced = 0 
   dr = 0.0d0
 
-  call detect_fragments ( fragment_to_move, shortest_vec )
+  call fragment_utility ( fragment_to_move, shortest_vec )
 
-  write(*,*) "shortest_vec in attack", shortest_vec(1,1)
-  
   do i = 1, natoms
       do j = 1, natoms
               if (i .eq. fragment_to_move(j)) then
                 dx(i) = shortest_vec(1,1)
                 dy(i) = shortest_vec(1,2)
                 dz(i) = shortest_vec(1,3)
-                natom_displaced = natom_displaced + 1
-                atom_displaced(i) = 1
               endif
+         natom_displaced = natom_displaced + 1
+         atom_displaced(i) = 1
       enddo
   enddo
 
   write(*,*) "This is dr_noncovalent_attack"
   do i = 1, natoms
-          write(*,*) dx(i), dy(i), dz(i)
+          write(*,'(3(f14.6))') dx(i), dy(i), dz(i)
   enddo
 
 END SUBROUTINE noncovalent_attack
+
 
 SUBROUTINE align ( read_min, current_min, align_well, read_sad, read_dr, dr_transformed, sad_transformed )
 
@@ -1442,12 +1425,19 @@ SUBROUTINE align ( read_min, current_min, align_well, read_sad, read_dr, dr_tran
         use defs
 
         implicit none
-        
+
+        !Arguments
         real(kind=8), intent(in) :: read_min(natoms_read,3)
         real(kind=8), intent(in) :: current_min(natoms,3)
         real(kind=8), intent(in) :: read_dr(natoms_read,3)
         real(kind=8), intent(in) :: read_sad(natoms_read,3)
 
+        logical, intent(inout) :: align_well
+
+        real(kind=8), intent(out) :: dr_transformed(natoms,3)
+        real(kind=8), intent(out) :: sad_transformed(natoms,3)
+
+        !Local variables
         real(kind=8) :: read_min_sliced(natoms_correspond,3)
         real(kind=8) :: current_min_sliced(natoms_correspond,3)
         real(kind=8) :: read_dr_sliced(natoms_correspond,3)
@@ -1457,14 +1447,9 @@ SUBROUTINE align ( read_min, current_min, align_well, read_sad, read_dr, dr_tran
         real(kind=8) :: read_dr_translated_rotated(natoms_correspond,3)
         real(kind=8) :: read_sad_translated_rotated(natoms_correspond,3)
 
-        logical, intent(inout) :: align_well
-
-        real(kind=8), intent(out) :: dr_transformed(natoms,3)
-        real(kind=8), intent(out) :: sad_transformed(natoms,3)
 
         integer :: read_atoms_correspond(natoms_correspond)
         integer :: current_atoms_correspond(natoms_correspond)
-        character :: dummy1, dummy2
 
         real(kind=8) :: read_min_sliced_centered(natoms_correspond,3)
         real(kind=8) :: current_min_sliced_centered(natoms_correspond,3)
@@ -1480,9 +1465,10 @@ SUBROUTINE align ( read_min, current_min, align_well, read_sad, read_dr, dr_tran
         real(kind=8) :: U_transpose(3,3), V(3,3), det_U_transpose, det_V
        
         integer :: i, j, dev_count, info
+        character :: dummy
         
         open(ALI, file = 'alignment.txt', status = 'unknown', action = 'read')
-        read(ALI,*) dummy1, dummy2
+        read(ALI,*) dummy, dummy
         do i = 1, natoms_correspond
                 read(ALI,*) current_atoms_correspond(i), read_atoms_correspond(i) 
                 write(*,*) current_atoms_correspond(i), read_atoms_correspond(i) 
