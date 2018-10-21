@@ -1122,12 +1122,12 @@ SUBROUTINE detect_fragments ( number_of_fragments, fragment_list )
         q_index = 1
         number_of_fragments = 0
         do
-                do j = 1, natoms                !Check if the nodes adjacent to the dequeued node are visited
+                do j = 1, natoms               
                         if (adj_matrix(node,j) .eq. .true. .and. visited(j) .eq. .false.) then  
-                                visited(j) = .true.                         !if not, visit them
+                                visited(j) = .true.                         
                                 do k = 1, size(queue)
                                         if (queue(k) .eq. 0) then           
-                                                queue(k) = j                !Once visited, enqueue them.
+                                                queue(k) = j                
                                                 exit
                                         endif
                                 enddo
@@ -1391,9 +1391,9 @@ SUBROUTINE noncovalent_attack()
                 dy(i) = shortest_vec(1,2)
                 dz(i) = shortest_vec(1,3)
               endif
-         natom_displaced = natom_displaced + 1
-         atom_displaced(i) = 1
       enddo
+      natom_displaced = natom_displaced + 1
+      atom_displaced(i) = 1
   enddo
 
   write(*,*) "This is dr_noncovalent_attack"
