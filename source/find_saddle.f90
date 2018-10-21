@@ -1152,7 +1152,6 @@ SUBROUTINE detect_fragments ( number_of_fragments, fragment_list )
                                 endif
                         enddo
                         if (unvisited .eq. 0) exit
-
                         do i = 1, natoms
                                 if (visited(i) .eq. .false.) then
                                         visited(i) = .true.
@@ -1162,8 +1161,6 @@ SUBROUTINE detect_fragments ( number_of_fragments, fragment_list )
                                         exit
                                 endif
                         enddo
-
-                        unvisited = 0
 
                 endif
 
