@@ -146,21 +146,16 @@ subroutine global_move()
   selectcase ( search_strategy )
 
   case ( 0 ) ! default 
-
         call set_move_random()
   
   case ( 1 ) ! "follow" strategy
-
         call set_move_follow()
 
   case ( 2 ) ! "avoid" strategy
-
         call set_move_avoid()
 
   case ( 3 ) ! "follow_and_avoid" strategy
-
         p = ran3()
-
         if (p > odds_follow_or_avoid) then
                 call set_move_follow()
         else
@@ -168,21 +163,16 @@ subroutine global_move()
         endif
 
   case ( 4 ) ! "noncovalent"
-         
         call noncovalent()
 
   case ( 5 ) ! "noncovalent_roll"
-         
         call noncovalent_roll()
 
   case ( 6 ) ! "noncovalent_attack"
-         
         call noncovalent_attack()
 
   case ( 7 ) ! "noncovalent_roll_and_attack"
-         
         p = ran3()
-
         if (p > odds_roll_or_attack) then
                 call noncovalent_roll()
         else
@@ -824,8 +814,8 @@ subroutine coord_based_move( )
 
   call center_and_norm ( INITSTEPSIZE )
 
-
 END SUBROUTINE coord_based_move 
+
 
 SUBROUTINE set_move_random()
 
@@ -884,7 +874,7 @@ SUBROUTINE set_move_follow()
   real(kind=8) :: dr_transformed_list(nsad_read,natoms,3)
   real(kind=8) :: sad_transformed_list(nsad_read,natoms,3)
 
-  allocate(dr(3*natoms)) 
+  allocate(dr(3*natoms))
   allocate(atom_displaced(natoms))
                                       ! We assign a few pointers. 
   
@@ -913,6 +903,7 @@ SUBROUTINE set_move_follow()
   enddo
 
 END SUBROUTINE set_move_follow
+
 
 SUBROUTINE set_move_avoid()
 
@@ -963,10 +954,11 @@ SUBROUTINE set_move_avoid()
       cos_theta = dot_product(dr,reshape(dr_transformed_list(rand,1:natoms,1:3),(/natoms*3/))) / &
                 & sqrt(dot_product(dr,dr)*dot_product(reshape(dr_transformed_list(rand,1:natoms,1:3),(/natoms*3/)),&
                 & reshape(dr_transformed_list(rand,1:natoms,1:3),(/natoms*3/))))
-            if (cos_theta .LT. 0.8) exit
+      if (cos_theta .LT. 0.8) exit
   enddo
 
 END SUBROUTINE set_move_avoid
+
 
 SUBROUTINE read_and_transform ( dr_transformed_list, sad_transformed_list, success_count )
 
@@ -1050,6 +1042,7 @@ SUBROUTINE read_and_transform ( dr_transformed_list, sad_transformed_list, succe
         write(*,*) "Success_count inside subroutine read_and_transform", success_count
 
 END SUBROUTINE read_and_transform
+
 
 SUBROUTINE detect_fragments ( number_of_fragments, fragment_list )
         
@@ -1174,6 +1167,7 @@ SUBROUTINE detect_fragments ( number_of_fragments, fragment_list )
 
 END SUBROUTINE detect_fragments
 
+
 SUBROUTINE fragment_utility ( fragment_to_move, shortest_vec )
         
         use defs
@@ -1206,9 +1200,7 @@ SUBROUTINE fragment_utility ( fragment_to_move, shortest_vec )
                                 each_frag_size = each_frag_size + 1
                         endif
                 enddo
-
                 frag_size_list(i) = each_frag_size
-
         enddo
 
         do i = 1, number_of_fragments
@@ -1249,6 +1241,7 @@ SUBROUTINE fragment_utility ( fragment_to_move, shortest_vec )
         deallocate(dist_between_frag)
 
 END SUBROUTINE fragment_utility
+
 
 SUBROUTINE noncovalent()
                 
@@ -1307,6 +1300,7 @@ SUBROUTINE noncovalent()
         
 END SUBROUTINE noncovalent
 
+
 SUBROUTINE noncovalent_roll()
 
   use defs
@@ -1354,6 +1348,7 @@ SUBROUTINE noncovalent_roll()
   enddo
 
 END SUBROUTINE noncovalent_roll
+
 
 SUBROUTINE noncovalent_attack()
 
