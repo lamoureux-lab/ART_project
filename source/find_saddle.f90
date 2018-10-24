@@ -163,7 +163,7 @@ subroutine global_move()
         endif
 
   case ( 4 ) ! "noncovalent"
-        call noncovalent()
+        call noncovalent_hop()
 
   case ( 5 ) ! "noncovalent_roll"
         call noncovalent_roll()
@@ -816,7 +816,6 @@ subroutine coord_based_move( )
 
 END SUBROUTINE coord_based_move 
 
-
 SUBROUTINE set_move_random()
 
   use defs
@@ -874,7 +873,8 @@ SUBROUTINE set_move_follow()
   real(kind=8) :: dr_transformed_list(nsad_read,natoms,3)
   real(kind=8) :: sad_transformed_list(nsad_read,natoms,3)
 
-  allocate(dr(3*natoms))
+
+  allocate(dr(3*natoms)) 
   allocate(atom_displaced(natoms))
                                       ! We assign a few pointers. 
   
@@ -1233,6 +1233,10 @@ SUBROUTINE fragment_utility ( fragment_to_move, shortest_vec )
                 enddo
         enddo
         
+        !Normalize shortest vec
+        
+        shortest_vec = shortest_vec/sqrt(dot_product(reshape(shortest_vec, (/1*3/)), reshape(shortest_vec, (/1*3/)))) 
+        
         do i = 1, frag_size_list(smallest_fragment)
                 write(*,'(<frag_size_list(largest_fragment)>(f14.3))') dist_between_frag(i, 1:frag_size_list(largest_fragment)) 
         enddo
@@ -1243,7 +1247,7 @@ SUBROUTINE fragment_utility ( fragment_to_move, shortest_vec )
 END SUBROUTINE fragment_utility
 
 
-SUBROUTINE noncovalent()
+SUBROUTINE noncovalent_hop()
                 
   use defs
   use random
@@ -1257,7 +1261,8 @@ SUBROUTINE noncovalent()
   real(kind=8), dimension(:), pointer :: dx, dy, dz
   real(kind=8) :: ran3
   integer, dimension(natoms) :: fragment_to_move
-  real(kind=8), dimension(1,3) :: shortest_vec 
+  real(kind=8), dimension(1,3) :: shortest_vec, hop_move 
+
 
   allocate(dr(3*natoms)) 
   allocate(atom_displaced(natoms))
@@ -1270,35 +1275,40 @@ SUBROUTINE noncovalent()
   natom_displaced = 0 
   dr = 0.0d0
 
+  hop_move = 0.0d0
+
   call fragment_utility ( fragment_to_move, shortest_vec )
   
   write(*,*) "This is fragment to move", fragment_to_move
 
-  do i = 1, natoms
-      do j = 1, natoms
-              if (i .eq. fragment_to_move(j)) then
-                do
-                        dx(i) = 0.5d0 - ran3()
-                        dy(i) = 0.5d0 - ran3()
-                        dz(i) = 0.5d0 - ran3()                             
-                        ! Ensures that the random displacement is isotropic
-                        dr2 = dx(i)**2 + dy(i)**2 + dz(i)**2
-                        if ( dr2 < 0.25d0 ) exit 
-                end do
-                natom_displaced = natom_displaced + 1
-                atom_displaced(i) = 1
-              endif
-      enddo
+  do
+          hop_move(1,1) = 0.5d0 - ran3()
+          hop_move(1,2) = 0.5d0 - ran3()
+          hop_move(1,3) = 0.5d0 - ran3()
+          ! Ensures that the random displacement is isotropic
+          if ( (hop_move(1,1)**2 + hop_move(1,2)**2 + hop_move(1,3)**2)  < 0.25d0 ) exit 
   enddo
 
-  write(*,*) "This is dr_noncovalent"
+  do i = 1, natoms
+          do j = 1, natoms
+                  if (i .eq. fragment_to_move(j)) then
+                          dx(i) = hop_move(1,1)
+                          dy(i) = hop_move(1,2)
+                          dz(i) = hop_move(1,3)
+                  endif
+          enddo
+          natom_displaced = natom_displaced + 1
+          atom_displaced(i) = 1
+  enddo
+
+  write(*,*) "This is dr_noncovalent_hop"
   do i = 1, natoms
           write(*,'(3(f14.6))') dx(i), dy(i), dz(i)
   enddo
 
   write(*,*) "Atoms displaced", natom_displaced
         
-END SUBROUTINE noncovalent
+END SUBROUTINE noncovalent_hop
 
 
 SUBROUTINE noncovalent_roll()
@@ -1313,9 +1323,10 @@ SUBROUTINE noncovalent_roll()
   integer :: i, j
   real(kind=8) :: dr2
   real(kind=8), dimension(:), pointer :: dx, dy, dz
-  real(kind=8) :: ran3
+  real(kind=8) :: ran3, proj_roll_move
   integer, dimension(natoms) :: fragment_to_move
-  real(kind=8), dimension(1,3) :: shortest_vec 
+  real(kind=8), dimension(1,3) :: shortest_vec, roll_move 
+
 
   allocate(dr(3*natoms)) 
   allocate(atom_displaced(natoms))
@@ -1328,18 +1339,32 @@ SUBROUTINE noncovalent_roll()
   natom_displaced = 0 
   dr = 0.0d0
 
+  roll_move = 0.0d0
+
   call fragment_utility ( fragment_to_move, shortest_vec )
   
+  write(*,*) "This is fragment to move", fragment_to_move
+
+  do
+          roll_move(1,1) = 0.5d0 - ran3()
+          roll_move(1,2) = 0.5d0 - ran3()
+          roll_move(1,3) = 0.5d0 - ran3()
+          ! Ensures that the random displacement is isotropic
+          if ( (roll_move(1,1)**2 + roll_move(1,2)**2 + roll_move(1,3)**2)  < 0.25d0 ) exit 
+  enddo
+  
+  proj_roll_move = dot_product(reshape(shortest_vec, (/1*3/)), reshape(roll_move, (/1*3/)))     !Projection of roll_move on shortest vec
+
   do i = 1, natoms
       do j = 1, natoms
               if (i .eq. fragment_to_move(j)) then
-                dx(i) = 0.5d0 - ran3()
-                dy(i) = 0.5d0 - ran3()
-                dz(i) = -1.0*(shortest_vec(1,1) * dx(i) + shortest_vec(1,2) * dy(i)) / shortest_vec(1,3)                             
-                natom_displaced = natom_displaced + 1
-                atom_displaced(i) = 1
+                dx(i) = roll_move(1,1) - proj_roll_move*shortest_vec(1,1)
+                dy(i) = roll_move(1,2) - proj_roll_move*shortest_vec(1,2)
+                dz(i) = roll_move(1,3) - proj_roll_move*shortest_vec(1,3)
               endif
       enddo
+      natom_displaced = natom_displaced + 1
+      atom_displaced(i) = 1
   enddo
 
   write(*,*) "This is dr_noncovalent_roll"
@@ -1365,6 +1390,7 @@ SUBROUTINE noncovalent_attack()
   real(kind=8) :: ran3
   integer, dimension(natoms) :: fragment_to_move
   real(kind=8), dimension(1,3) :: shortest_vec 
+
 
   allocate(dr(3*natoms)) 
   allocate(atom_displaced(natoms))
