@@ -1408,9 +1408,9 @@ SUBROUTINE noncovalent_attack()
   do i = 1, natoms
       do j = 1, natoms
               if (i .eq. fragment_to_move(j)) then
-                dx(i) = shortest_vec(1,1)
-                dy(i) = shortest_vec(1,2)
-                dz(i) = shortest_vec(1,3)
+                dx(i) = -1.0*shortest_vec(1,1)
+                dy(i) = -1.0*shortest_vec(1,2)
+                dz(i) = -1.0*shortest_vec(1,3)
               endif
       enddo
       natom_displaced = natom_displaced + 1
