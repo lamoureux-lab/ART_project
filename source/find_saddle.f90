@@ -1091,7 +1091,7 @@ SUBROUTINE detect_fragments ( number_of_fragments, fragment_list )
         do i = 1, natoms
                 do j = 1, natoms
                         if ( i .ne. j ) then
-                                if (abs(dist_matrix(i,j) - (cov_radius_current(i) + cov_radius_current(j)) < 0.30)) then
+                                if (abs(dist_matrix(i,j) - (cov_radius_current(i) + cov_radius_current(j))) < 0.30) then
                                         adj_matrix(i,j) = .true.
                                 else
                                         adj_matrix(i,j) = .false.
