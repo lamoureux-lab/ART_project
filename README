@@ -1,3 +1,3 @@
-Activation-Relaxation Technique (ART) coupled with Gaussian. 
+Activation-Relaxation Technique (ART) coupled with Gaussian and CP2K. 
 The orginal code has been tailored to accommodate automated exploration of energy landscapes in order to reduce computational cost.
 Still a work in progress!
