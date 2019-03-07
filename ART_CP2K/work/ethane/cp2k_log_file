@@ -1,0 +1,5 @@
+ Warning: Force_Threshold_Perp_Rel should be smaller or equal to Exit_Force_Thre
+ shold
+ The code has automatically set Force_Threshold_Perp_Rel=Exit_Force_Threshold
+ DEBUG!!! At this point, the coordinates are rescaled by the initialize_potentia
+ l subroutine

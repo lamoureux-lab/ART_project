@@ -1,0 +1,55 @@
+ ****************************** 
+ WELCOME TO ARTGAUSS : ART + Gaussian 
+ ****************************** 
+>> Start:   5-MAR-2019   3:40:35
+  - Version number of  ART            :        3.000
+  - Event type                        :              NEW
+  - Temperature                       :       0.4000
+  - Number of atoms                   :            0
+  - Number of events                  :            1
+  - Maximum number of neighbours      :            0
+  
+ Selection of the event 
+ ********************** 
+  - Type of events                    :          global
+  
+ Activation parameters 
+ ********************* 
+  - Eigenvalue threshold                          :  -0.2000
+  - Total force threshold (saddle)                :   0.1000
+  - Initial step size                             :   0.1000
+  - Increment size                                :   0.1000
+  - Atomic displacement for breaking the symmetry :   0.2000
+  - Number of vectors computed by Lanzcos         :       16      16
+  - Delta displacement for derivative in Lanzcos  :   0.0100
+  
+  - Calculation of the Hessian for each minimum   :        F
+  - Min. number of ksteps before calling lanczos  :        3
+  - Factor mult. INCREMENT for leaving basin      :   2.1000
+  - Maximum number of iteractions (basin -kter)   :       20
+  - Maximum number of perpendicular moves (basin) :        3
+  
+  - Maximum number of iteractions (activation)    :      400
+  - Maximum number of perpendicular moves (activ) :        5
+  - Force threshold for perpendicular relaxation  :   0.0000
+  - Fraction of displacement over the saddle      :   0.3000
+  
+  Use DIIS for convergence to saddle               F
+  
+ Input / Output 
+ ********************* 
+  - Name of log file                  :     log.file.12
+  - Liste of events                   :     events.list
+  - Reference configuration           :   refconfig.dat
+  - Restart file                      :     restart.dat
+  - Prefix for minima (file)          :             min
+  - Prefix for saddle points          :             sad
+  - File with filecounter             :     filecounter
+ ********************* 
+  
+  - The seed is                  :              -269
+  - Restart                      :                 F
+  Start with new event    
+  - Mincounter                   :              1000
+  RELAXATION
+ start minimization
