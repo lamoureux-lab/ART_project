@@ -3,7 +3,7 @@
 #Sets the environment variables for the molecules in question
 
 setenv Temperature 0.4      # Temperature in kcal/mol, if negative always reject the event  0.4 >> 0.1
-setenv ENERGY_CALC CP2K      # Choose: DFT, SWP (Stillinger-Weber) or GAU
+setenv ENERGY_CALC CP2K      # Choose: DFT, SWP (Stillinger-Weber) or CP2K
 setenv EVENT_TYPE  NEW      # Either 'NEW', 'REFINE_SADDLE' when further converging a saddle point
                             # Or "REFINE_AND_RELAX", to refine at the saddle and check the final minimum
 
