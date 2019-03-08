@@ -6,15 +6,15 @@ OBJ = art.o defs.o  random.o initialize.o min_converge.o \
 #SYS = MacIntel
 #include ${SYS}.arch
 
-FORTRAN = ifort -g -O2
+FORTRAN = ifort -g 
 FLAGS =  -O3 -cpp
 LLIBS = -mkl=sequential
 TRACE = -traceback
 
-all : artgaussian
+all : artcp2k
 
-artgaussian : ${OBJ} 
-	$(FORTRAN) $(TRACE)  $(OBJ) $(FFLAGS)  -o  artgaussian $(LLIBS)
+artcp2k : ${OBJ} 
+	$(FORTRAN) $(TRACE)  $(OBJ) $(FFLAGS)  -o  artcp2k $(LLIBS)
 
 defs.o: defs.f90
 	$(FORTRAN) $(TRACE)  -c $(FLAGS) defs.f90
@@ -59,4 +59,4 @@ diis.o:defs.o diis.f90
 	$(FORTRAN) $(TRACE) -c $(FLAGS) diis.f90
 
 clean:
-	rm -f *.o *.mod artgaussian
+	rm -f *.o *.mod artcp2k

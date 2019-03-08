@@ -122,7 +122,7 @@ subroutine initialize()
 
      open( unit = FLOG, file = LOGFILE, status = 'unknown',&
           & action = 'write', position = 'append', iostat = ierror )
-     write(*,*) 'ARTGAUSS: Configuration stored in file ',fname
+     write(*,*) 'ARTCP2K: Configuration stored in file ',fname
      write(FLOG,'(1X,A34,A17)') ' - Configuration stored in file : ', trim(fname)
      if ( .not. success ) then
         write(FLOG,'(1X,A)') "ERROR: Initial configurations is not a minimum"

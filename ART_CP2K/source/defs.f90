@@ -30,6 +30,9 @@ module defs
   integer      :: NATOMS_CORRESPOND  !Number of atoms in the system
   integer      :: NMIN_READ          !Number of atoms in the system
   integer      :: NSAD_READ          !Number of atoms in the system
+  real(kind=8) :: CELL_A             !CP2K CELL X_DIM 
+  real(kind=8) :: CELL_B             !CP2K CELL Y_DIM 
+  real(kind=8) :: CELL_C             !CP2K CELL Z_DIM 
   integer      :: MAXNEI             !Maximum number of nearest neighbours
   integer      :: VECSIZE            !Length of the force and position vectors
   integer      :: nbr_quantum        !Number of quantum atoms for BSW force_calc. These are the first atoms in the input file

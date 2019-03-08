@@ -3,7 +3,7 @@
 #Sets the environment variables for the molecules in question
 
 setenv Temperature 0.4      # Temperature in kcal/mol, if negative always reject the event  0.4 >> 0.1
-setenv ENERGY_CALC GAU      # Choose: DFT, SWP (Stillinger-Weber) or GAU
+setenv ENERGY_CALC CP2K      # Choose: DFT, SWP (Stillinger-Weber) or GAU
 setenv EVENT_TYPE  NEW      # Either 'NEW', 'REFINE_SADDLE' when further converging a saddle point
                             # Or "REFINE_AND_RELAX", to refine at the saddle and check the final minimum
 
@@ -53,6 +53,12 @@ setenv nmin_read			    0 # nmin read from vector file
 setenv nsad_read			    0 # nsad read from vector file
 setenv natoms_read			    0 # natoms read from vector file
 setenv natoms_correspond		    0 # natoms that correspond
+
+###### CP2K cell parameters #########
+
+setenv cell_a			            0 # cell x-dimension  
+setenv cell_b				    0 # cell y-dimension	
+setenv cell_c                               0 # cell z-dimension
 
 ############### Input              #######################################################################
 

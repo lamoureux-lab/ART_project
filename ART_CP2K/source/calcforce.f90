@@ -31,7 +31,7 @@ subroutine calcforce(nat, posa, forca, energy, evalf_number, conv )
 
 END SUBROUTINE calcforce
 
-! In this routine, is the interface between ART and Gaussian
+! In this routine, is the interface between ART and CP2K
 
 subroutine calcforce_gau(nat,typa,posa,forca,energy)
   use defs
@@ -49,7 +49,7 @@ subroutine calcforce_gau(nat,typa,posa,forca,energy)
   character(len=20) :: CPK_COORD   = 'cp2k_coords.xyz'
   character(len=20) :: CPK_ENE_FOR = 'cp2k_output'
   character(len=40) :: line
-  logical :: read_coords_done, read_energy_done,read_forces_done
+  logical :: read_energy_done,read_forces_done
   real(8), dimension(:), pointer :: xa, ya, za
   real(8), dimension(:), pointer :: fax, fay, faz   ! Pointers for working force
 
@@ -70,7 +70,7 @@ subroutine calcforce_gau(nat,typa,posa,forca,energy)
   enddo
   close(PATH)
 
-  ! We first write to a file the format requested by Gaussian
+  ! We first write to a file the format requested by CP2K
   open(unit=CPK,file=CPK_COORD,status='unknown', action='write', iostat=ierror)
 
   write(CPK,*) NATOMS
@@ -87,27 +87,18 @@ subroutine calcforce_gau(nat,typa,posa,forca,energy)
 
   write(*,*) "single point energy calculation"
 
-  call system('python3.6 update_cp2k_input.py -k ef')
+  call system('python update_cp2k_input.py -k ef')
 
-  call system('python3.6 execute_cp2k.py > cp2k_energy_forces')
+  call system('python execute_cp2k.py > cp2k_energy_forces')
 
   open(unit=CPK,file=CPK_ENE_FOR,status='old',action='read',iostat=ierror)
 
   read_energy_done = .false.
-  read_coords_done = .false.
   read_forces_done = .false.
 
   do 
-      read(CPK,"(A40)", end=300) line
+      read(CPK,"(A40)") line
         
-      !Coords
-      if ( line  == "coords:" ) then
-         do i = 1, NATOMS
-            read(CPK,*) xa(i),ya(i),za(i)
-         end do
-         read_coords_done = .true.
-      endif
-
       !Gets the final energy
       if ( line  == "energy:" ) then
           read(CPK,*) energy
@@ -120,7 +111,7 @@ subroutine calcforce_gau(nat,typa,posa,forca,energy)
       if ( line  == "forces:" ) then
          do i = 1, NATOMS
             read(CPK,*) fax(i),fay(i),faz(i)
-            ! ! unit conversion Gaussian format Forces (Hartrees/Bohr) to Gaussian format forces forces (eV/Ang):
+            ! ! unit conversion CP2K format Forces (Hartrees/Bohr) to CP2K format forces forces (eV/Ang):
             ! ! hartree_to_ev=27.2113838668 and bohr_to_angstrom=0.52917721092
             fax(i) = fax(i)*51.4220629786602
             fay(i) = fay(i)*51.4220629786602
@@ -130,11 +121,9 @@ subroutine calcforce_gau(nat,typa,posa,forca,energy)
       endif
        
       !Checks that 
-      if(read_coords_done .and. read_energy_done .and. read_forces_done ) exit
+      if(read_energy_done .and. read_forces_done ) exit
 
   end do
-
-  300 rewind(CPK)
 
   close(CPK)
 

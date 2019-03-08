@@ -135,11 +135,11 @@ subroutine read_parameters( )
           energy_type = 'DFT'
      case ( 'SWP' )
           energy_type = 'SWP'
-     case ( 'GAU' )
-          energy_type = 'GAU'
+     case ( 'CP2K' )
+          energy_type = 'CP2K'
      case default
           write(*,*) "Error: energy calculation type is not defined: ENERGY_CALC "
-          write(*,*) " choose: DFT, SWP (Stillinger-Weber), or GAU (Gaussian) "
+          write(*,*) " choose: DFT, SWP (Stillinger-Weber), or CP2K (CP2K) "
           stop
   end select
 
@@ -644,6 +644,30 @@ subroutine read_parameters( )
   end if
 
   !!__________________
+  ! CP2K input file cell parameters 
+
+  call getenv('cell_a', temporary)
+  if (temporary .eq. '') then
+     cell_a = 0
+  else
+     read(temporary,*) cell_a
+  end if
+
+  call getenv('cell_b', temporary)
+  if (temporary .eq. '') then
+     cell_b = 0
+  else
+     read(temporary,*) cell_b
+  end if
+
+  call getenv('cell_c', temporary)
+  if (temporary .eq. '') then
+     cell_c = 0
+  else
+     read(temporary,*) cell_c
+  end if
+
+  !!__________________
   ! Reference configuration for refine saddle. Without ext.
   call getenv('REFCONFIG', temporary)
   if (temporary .eq. '') then
@@ -870,7 +894,7 @@ subroutine write_parameters( )
   call date_and_time(values=values)
 
   if ( .not. setup_initial ) then
-     idum = -1 * mod( (1000 * values(7) + values(8))+iproc, 1024)
+     idum = -647!-1 * mod( (1000 * values(7) + values(8))+iproc, 1024)
   else
      idum = 0
   end if
@@ -898,7 +922,7 @@ subroutine write_parameters( )
   ! We write down the various parameters for the simulation
   open(unit=FLOG,file=LOGFILE,status='unknown',action='write',position='rewind',iostat=ierror)  
   write(flog,*) '****************************** '
-  write(flog,*) 'WELCOME TO ARTGAUSS : ART + Gaussian '
+  write(flog,*) 'WELCOME TO ARTCP2K : ART + CP2K '
   write(flog,*) '****************************** '
   call timestamp ('Start')
   write(flog,'(1X,A39,f12.3)')  ' - Version number of  ART            : ', VERSION_NUMBER

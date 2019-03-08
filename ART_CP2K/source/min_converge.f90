@@ -48,7 +48,7 @@ subroutine min_converge ( success )
       close(FLOG)
    end if
 
-   write(*,"('',' ARTGAUSS: Relaxed energy : ',(1p,e17.10,0p))") total_energy
+   write(*,"('',' ARTCP2K: Relaxed energy : ',(1p,e17.10,0p))") total_energy
 
    return
 END SUBROUTINE min_converge
@@ -89,7 +89,7 @@ subroutine check_min( stage )
       repetition = 3
    end if
 
-   write(*,*) "ARTGAUSS: INIT LANCZOS"  !debug
+   write(*,*) "ARTCP2K: INIT LANCZOS"  !debug
    do i = 1, repetition
       call lanczos( NVECTOR_LANCZOS_H, new_projection , a1 )
       ! Report
@@ -102,7 +102,7 @@ subroutine check_min( stage )
       end if
       write(FLOG,'(I6,3X,(1p,e10.2,0p),4X,F12.6,1X,F7.4)') i, proj_energy-min_energy, eigenvalue, a1
       close(FLOG)
-      write(*,*) 'ARTGAUSS: Iter ', i, ' : ', lanc_energy, proj_energy,  eigenvalue, a1
+      write(*,*) 'ARTCP2K: Iter ', i, ' : ', lanc_energy, proj_energy,  eigenvalue, a1
 
       ! Now we start from the previous direction.
       new_projection= .false.
@@ -111,7 +111,7 @@ subroutine check_min( stage )
    end do
 
    ! Report
-   write(*,*) "ARTGAUSS: END  LANCZOS"  !debug
+   write(*,*) "ARTCP2K: END  LANCZOS"  !debug
    open( unit = FLOG, file = LOGFILE, status = 'unknown',&
         & action = 'write', position = 'append', iostat = ierror )
    write(FLOG,*) ' Done Lanczos'
@@ -267,8 +267,8 @@ subroutine min_converge_fire(success)
    falpha=0.99d0
    nstep=1
 
-   ! Optimization for Gaussian
-   if (energy_type == "GAU") then
+   ! Optimization for CP2K
+   if (energy_type == "CP2K") then
       dtmax=0.3d0
    else
       dtmax=0.15d0
@@ -473,9 +473,9 @@ subroutine perp_fire(success,max_iter)
    falpha=0.99d0
    nstep=1
 
-   ! Optimization for Gaussian
-   if (energy_type == "GAU") then
-      write(*,*) "Test1: GAU is properly set" 
+   ! Optimization for CP2K
+   if (energy_type == "CP2K") then
+      write(*,*) "Test1: CP2K is properly set" 
       dtmax=0.3d0
    else
       dtmax=0.15d0
@@ -589,7 +589,7 @@ subroutine perp_fire(success,max_iter)
    return
 END SUBROUTINE perp_fire
 
-! In this routine, we interface between ART and GAUSSIAN
+! In this routine, we interface between ART and CP2KSSIAN
 subroutine min_converge_cpk(success)
   use defs
 
@@ -604,13 +604,12 @@ subroutine min_converge_cpk(success)
   character(len=20) :: CPK_OPT_COORD = 'cp2k-pos-1.xyz'
   character(len=70) :: line, dummy
   character(len=10) :: string_natoms
-  logical :: opt_coords_read, opt_energy_read
 
   open(unit=FLOG,file=LOGFILE,status='unknown',action='write',position='append',iostat=ierror)
   write(flog,*) 'start minimization'
   close(flog)
 
-  ! We first write to a file the format requested by GAUSS
+  ! We first write to a file the format requested by CP2KSS
 
   open(unit=CPK,file=CPK_COORD,status='unknown',action='write',iostat=ierror)
 
@@ -627,9 +626,9 @@ subroutine min_converge_cpk(success)
   opt_energy_read = .false.
 
   write(*,*) "Updating to opt"
-  call system('python3.6 update_cp2k_input.py -k opt')
+  call system('python update_cp2k_input.py -k opt')
   write(*,*) "Updated to opt"
-  call system('python3.6 execute_cp2k.py > cp2k_energy_forces')
+  call system('python execute_cp2k.py > cp2k_energy_forces')
   
   open(unit=CPK,file=CPK_ENE_FOR,status='old',action='read',iostat=ierror)
   
@@ -639,7 +638,6 @@ subroutine min_converge_cpk(success)
       !Gets the final energy
       if ( line  == "energy:" ) then
           read(CPK,*) energy
-          opt_energy_read = .true.
       endif
         
   end do
@@ -651,18 +649,15 @@ subroutine min_converge_cpk(success)
 
   ! We must now read the position from cp2k's output file
   open(unit=CPK,file=CPK_OPT_COORD,status='old',action='read',iostat=ierror)
-  opt_coords_read = .false.
   do 
-    read(CPK,'(A40)') dummy
+    read(CPK,'(A40)',end=400) dummy
     read(CPK,'(A40)') dummy
     do i = 1, NATOMS
-        read (CPK,*, end=400) typat(i), x(i), y(i), z(i)
+        read (CPK,*) typat(i), x(i), y(i), z(i)
+        x(i) = x(i) - cell_a/2
+        y(i) = y(i) - cell_b/2
+        z(i) = z(i) - cell_c/2
     end do
-  
-    opt_coords_read = .true.
-
-    if (opt_coords_read .and. opt_energy_read) exit    
-
   end do
   400 rewind(CPK)
   close(CPK)

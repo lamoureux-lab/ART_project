@@ -75,20 +75,20 @@ subroutine restart_states( istatus, ieventcurrent, iterations, iatp )
   end do
                                       ! DEBUG 
   if ( iproc == 0 ) then
-     write(*,*) 'ARTGAUSS: restart file'
-     write(*,*) 'ARTGAUSS: central_atom ', central_atom  
-     write(*,'(a,(1p,e17.10,0p))') ' ARTGAUSS: total energy: ', total_energy
-     write(*,'(a,(1p,e17.10,0p))') ' ARTGAUSS: ref   energy: ', ref_energy 
-     write(*,'(a,3f20.8)') ' ARTGAUSS: xref(1): ', xref(1), yref(1), zref(1)
-     write(*,'(a,3f20.8)') ' ARTGAUSS: x(1)   : ', x(1), y(1), z(1)
-     write(*,'(a,3f20.8)') ' ARTGAUSS: x(NATOMS): ', x(NATOMS), y(NATOMS), z(NATOMS)
+     write(*,*) 'ARTCP2K: restart file'
+     write(*,*) 'ARTCP2K: central_atom ', central_atom  
+     write(*,'(a,(1p,e17.10,0p))') ' ARTCP2K: total energy: ', total_energy
+     write(*,'(a,(1p,e17.10,0p))') ' ARTCP2K: ref   energy: ', ref_energy 
+     write(*,'(a,3f20.8)') ' ARTCP2K: xref(1): ', xref(1), yref(1), zref(1)
+     write(*,'(a,3f20.8)') ' ARTCP2K: x(1)   : ', x(1), y(1), z(1)
+     write(*,'(a,3f20.8)') ' ARTCP2K: x(NATOMS): ', x(NATOMS), y(NATOMS), z(NATOMS)
  
      if ( istatus == 2 .or. istatus == 4 ) then
-     write(*,*) 'ARTGAUSS: previous_norm : ', diis_norm_restart
-     write(*,*) 'ARTGAUSS: last line ',maxter_r,eigen_min_r,eigenvalue_r,nsteps_after_eigen_min_r 
+     write(*,*) 'ARTCP2K: previous_norm : ', diis_norm_restart
+     write(*,*) 'ARTCP2K: last line ',maxter_r,eigen_min_r,eigenvalue_r,nsteps_after_eigen_min_r 
      end if 
-     write(*,*) 'ARTGAUSS: Reading atomic input positions from RESTART file,'
-     write(*,*) 'ARTGAUSS: please, ignore the next message. '
+     write(*,*) 'ARTCP2K: Reading atomic input positions from RESTART file,'
+     write(*,*) 'ARTCP2K: please, ignore the next message. '
   end if
 
 END SUBROUTINE restart_states 

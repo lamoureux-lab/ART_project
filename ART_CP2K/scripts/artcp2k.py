@@ -119,7 +119,20 @@ def calculate_atoms():
             
             atom_list.append(natoms)
 
-    zipped_atomic_list = zip(files_to_run, atom_list)
+	cell_params_list = []
+	for each_file in files_to_run:
+		cell_a = 0
+		cell_b = 0
+		cell_c = 0
+		with open (each_file) as f:
+			for line in f:
+				if "ABC" in line:
+					cell_a = line.split()[1]
+					cell_b = line.split()[2]
+					cell_c = line.split()[3]
+			cell_params_list.append((cell_a, cell_b, cell_c))
+
+    zipped_atomic_list = zip(files_to_run, atom_list, cell_params_list)
     return zipped_atomic_list
 
 def read_vec_log():
@@ -150,7 +163,7 @@ def read_vec_log():
     return min_sad_natoms_read
 
 def create_cp2k_art(zipped_atomic_list, min_sad_natoms_read):
-    for each_file, natoms in zipped_atomic_list:
+    for each_file, natoms, cell_params in zipped_atomic_list:
         with open (cp2k_art_template) as f:
             with open (join(each_file.split('.')[0], cp2k_art), 'w+') as m:
                 for line in f:                     
@@ -206,6 +219,12 @@ def create_cp2k_art(zipped_atomic_list, min_sad_natoms_read):
                         line = line.replace(line.split('#')[0].split()[2], str(min_sad_natoms_read[1]), 1)
                     if 'natoms_read' in line:
                         line = line.replace(line.split('#')[0].split()[2], str(min_sad_natoms_read[2]), 1)
+                    if 'cell_a' in line:
+                        line = line.replace(line.split('#')[0].split()[2], cell_params[0], 1)
+                    if 'cell_b' in line:
+                        line = line.replace(line.split('#')[0].split()[2], cell_params[1], 1)
+                    if 'cell_c' in line:
+                        line = line.replace(line.split('#')[0].split()[2], cell_params[2], 1)
 
                     m.write(line)
 

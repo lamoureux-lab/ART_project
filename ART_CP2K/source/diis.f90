@@ -174,7 +174,7 @@ subroutine apply_diis( diter, saddle_energy, ret )
          rejected_step = .false.
       end if 
       if ( iproc == 0 ) then          ! REPORT DIIS 
-        write (*,'(a,3I5,1x,2F11.4,2x,(1p,e14.5,0p),1x,L1)') 'ARTGAUSS DIIS:',  &
+        write (*,'(a,3I5,1x,2F11.4,2x,(1p,e14.5,0p),1x,L1)') 'ARTCP2K DIIS:',  &
         &  pas, diter, maxter, n_deltaGdiis, factor_diis*INCREMENT, solution(maxter+1), &
         &  rejected_step 
       end if
@@ -202,7 +202,7 @@ subroutine apply_diis( diter, saddle_energy, ret )
                ! If not ITERATIVE, we can not continue with this event. 
                end_activation = .true. 
                ret = 70000 + pas - 1
-               if ( iproc == 0 ) write(*,*) 'ARTGAUSS: DIIS Failed, no memory'
+               if ( iproc == 0 ) write(*,*) 'ARTCP2K: DIIS Failed, no memory'
 
             else if ( diter > 1 ) then
 
@@ -385,7 +385,7 @@ subroutine get_solution( maxter, error_vector, solution )
   call dsysv('U', n, nrhs, matrice, n, interchanges, solution, n, work, lwork, i_err )
                    ! If something fails 
   if ( i_err /= 0 ) then
-     if ( iproc == 0 ) write(*,*) 'ARTGAUSS WARNING DIIS: info calculation of solution', i_err
+     if ( iproc == 0 ) write(*,*) 'ARTCP2K WARNING DIIS: info calculation of solution', i_err
   end if
 
   deallocate(work)
@@ -536,8 +536,8 @@ subroutine  apply_lanczos ( liter, saddle_energy, ret )
 
       call lanczos_step ( saddle_energy, a1, liter, get_proj )
 
-      ! Optimization for Gaussian
-      if (energy_type == "GAU") then
+      ! Optimization for CP2K
+      if (energy_type == "CP2K") then
         if (delta_e > delta_thr .or. eigenvalue > (EIGEN_THRESH/4.0d0) ) then
          saddle_energy = total_energy
          end_activation = .true.
@@ -557,9 +557,9 @@ subroutine  apply_lanczos ( liter, saddle_energy, ret )
 
              call clean_wavefunction ( a1, .True. )
 
-             if ( ftot >= EXITTHRESH .and. cw_try_again .and. energy_type .ne. "GAU" ) then
+             if ( ftot >= EXITTHRESH .and. cw_try_again .and. energy_type .ne. "CP2K" ) then
                 cw_try_again = .False.
-             ! Optimization made for Gaussian when delta_e < delta_thr
+             ! Optimization made for CP2K when delta_e < delta_thr
              else if ( ftot >= EXITTHRESH .and. cw_try_again .and. delta_e < delta_thr ) then
 
                                            ! we continue in lanczos,
@@ -689,14 +689,14 @@ subroutine lanczos_step ( current_energy, a1, liter, get_proj )
         new_projection = .false.      ! previous direction each time.
         call lanczos( NVECTOR_LANCZOS_C, new_projection, a1 )
         if ( iproc == 0 ) write(*,'(a,3I5,f12.6,f7.2)') &
-           & 'ARTGAUSS COLLINEAR:', pas, liter, i, eigenvalue, a1
+           & 'ARTCP2K COLLINEAR:', pas, liter, i, eigenvalue, a1
         if ( a1 > collinear_factor ) exit 
      end do
   end if
                                       ! Debug
   !if ( iproc == 0 ) then                
-  ! write(*,*) 'ARTGAUSS: eigenvalue : ', eigenvalue
-  ! write(*,"(' ','ARTGAUSS: eigenvals: ',4f12.6)") (eigenvals(i),i=1,4)
+  ! write(*,*) 'ARTCP2K: eigenvalue : ', eigenvalue
+  ! write(*,"(' ','ARTCP2K: eigenvals: ',4f12.6)") (eigenvals(i),i=1,4)
   !end if
                                       ! Write 
   call write_step ( 'L', liter, a1, current_energy )
