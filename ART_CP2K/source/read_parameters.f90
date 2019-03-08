@@ -894,7 +894,7 @@ subroutine write_parameters( )
   call date_and_time(values=values)
 
   if ( .not. setup_initial ) then
-     idum = -647!-1 * mod( (1000 * values(7) + values(8))+iproc, 1024)
+     idum = -1 * mod( (1000 * values(7) + values(8))+iproc, 1024)
   else
      idum = 0
   end if
