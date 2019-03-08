@@ -514,12 +514,20 @@ subroutine read_parameters( )
   !!__________________
   ! Get probability follow or avoid
   call getenv('Odds_follow_avoid', temporary)
+  if (temporary .eq. '') then
+     odds_follow_or_avoid = 0 
+  else
      read(temporary,*) odds_follow_or_avoid
+  end if
 
   !!__________________
   ! Get probability roll or attack
   call getenv('Odds_roll_or_attack', temporary)
+  if (temporary .eq. '') then
+     odds_roll_or_attack = 0 
+  else
      read(temporary,*) odds_roll_or_attack
+  end if
 
   !!__________________
   ! General output for message
@@ -579,22 +587,38 @@ subroutine read_parameters( )
   !!__________________
   ! Choose the strategy of search.
   call getenv('Strategy_of_Search', temporary)
-  read(temporary,*) SEARCH_STRATEGY
+  if (temporary .eq. '') then
+     SEARCH_STRATEGY = 0 
+  else
+     read(temporary,*) SEARCH_STRATEGY
+  end if
 
   !!__________________
   ! Choose number of min read from log
   call getenv('nmin_read', temporary)
-  read(temporary,*) nmin_read
+  if (temporary .eq. '') then
+     nmin_read = 0
+  else
+     read(temporary,*) nmin_read
+  end if
 
   !!__________________
   ! Choose number of sad read from log
   call getenv('nsad_read', temporary)
-  read(temporary,*) nsad_read
+  if (temporary .eq. '') then
+     nsad_read = 0
+  else
+     read(temporary,*) nsad_read
+  end if
 
   !!__________________
   ! Choose number of atoms read from log
   call getenv('natoms_read', temporary)
-  read(temporary,*) natoms_read
+  if (temporary .eq. '') then
+     natoms_read = 0
+  else
+     read(temporary,*) natoms_read
+  end if
 
   !!__________________
   ! Name the shared history file 
@@ -613,7 +637,11 @@ subroutine read_parameters( )
   !!__________________
   ! Name the shared history file to be read from
   call getenv('natoms_correspond', temporary)
-  read(temporary,*) natoms_correspond
+  if (temporary .eq. '') then
+     natoms_correspond = 0
+  else
+     read(temporary,*) natoms_correspond
+  end if
 
   !!__________________
   ! Reference configuration for refine saddle. Without ext.
