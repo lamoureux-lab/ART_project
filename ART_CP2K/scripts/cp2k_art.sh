@@ -73,7 +73,7 @@ setenv RESTART          restart.dat               # current data.sh for restarti
 
 ############### Run the simulation #######################################################################
 
-set art_location = "../../source/artgaussian"
+set art_location = "../../source/artcp2k"
 $art_location
 
 
