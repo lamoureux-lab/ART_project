@@ -6,7 +6,7 @@ from subprocess import call
 
 parser = argparse.ArgumentParser(description = 'ART')
 
-parser.add_argument('-energy', '--energy_type', help = 'Quantum code used to calculate energy and forces, e.g. Gaussian or CP2K')
+parser.add_argument('-energy', '--energy_type', help = 'Quantum code used to calculate energy and forces, e.g. GAU or CPK')
 parser.add_argument('-f', '--input_file', nargs = '+', help = 'Input file')
 parser.add_argument('-m', '--mem', help = 'memory allocation, e.g. 16G', default='16G')
 parser.add_argument('-n', '--nodes', help = 'processor nodes, e.g. 2', default = '2')
@@ -205,6 +205,8 @@ def create_art_params_script(zipped_atomic_list, min_sad_natoms_read):
                         line = line.replace(line.split('#')[0].split()[2], str(natoms), 1)
                     if 'Max_Number_Events' in line:
                         line = line.replace(line.split('#')[0].split()[2], args.max_events, 1)
+                    if 'ENERGY_CALC' in line:
+                        line = line.replace(line.split('#')[0].split()[2], args.energy_type, 1)
                     if 'Type_of_Events' in line:
                         line = line.replace(line.split('#')[0].split()[2], args.type_events, 1)
                     if 'Radius_Initial_Deformation' in line:
@@ -263,7 +265,7 @@ def create_art_params_script(zipped_atomic_list, min_sad_natoms_read):
                     m.write(line)
 
 def create_refconfig():
-    if energy_forces == "Gaussian":
+    if energy_forces == "GAU":
         for each_file, directory in my_dict.items():
             with open(each_file) as f: 
                 with open (join(directory, refconfig), 'w+') as m:
@@ -274,7 +276,7 @@ def create_refconfig():
                             coords = re.findall(r'\S+\s+[-]?\d+[.]\d+\s+[-]?\d+[.]\d+\s+[-]?\d+[.]\d+\s+',line)[0]
                             m.write(coords)
 
-    if energy_forces == "CP2K":
+    if energy_forces == "CPK":
         for directory in my_dict.values():
             with open(directory + '.xyz') as f: 
                 with open (join(directory, refconfig), 'w+') as m:
@@ -302,15 +304,19 @@ def submitting_scripts():
 
 if __name__ == '__main__':
 
+    if energy_forces != "GAU" and energy_forces != "CPK":
+        print("Sorry! energy should be either GAU or CPK")
+        exit()
+
     create_directory()
     create_submission_file()
-    if energy_forces == "Gaussian":
+    if energy_forces == "GAU":
         update_gaussian_header_script()
         create_exec_script(gauss_exec_script_template, gauss_exec_script)
         atomic_list = calculate_gauss_atoms()
         min_sad_natoms_read = read_vec_log()
         create_art_params_script(atomic_list, min_sad_natoms_read)
-    if energy_forces == "CP2K":
+    if energy_forces == "CPK":
         create_cp2k_input()
         create_cp2k_coord()
         update_cp2k_header_script()

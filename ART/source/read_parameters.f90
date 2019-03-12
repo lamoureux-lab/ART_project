@@ -141,7 +141,7 @@ subroutine read_parameters( )
           energy_type = 'GAU'
      case default
           write(*,*) "Error: energy calculation type is not defined: ENERGY_CALC "
-          write(*,*) " choose: DFT, SWP (Stillinger-Weber), or CP2K (CP2K) "
+          write(*,*) " choose: DFT, SWP (Stillinger-Weber), GAU, or CPK (CPK) "
           stop
   end select
 
