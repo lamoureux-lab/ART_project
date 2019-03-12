@@ -1,6 +1,0 @@
-#On Machintosh 
-FLAGS =  -O3 -cpp
-LLIBS =   -O3 -framework vecLib
-FORTRAN = gfortran -ffree-form 
-FFlAGS = -O3 
-EXEC_ART = $(EXEC)_Mac

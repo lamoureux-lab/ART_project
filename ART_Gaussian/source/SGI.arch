@@ -1,5 +1,0 @@
-#on Silicon graphics Origin 2000
-FLAGS =  -O3
-LLIBS =  -lscs
-FORTRAN = f90 -cpp
-EXEC  = art01_SGI

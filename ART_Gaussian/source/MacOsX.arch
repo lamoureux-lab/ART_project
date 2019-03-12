@@ -1,6 +1,0 @@
-#On Machintosh 
-FLAGS =  -qsuffix=cpp=f90  -O3
-LLIBS =   -O3 -framework vecLib
-EXEC  = art01_Mac 
-FORTRAN = xlf90          
-FFlAGS = -O3 -qarch=auto -qtune=auto -qcache=auto -qextname
