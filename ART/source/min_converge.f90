@@ -730,13 +730,13 @@ subroutine min_converge_cp2k(success)
     read(FCPK,'(A40)',end=400) dummy
     read(FCPK,'(A40)') dummy
     do i = 1, NATOMS
-        read (CPK,*) typat(i), x(i), y(i), z(i)
+        read (FCPK,*) typat(i), x(i), y(i), z(i)
         x(i) = x(i) - cell_a/2
         y(i) = y(i) - cell_b/2
         z(i) = z(i) - cell_c/2
     end do
   end do
-  400 rewind(CPK)
+  400 rewind(FCPK)
   close(FCPK)
 
   open(unit=FLOG,file=LOGFILE,status='unknown',action='write',position='append',iostat=ierror)
