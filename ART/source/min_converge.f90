@@ -622,7 +622,7 @@ subroutine min_converge_gau(success)
   ! We first write to a file the format requested by GAUSS
 
   write(*,*) "Optimizing now"
-  call system('python create_header.py -k opt')
+  call system('python update_gaussian_header.py -k opt')
 
   open(unit=FGAUSS,file=GAUSS,status='unknown',action='write', position = 'append', iostat=ierror)
 
