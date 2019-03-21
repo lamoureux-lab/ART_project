@@ -84,7 +84,7 @@ subroutine gaussian_energy_forces ( nat, typa, posa, forca, energy )
 
 
   ! We first write to a file the format requested by Gaussian
-  call system('python create_header.py')
+  call system('python update_gaussian_header.py')
   open(unit=FGAUSS,file=GAUSS,status='unknown',action='write', position = 'append', iostat=ierror)
 
   ! Prepares gaussian input file coordinates
