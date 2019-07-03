@@ -12,11 +12,12 @@ with open(gaussian_input_file) as f:
         for line in f:
             c.write(line)
 
-call(['g09', gaussian_input_file], shell = False)
+call(['g16', gaussian_input_file], shell = False)
 
 
 def reading_coords():
     reading_coords = False
+    coords = ''
     with open(gaussian_log_file) as log:
         for line in log:
             if "Input orientation" in line:
@@ -33,6 +34,7 @@ def reading_coords():
     return coords
 
 def reading_energy():
+    energy = ''
     with open(gaussian_log_file) as log:
         for line in log:
             if "E(" in line:
@@ -43,6 +45,7 @@ def reading_energy():
 
 def reading_forces():
     reading_forces = False
+    forces = ''
     with open(gaussian_log_file) as log:
         for line in log:
             if "Forces (Hartrees/Bohr)" in line:

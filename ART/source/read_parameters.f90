@@ -245,8 +245,8 @@ subroutine read_parameters( )
      read(temporary,*) FTHRESHOLD
      if(FTHRESHOLD>EXITTHRESH) then
         FTHRESHOLD = EXITTHRESH
-        write(*,*) 'Warning: Force_Threshold_Perp_Rel should be smaller or equal to Exit_Force_Threshold'
-        write(*,*) 'The code has automatically set Force_Threshold_Perp_Rel=Exit_Force_Threshold'
+        !write(*,*) 'Warning: Force_Threshold_Perp_Rel should be smaller or equal to Exit_Force_Threshold'
+        !write(*,*) 'The code has automatically set Force_Threshold_Perp_Rel=Exit_Force_Threshold'
      endif 
  end if
 

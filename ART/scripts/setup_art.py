@@ -17,7 +17,7 @@ parser.add_argument('-ne', '--max_events', help = 'number of ART events, e.g. 1'
 parser.add_argument('-type', '--type_events', help = 'type of ART event, e.g. global or local', default ='global')
 parser.add_argument('-r', '--radius', help = 'radius of initial deformation, e.g. 3.0', default ='3.0')
 parser.add_argument('-cat', '--centre_atm', help = 'central atom for local event, e.g. 1', default ='1')
-parser.add_argument('-eigen', '--eigen_thresh', help = 'eigenvalue threshold, e.g. -0.2', default ='-0.2')
+parser.add_argument('-eigen', '--eigen_thresh', help = 'eigenvalue threshold, e.g. -1.5', default ='-0.2')
 parser.add_argument('-force', '--force_thresh', help = 'exit force thresh, e.g. 0.1', default ='0.1')
 parser.add_argument('-inc', '--inc_size', help = 'increment size', default ='0.1')
 parser.add_argument('-init', '--init_step', help = 'initial step size, e.g. 0.1', default ='0.1')
@@ -29,28 +29,32 @@ parser.add_argument('-l', '--lanczos', help = 'number of iterations in the Lancz
 parser.add_argument('-am', '--activ_max', help = 'max iterations during activation, e.g. 400', default ='400')
 parser.add_argument('-d', '--delta_thresh', help = 'energy threshold during Lanczos e.g. 4.0', default ='4.0')
 parser.add_argument('-pa', '--max_perp_activ', help = 'max perp steps during activation e.g 5', default ='5')
-parser.add_argument('-fp', '--force_thresh_perp', help = 'force thresh perp relax, e.g. 0.5', default ='0.5')
+parser.add_argument('-fp', '--force_thresh_perp', help = 'force thresh perp relax, e.g. 0.05', default ='0.05')
 parser.add_argument('-bm', '--basin_max', help = 'max iterations in basin, e.g. 20', default ='20')
 parser.add_argument('-xyz', '--write_xyz', help = 'write or not xyz files -- true or false', default ='true')
 parser.add_argument('-search', '--search_strat', help = 'search strategy, e.g. 0, 1 or 2', default ='0')
+parser.add_argument('-odds_search', '--odds_follow_avoid', help = 'odds to follow or avoid', default ='0.4')
+parser.add_argument('-odds_move', '--odds_roll_attack', help = 'odds to roll or attack', default ='0.4')
 parser.add_argument('-read', '--read_from', help = 'read from a specific file, e.g. vector20', default ='xxx')
+parser.add_argument('-align', '--alignment', help = 'atoms that align', default ='all')
 
 args                            = parser.parse_args()
 
-submission_script_template      = join(dirname(relpath(__file__)), 'psi.sub')
+submission_script_template      = join(dirname(relpath(__file__)), 'gauss_graham.sub')
 gauss_exec_script_template      = join(dirname(relpath(__file__)), 'execute_gaussian.py')
 cp2k_exec_script_template       = join(dirname(relpath(__file__)), 'execute_cp2k.py')
 update_gaussian_header_template = join(dirname(relpath(__file__)), 'update_gaussian_header.py')
 update_cp2k_header_template     = join(dirname(relpath(__file__)), 'update_cp2k_header.py')
 art_params_script_template      = join(dirname(relpath(__file__)), 'art.sh')
 
-submission_script               = 'psi.sub'
+submission_script               = 'gauss_graham.sub'
 update_gaussian_header          = 'update_gaussian_header.py'
 update_cp2k_header              = 'update_cp2k_header.py'
 gauss_exec_script               = 'execute_gaussian.py'
 cp2k_exec_script                = 'execute_cp2k.py'
 art_params_script               = 'art.sh'
 refconfig                       = 'refconfig.dat'
+alignment_file                  = 'alignment.txt'
 filecounter                     = 'filecounter'
 shared_log                      = '../shared_log/'
 files_to_run                    = args.input_file
@@ -85,7 +89,7 @@ def create_submission_file():
                     if 'cpus' in line:
                         line = line.replace(line.split('=')[1], args.cpus + '\n')
                     new_line = new_line + line
-                calling_art = 'csh ' + art_params_script + ' > ' + 'output.log'
+                calling_art = 'csh ' + '"' + art_params_script + '"' + ' > ' +  '"' + 'output.log' + '"'
                 m.write(new_line + calling_art)
                
 def create_exec_script(template,script):
@@ -245,6 +249,10 @@ def create_art_params_script(zipped_atomic_list, min_sad_natoms_read):
                         line = line.replace(line.split('#')[0].split()[2], '.' + args.write_xyz + '.', 1)
                     if 'Strategy_of_Search' in line:
                         line = line.replace(line.split('#')[0].split()[2], args.search_strat, 1)
+                    if 'Odds_follow_avoid' in line:
+                        line = line.replace(line.split('#')[0].split()[2], args.odds_follow_avoid, 1)
+                    if 'Odds_roll_or_attack' in line:
+                        line = line.replace(line.split('#')[0].split()[2], args.odds_roll_attack, 1)
                     if 'Shared_History_Filename' in line:
                         line = line.replace(line.split('#')[0].split()[2], shared_log + each_file.split('.')[0] + '.log', 1)
                     if 'Shared_History_To_Read' in line:
@@ -255,6 +263,11 @@ def create_art_params_script(zipped_atomic_list, min_sad_natoms_read):
                         line = line.replace(line.split('#')[0].split()[2], str(min_sad_natoms_read[1]), 1)
                     if 'natoms_read' in line:
                         line = line.replace(line.split('#')[0].split()[2], str(min_sad_natoms_read[2]), 1)
+                    if 'natoms_correspond' in line:
+                        if args.alignment == 'all':
+                            line = line.replace(line.split('#')[0].split()[2], str(natoms), 1)
+                        else:
+                            line = line.replace(line.split('#')[0].split()[2], str(args.alignment), 1)
                     if 'cell_a' in line:
                         line = line.replace(line.split('#')[0].split()[2], str(cell_params[0]), 1)
                     if 'cell_b' in line:
@@ -292,13 +305,20 @@ def create_filecounter():
         with open(join(directory, filecounter),'w+') as f:
             f.write("Counter:      1000")
 
+def create_alignment_file(atomic_list):
+    if args.search_strat == '1' or args.search_strat == '2':
+        for each_file, natoms, cell_params in atomic_list:
+            with open (join(each_file.split('.')[0], alignment_file), 'w+') as f:
+                f.write('CURRENT' + '\t' + 'READ_FROM \n')
+                for i in range(natoms):
+                    f.write(str(i+1) + '\t' + str(i+1) + '\n')
 
 def submitting_scripts():
     for each_file, directory in my_dict.items():
         print("Creating submission files for " + directory)
         work_directory = getcwd()
         chdir(join(work_directory, directory))
-#        call(['sbatch', '-J', each_file.split('.')[0], submission_script], shell = False) 
+        call(['sbatch', '-J', each_file.split('.')[0], submission_script], shell = False) 
         chdir(work_directory)
 
 
@@ -316,6 +336,7 @@ if __name__ == '__main__':
         atomic_list = calculate_gauss_atoms()
         min_sad_natoms_read = read_vec_log()
         create_art_params_script(atomic_list, min_sad_natoms_read)
+        create_alignment_file(atomic_list)
     if energy_forces == "CPK":
         create_cp2k_input()
         create_cp2k_coord()
@@ -324,6 +345,7 @@ if __name__ == '__main__':
         atomic_list = calculate_cp2k_atoms()
         min_sad_natoms_read = read_vec_log()
         create_art_params_script(atomic_list, min_sad_natoms_read)
+        create_alignment_file(atomic_list)
     create_refconfig()
     create_filecounter()
     submitting_scripts()

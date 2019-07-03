@@ -2,11 +2,12 @@ import numpy as np
 import re
 import argparse
 
-parser = argparse.ArgumentParser(description = 'Add distance tolerance')
+parser = argparse.ArgumentParser(description = 'Checks log files for frequencies and geometry optimizations.')
 parser.add_argument('-f','--log_file',
         help = 'log file to test e.g. min1000.log')
 parser.add_argument('-type','--type', required = True, 
-        help = 'type of files to test')
+        help = 'type of files to test, e.g. check_min for min files and check_sad for sad files')
+parser.add_argument('-tol_opt','--tol_check_opt', type = float, default = 0.1, help = 'distance_tolerance to check optimization')
 args = parser.parse_args()
 
 logfile_to_test = args.log_file
@@ -16,6 +17,7 @@ freq_list = []
 def analyze_freq():
 
     with open (logfile_to_test) as f:
+        frequency_verdict = ''
         freq_count = 0
         for line in f:
             if "Frequencies" in line:
@@ -54,24 +56,24 @@ def analyze_freq():
 def get_initial_coords():
 
     with open (logfile_to_test) as f:
-        init_coords = False
-        new_line = ''
+        init_coords_found = False
+        init_coords = ''
         for line in f:
             if "Input orientation" in line:
-                init_coords = True
-            if (init_coords):
+                init_coords_found = True
+            if (init_coords_found):
                 if (re.findall(r'[-]?\d[.]\d+\s+[-]?\d[.]\d+\s+[-]?\d[.]\d+\s+',line)):
-                    new_line = new_line + re.findall(r'[-]?\d[.]\d+\s+[-]?\d[.]\d+\s+[-]?\d[.]\d+\s+',line)[0]
+                    init_coords = init_coords + re.findall(r'[-]?\d[.]\d+\s+[-]?\d[.]\d+\s+[-]?\d[.]\d+\s+',line)[0]
             if "Distance matrix" in line:
                 break
 
-    print(new_line)
+    print(init_coords)
 
     initial_coords = []
-    for each_line in new_line.splitlines():
-        init_coords_x = float(each_line.split()[0])
-        init_coords_y = float(each_line.split()[1])
-        init_coords_z = float(each_line.split()[2])
+    for each_coord in init_coords.splitlines():
+        init_coords_x = float(each_coord.split()[0])
+        init_coords_y = float(each_coord.split()[1])
+        init_coords_z = float(each_coord.split()[2])
         
         initial_coords.append((init_coords_x, init_coords_y, init_coords_z))
 
@@ -79,38 +81,32 @@ def get_initial_coords():
 
 def get_optimized_coords():
 
-    with open (logfile_to_test) as f:
-        for line_number, each_line in enumerate(f):
-            if "Input orientation" in each_line:
-                opt_coord_start_point = line_number
-            if "Distance matrix" in each_line:
-                opt_coord_end_point = line_number
-
     with open (logfile_to_test) as m:
-        opt_coords = False
-        new_line = ''
-        for number, line in enumerate(m):
-            if "Input orientation" in line and number == opt_coord_start_point:
-                opt_coords = True
-            if (opt_coords):
+        opt_coords_found = False
+        opt_coords = ''
+        for line in m:
+            if "Input orientation" in line:
+                opt_coords_found = True
+                opt_coords = ''
+            if "Distance matrix" in line:
+                opt_coords_found = False
+            if (opt_coords_found):
                 if (re.findall(r'[-]?\d[.]\d+\s+[-]?\d[.]\d+\s+[-]?\d[.]\d+\s+',line)):
-                    new_line = new_line + re.findall(r'[-]?\d[.]\d+\s+[-]?\d[.]\d+\s+[-]?\d[.]\d+\s+',line)[0]
-            if "Distance matrix" in line and number == opt_coord_end_point:
-                break
-
-    print(new_line)
+                    opt_coords = opt_coords + re.findall(r'[-]?\d[.]\d+\s+[-]?\d[.]\d+\s+[-]?\d[.]\d+\s+',line)[0]
+    print(opt_coords)
 
     optimized_coords = []
-    for each_line in new_line.splitlines():
-        opt_coords_x = float(each_line.split()[0])
-        opt_coords_y = float(each_line.split()[1])
-        opt_coords_z = float(each_line.split()[2])
+    for each_coord in opt_coords.splitlines():
+        opt_coords_x = float(each_coord.split()[0])
+        opt_coords_y = float(each_coord.split()[1])
+        opt_coords_z = float(each_coord.split()[2])
         
         optimized_coords.append((opt_coords_x, opt_coords_y, opt_coords_z))
 
     return optimized_coords
 
 def compare_coords(initial_coords, optimized_coords):
+    optimization_verdict = ''
     coords_map = {}
     coords_map['ART'] = initial_coords
     coords_map['Gaussian'] = optimized_coords
@@ -125,7 +121,7 @@ def compare_coords(initial_coords, optimized_coords):
 
         dist_matrix_map[program] = distance_matrix
 
-    if (np.allclose(dist_matrix_map['ART'], dist_matrix_map['Gaussian'], atol = 0.1)):
+    if (np.allclose(dist_matrix_map['ART'], dist_matrix_map['Gaussian'], atol = args.tol_check_opt)):
         optimization_verdict = "ART structure is OK :)"
     else:
         optimization_verdict = "ART structure is not OK :("

@@ -3,13 +3,13 @@
 #Sets the environment variables for the molecules in question
 
 setenv Temperature 0.4      # Temperature in kcal/mol, if negative always reject the event  0.4 >> 0.1
-setenv ENERGY_CALC CPK      # Choose: DFT, SWP (Stillinger-Weber) or GAU
+setenv ENERGY_CALC GAU      # Choose: DFT, SWP (Stillinger-Weber) or GAU
 setenv EVENT_TYPE  NEW      # Either 'NEW', 'REFINE_SADDLE' when further converging a saddle point
                             # Or "REFINE_AND_RELAX", to refine at the saddle and check the final minimum
 
 setenv NATOMS     8         # Number of atoms in the problem
 
-setenv Prefactor_Push_Over_Saddle 0.3 # The prefactor for pushing over the saddle point, fraction of distance from initial minimum to saddle point 0.15 (default) 0.3 (siesta)
+setenv Prefactor_Push_Over_Saddle 0.15 # The prefactor for pushing over the saddle point, fraction of distance from initial minimum to saddle point 0.15 (default) 0.3 (siesta)
 
 ######  ART ##############################################################################################
 
@@ -33,7 +33,7 @@ setenv Basin_Factor                         2.1   # Factor multiplying Increment
 
 #setenv Lanczos_of_minimum               .true.   # Calculation of the Hessian for each minimum
 setenv Lanczos_SCLoop                         5   # Number of iterations in the lanczos Self consistent loop default 20 >> 1 (default)
-setenv Activation_MaxIter                   400   # 400
+setenv Activation_MaxIter                   400   # Max iterations for reaching the saddle point
 setenv delta_threshold                      4.0   # Energy threshold during Lanczos
 
 setenv Max_Perp_Moves_Activ                   5   # Maximum number of perpendicular steps during activation 12 (default) 8 (siesta)
@@ -47,8 +47,9 @@ setenv Write_xyz                         .true.   # Generates .xyz files
 
 setenv Strategy_of_Search                     0   # '0' --> Proceed randomly (as it was doing already), '1' --> Follow the vector, '2' --> Avoid the vector
 setenv Odds_follow_avoid		      0   # Odds that ART will either 'follow' or 'avoid'
-setenv Shared_History_Filename              ../shared_log/test.log # Name the shared history file
-setenv Shared_History_To_Read               ../shared_log/xxx.log # Shared vector file to read from
+setenv Odds_roll_or_attack		      0   # Odds that ART will either 'roll' or 'attack'
+setenv Shared_History_Filename        ../shared_log/test.log # Name the shared history file
+setenv Shared_History_To_Read         ../shared_log/xxx.log # Shared vector file to read from
 setenv nmin_read			    0 # nmin read from vector file
 setenv nsad_read			    0 # nsad read from vector file
 setenv natoms_read			    0 # natoms read from vector file

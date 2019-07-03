@@ -4,7 +4,7 @@ from subprocess import call
 import argparse
 import cluster
 
-submission_script_template = join(dirname(relpath(__file__)), '../gauss_graham.sub')
+submission_script_template = join(dirname(relpath(__file__)), 'gauss_graham.sub')
 check_frequency            = join(dirname(relpath(__file__)), 'check_freq.py')
 check_cluster_members      = join(dirname(relpath(__file__)), 'check_cluster_members.py')
 
@@ -24,6 +24,8 @@ parser.add_argument('-np','--nodes_proc', default = '4',
         help = 'number of nodes and processors, e.g. 4')
 parser.add_argument('-tol','--tol_def_clusters', type = float, default = 0.1,
         help = 'Tolerance for defining clusters eg. 0.01')
+parser.add_argument('-tol_opt','--tol_check_opt', type = float, default = 0.1,
+        help = 'Tolerance for checking optimization eg. 0.01')
 parser.add_argument('-c','--check_one_per_cluster', action = 'store_true',
         help = 'Option to automatically check one file per cluster')
 
@@ -31,12 +33,13 @@ args = parser.parse_args()
 
 file_type = re.split('(\d+)', args.filenames[0])[0]
 
-input_file_template = args.gaussian_input_template
-wt                  = args.wall_time
-jn                  = args.job_name
-np                  = args.nodes_proc
-me                  = args.memory
-tol_define_clusters = args.tol_def_clusters
+input_file_template    = args.gaussian_input_template
+wt                     = args.wall_time
+jn                     = args.job_name
+np                     = args.nodes_proc
+me                     = args.memory
+tol_define_clusters    = args.tol_def_clusters
+tol_check_optimization = args.tol_check_opt
 
 def get_gaussian_header(input_file_template):
     count_link0_route = 0
@@ -109,7 +112,7 @@ def write_submission_script(filename, file_string):
     submission_script = filename + '.sub'
 
     call_gaussian      = 'g16' + ' ' + filename + '.inp' + '\n' 
-    call_check_freq    = 'python ' + check_frequency + ' -f ' + filename + '.log' + ' -type ' + 'check_' + file_type + ' > ' + filename + '_results.txt' + '\n'  
+    call_check_freq    = 'python ' + check_frequency + ' -f ' + filename + '.log' + ' -type ' + 'check_' + file_type + ' -tol_opt ' + str(tol_check_optimization) + ' > ' + filename + '_results.txt' + '\n'  
     call_check_members = 'python ' + check_cluster_members + ' -f ' + file_string + '-tol ' + str(tol_define_clusters)
 
     with open(submission_script_template) as f:
@@ -159,7 +162,7 @@ if __name__ == '__main__':
             if file_type == 'sad':
                 sad_input_file(filename, header_elements)
             print("Running jobs for ", filename)
-        #    call(['sbatch','-J ' + jn + '_' + filename, '-t' + wt,'-c' + np, submission_script], shell=False)
+            call(['sbatch','-J ' + jn + '_' + filename, '-t' + wt,'-c' + np, submission_script], shell=False)
       
 
 
