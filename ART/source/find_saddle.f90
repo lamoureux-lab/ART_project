@@ -841,6 +841,9 @@ SUBROUTINE set_move_random()
   natom_displaced = 0 
   dr = 0.0d0
 
+  call find_dihedrals()
+  call end_art()
+
   do i = 1, natoms
       do
          dx(i) = 0.5d0 - ran3()
@@ -1647,3 +1650,153 @@ SUBROUTINE align ( read_min, current_min, align_well, read_sad, read_dr, dr_tran
         endif
         
 END SUBROUTINE align
+
+SUBROUTINE find_dihedrals ()
+
+        use defs
+
+        implicit none  
+
+        !Local variables
+        integer :: i, j, k, l, dihedral_count
+        real(kind=8), dimension(natoms, natoms) :: dist_matrix 
+        logical, dimension(natoms, natoms) :: adj_matrix 
+        character(len=1), dimension(4) :: atomic_kind
+        real(kind=8), dimension(4) :: cov_rad
+        real(kind=8), dimension(natoms) :: cov_radius_current
+        integer, dimension(:,:), allocatable :: dihedral_atom_list
+        real, dimension(:,:,:), allocatable :: dihedral_vectors
+        real, dimension(:,:,:), allocatable :: dihedral_vector_cross
+        real, dimension(:,:), allocatable :: magnitude_of_cross
+        real, dimension(:), allocatable :: dihedral_angles
+
+        do i = 1, natoms
+                do j = 1, natoms
+                      dist_matrix(i,j) = sqrt((x(i) - x(j))**2 + (y(i) - y(j))**2 + (z(i) - z(j))**2)
+                enddo
+                write(*,'(<natoms>(f14.8))') dist_matrix(i,1:natoms)
+        enddo
+
+
+        atomic_kind = [ 'C',  'H',  'N',  'O' ]            !Theoretical covalent radii of the
+        cov_rad     = [ 0.76, 0.31, 0.71, 0.66 ]           !four most common organic elements 
+
+        !Every atom in the current structure is assigned a covalent radius
+
+        do i = 1, natoms
+                do j = 1, 4
+                        if (typat(i) == atomic_kind(j)) then
+                                cov_radius_current(i) = cov_rad(j)
+                        endif
+                enddo
+        enddo
+
+        dihedral_count = 0
+        do i = 1, natoms
+                do j = 1, natoms
+                        do k = 1, natoms
+                                do l = 1, natoms
+                                        if (i .ne. j .and. i .ne. k .and. i .ne. l .and. j .ne. k .and. j .ne. l .and. k .ne. l) then
+                                                if (abs(dist_matrix(i,j) - (cov_radius_current(i) + cov_radius_current(j))) < 0.30 &
+                                                & .and. abs(dist_matrix(j,k) - (cov_radius_current(j) + cov_radius_current(k))) < 0.30 & 
+                                                & .and. abs(dist_matrix(k,l) - (cov_radius_current(k) + cov_radius_current(l))) < 0.30) then
+                                                        dihedral_count = dihedral_count + 1
+                                                endif
+                                        endif
+                                enddo
+                        enddo
+                enddo
+        enddo
+
+        allocate(dihedral_atom_list(dihedral_count, 4))
+
+        dihedral_count = 0
+        do i = 1, natoms
+                do j = 1, natoms
+                        do k = 1, natoms
+                                do l = 1, natoms
+                                        if (i .ne. j .and. i .ne. k .and. i .ne. l .and. j .ne. k .and. j .ne. l .and. k .ne. l) then
+                                                if (abs(dist_matrix(i,j) - (cov_radius_current(i) + cov_radius_current(j))) < 0.30 &
+                                                & .and. abs(dist_matrix(j,k) - (cov_radius_current(j) + cov_radius_current(k))) < 0.30 & 
+                                                & .and. abs(dist_matrix(k,l) - (cov_radius_current(k) + cov_radius_current(l))) < 0.30) then
+                                                        dihedral_count = dihedral_count + 1
+                                                        dihedral_atom_list(dihedral_count,1) = i
+                                                        dihedral_atom_list(dihedral_count,2) = j
+                                                        dihedral_atom_list(dihedral_count,3) = k
+                                                        dihedral_atom_list(dihedral_count,4) = l
+                                                endif
+                                        endif
+                                enddo
+                        enddo
+                enddo
+        enddo
+        
+        write(*,*) "The dihedral list is:"
+
+        do i = 1, dihedral_count
+                write(*,'(4(I))') dihedral_atom_list(i, 1:4)
+        enddo
+        
+	allocate(dihedral_vectors(dihedral_count,3,3))
+
+        do i = 1, dihedral_count
+		dihedral_vectors(i,1,1) = x(dihedral_atom_list(i,1)) - x(dihedral_atom_list(i,2)) 
+		dihedral_vectors(i,1,2) = y(dihedral_atom_list(i,1)) - y(dihedral_atom_list(i,2)) 
+		dihedral_vectors(i,1,3) = z(dihedral_atom_list(i,1)) - z(dihedral_atom_list(i,2)) 
+
+		dihedral_vectors(i,2,1) = x(dihedral_atom_list(i,2)) - x(dihedral_atom_list(i,3)) 
+		dihedral_vectors(i,2,2) = y(dihedral_atom_list(i,2)) - y(dihedral_atom_list(i,3)) 
+		dihedral_vectors(i,2,3) = z(dihedral_atom_list(i,2)) - z(dihedral_atom_list(i,3)) 
+		
+		dihedral_vectors(i,3,1) = x(dihedral_atom_list(i,3)) - x(dihedral_atom_list(i,4)) 
+		dihedral_vectors(i,3,2) = y(dihedral_atom_list(i,3)) - y(dihedral_atom_list(i,4)) 
+		dihedral_vectors(i,3,3) = z(dihedral_atom_list(i,3)) - z(dihedral_atom_list(i,4)) 
+	enddo
+
+        do i = 1, dihedral_count
+		do j = 1, 3
+                	write(*,'(3(f14.8))') dihedral_vectors(i, j, 1:3)
+		enddo
+        enddo
+	write(*,'(a)') new_line('a')
+
+	allocate(dihedral_vector_cross(dihedral_count,2,3))
+
+	do i = 1, dihedral_count
+		dihedral_vector_cross(i,1,1) = (dihedral_vectors(i,1,2)*dihedral_vectors(i,2,3)) - (dihedral_vectors(i,2,2)*dihedral_vectors(i,1,3))
+		dihedral_vector_cross(i,1,2) = (dihedral_vectors(i,2,1)*dihedral_vectors(i,1,3)) - (dihedral_vectors(i,1,1)*dihedral_vectors(i,2,3))
+		dihedral_vector_cross(i,1,3) = (dihedral_vectors(i,1,1)*dihedral_vectors(i,2,2)) - (dihedral_vectors(i,2,1)*dihedral_vectors(i,1,2))
+
+		dihedral_vector_cross(i,2,1) = (dihedral_vectors(i,2,2)*dihedral_vectors(i,3,3)) - (dihedral_vectors(i,3,2)*dihedral_vectors(i,2,3))
+		dihedral_vector_cross(i,2,2) = (dihedral_vectors(i,3,1)*dihedral_vectors(i,2,3)) - (dihedral_vectors(i,2,1)*dihedral_vectors(i,3,3))
+		dihedral_vector_cross(i,2,3) = (dihedral_vectors(i,2,1)*dihedral_vectors(i,3,2)) - (dihedral_vectors(i,3,1)*dihedral_vectors(i,2,2))
+	enddo
+
+        do i = 1, dihedral_count
+		do j = 1, 2
+                	write(*,'(3(f14.8))') dihedral_vector_cross(i, j, 1:3)
+		enddo
+        enddo
+
+	allocate(magnitude_of_cross(dihedral_count,2))
+
+	do i = 1, dihedral_count
+		magnitude_of_cross(i,1) = sqrt(dihedral_vector_cross(i,1,1)**2 + dihedral_vector_cross(i,1,2)**2 + dihedral_vector_cross(i,1,3)**2)
+		magnitude_of_cross(i,2) = sqrt(dihedral_vector_cross(i,2,1)**2 + dihedral_vector_cross(i,2,2)**2 + dihedral_vector_cross(i,2,3)**2)
+	enddo
+
+	allocate(dihedral_angles(dihedral_count))
+
+	do i = 1, dihedral_count
+		!dihedral_angles(i) = acos((dot_product(dihedral_vector_cross(i,1,1:3), dihedral_vector_cross(i,2,1:3)))/(magnitude_of_cross(i,1)*magnitude_of_cross(i,2)))
+		dihedral_angles(i) = dot_product(dihedral_vector_cross(i,1,1:3), dihedral_vector_cross(i,2,1:3))
+		write(*,*) dihedral_angles(i)
+	enddo
+
+	deallocate(dihedral_angles)
+	deallocate(magnitude_of_cross)
+	deallocate(dihedral_vector_cross)
+	deallocate(dihedral_vectors)
+        deallocate(dihedral_atom_list)
+
+END SUBROUTINE find_dihedrals

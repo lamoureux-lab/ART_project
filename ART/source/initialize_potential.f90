@@ -16,7 +16,6 @@ subroutine initialize_potential( )
    !Local variables
    integer :: ierror
 
-   call init_potential_gau()
    call calcforce( NATOMS, pos, force, total_energy, evalf_number, .false. )
 
 END SUBROUTINE initialize_potential

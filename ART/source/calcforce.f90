@@ -65,7 +65,6 @@ subroutine gaussian_energy_forces ( nat, typa, posa, forca, energy )
 
   posG = posa
 
-
   xG => posG(1:NATOMS)
   yG => posG(NATOMS+1:2*NATOMS)
   zG => posG(2*NATOMS+1:3*NATOMS)
@@ -107,9 +106,10 @@ subroutine gaussian_energy_forces ( nat, typa, posa, forca, energy )
 
       !Gets the Gaussian output coordinates
       if ( line  == "outcoor:" ) then
+          write(*,*)"GAUSSIAN COORDS"
           do i = 1, NATOMS
               read(FGAUSS,*) xG(i),yG(i),zG(i)
-              write(*,*) xG(i),yG(i),zG(i)
+              write(*,'(3(f15.8))') xG(i),yG(i),zG(i)
           end do
           read_coordinates_done = .true.
       endif
@@ -125,7 +125,7 @@ subroutine gaussian_energy_forces ( nat, typa, posa, forca, energy )
          do i = 1, NATOMS
             read(FGAUSS,*) fax(i),fay(i),faz(i)
             ! ! unit conversion Gaussian format Forces (Hartrees/Bohr) to Gaussian format forces forces (eV/Ang):
-            ! ! hartree_to_ev=27.2113838668 and bohr_to_angstrom=0.52917721092
+            ! ! hartree_to_ev=27.2113838668 and bohr_to_Angstrom=0.52917721092
             fax(i) = fax(i)*51.4220629786602
             fay(i) = fay(i)*51.4220629786602
             faz(i) = faz(i)*51.4220629786602
@@ -137,12 +137,17 @@ subroutine gaussian_energy_forces ( nat, typa, posa, forca, energy )
       if(read_force_done .and. read_coordinates_done .and. read_energy_done ) exit
 
   end do
-
   300 rewind(FGAUSS)
-
   close(FGAUSS)
 
   call center(forca,VECSIZE)
+
+  open(unit=GFORCE,file='all_forces',status='unknown',action='write',position='append',iostat=ierror)
+  write(GFORCE,'((25X,a10), (40X,a20), (40X,a15), (1X,f15.8))') "COORDS", "FORCES (eV/Angstrom)", "ENERGY (eV) =", energy
+  do i=1,NATOMS
+       write(GFORCE,'((1X,a),3(2X,f15.8),(5X,f15.8),2(2X,f15.8))') typat(i), xa(i), ya(i), za(i), fax(i), fay(i), faz(i)
+  enddo
+  close(GFORCE)
 
 end subroutine gaussian_energy_forces
 
@@ -225,7 +230,7 @@ subroutine cp2k_energy_forces(nat,typa,posa,forca,energy)
          do i = 1, NATOMS
             read(FCPK,*) fax(i),fay(i),faz(i)
             ! ! unit conversion CP2K format Forces (Hartrees/Bohr) to CP2K format forces forces (eV/Ang):
-            ! ! hartree_to_ev=27.2113838668 and bohr_to_angstrom=0.52917721092
+            ! ! hartree_to_ev=27.2113838668 and bohr_to_Angstrom=0.52917721092
             fax(i) = fax(i)*51.4220629786602
             fay(i) = fay(i)*51.4220629786602
             faz(i) = faz(i)*51.4220629786602
@@ -243,9 +248,4 @@ subroutine cp2k_energy_forces(nat,typa,posa,forca,energy)
   call center(forca,VECSIZE)
 
 end subroutine cp2k_energy_forces
-
-! This subroutine is not used for siesta
-subroutine init_potential_gau()
-! placeholder to define default parameters if desired
-end subroutine
 

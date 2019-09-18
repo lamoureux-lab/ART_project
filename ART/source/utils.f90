@@ -129,7 +129,7 @@ subroutine store( fname )
 
   open(PATH, file = 'pathway.xyz', action = 'write', position = 'append')
   write(PATH,*) NATOMS
-  write(PATH,'(a10)') "ART_COORDS"
+  write(PATH,'(a7)') fname
   do i=1,NATOMS
        write(PATH,'((1X,a),3(2X,f15.8))') typat(i), x(i), y(i), z(i)
   enddo

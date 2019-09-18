@@ -115,6 +115,13 @@ subroutine initialize()
      end do
      close(VLOG)
 
+     open(unit=GFORCE,file='all_forces',status='unknown',action='write',position='append',iostat=ierror)
+     write(GFORCE,'((25X,a10), (40X,a20), (40X,a15), (1X,f15.8))') fname, "FORCES (eV/Angstrom)", "ENERGY (eV) =", total_energy
+     do i=1,NATOMS
+          write(GFORCE,'((1X,a),3(2X,f15.8),(5X,f15.8),2(2X,f15.8))') typat(i), x(i), y(i), z(i), force_opt(i), force_opt(i+NATOMS), force_opt((i)+2*NATOMS)
+     enddo
+     close(GFORCE)
+
      open( unit = FLOG, file = LOGFILE, status = 'unknown',&
           & action = 'write', position = 'append', iostat = ierror )
      write(*,*) 'ART: Configuration stored in file ',fname

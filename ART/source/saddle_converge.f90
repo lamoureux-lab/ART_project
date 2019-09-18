@@ -493,6 +493,13 @@ subroutine end_report ( success, ret, saddle_energy )
                 write(VLOG,'(1x,a,3(2x,f16.8))') typat(i), x(i), y(i), z(i)
               end do
               close(VLOG)
+
+              open(unit=GFORCE, file='all_forces', status='unknown', action='write', position='append')
+              write(GFORCE,'((25X,a10), (40X,a20), (40X,a15), (1X,f15.8))') fname, "FORCES (eV/Angstrom)", "ENERGY (eV) =", saddle_energy
+              do i=1,NATOMS
+                write(GFORCE,'(1x,a,3(2x,f15.8), (5X,f15.8), 2(2x,f15.8))') typat(i), x(i), y(i), z(i), force(i), force(NATOMS+i), force(2*NATOMS+(i))
+              enddo
+              close(GFORCE)
       endif
       conf_saddle = fname
 

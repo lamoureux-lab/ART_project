@@ -612,7 +612,13 @@ subroutine min_converge_gau(success)
   character(len=20) :: GAUSSFORCE = 'gaussian2art'
   character(len=70) :: line
   character(len=10) :: string_natoms
-  logical :: opt_coords_read, opt_energy_read
+  real*8, dimension(VECSIZE), target :: forcea_opt
+  real(8), dimension(:), pointer :: fax_opt, fay_opt, faz_opt   ! Pointers for working force
+  logical :: opt_coords_read, opt_energy_read, opt_forces_read
+
+  fax_opt => forcea_opt(1:NATOMS)
+  fay_opt => forcea_opt(NATOMS+1:2*NATOMS)
+  faz_opt => forcea_opt(2*NATOMS+1:3*NATOMS)
 
   success = .false.
   open(unit=FLOG,file=LOGFILE,status='unknown',action='write',position='append',iostat=ierror)
@@ -641,6 +647,7 @@ subroutine min_converge_gau(success)
   open(unit=FGAUSS,file=GAUSSFORCE,status='old',action='read',iostat=ierror)
   opt_coords_read = .false.
   opt_energy_read = .false.
+  opt_forces_read = .false.
   do 
     !Gets the Gaussian output coordinates
     read(FGAUSS,'(A40)') line
@@ -655,10 +662,25 @@ subroutine min_converge_gau(success)
         read(FGAUSS,*) total_energy
         opt_energy_read = .true.
     endif
-    if (opt_coords_read .and. opt_energy_read) exit    
+
+      !Gets the forces
+    if ( line  == "forces:" ) then
+       do i = 1, NATOMS
+          read(FGAUSS,*) fax_opt(i),fay_opt(i),faz_opt(i)
+            ! ! unit conversion Gaussian format Forces (Hartrees/Bohr) to Gaussian format forces forces (eV/Ang):
+            ! ! hartree_to_ev=27.2113838668 and bohr_to_Angstrom=0.52917721092
+          fax_opt(i) = fax_opt(i)*51.4220629786602
+          fay_opt(i) = fay_opt(i)*51.4220629786602
+          faz_opt(i) = faz_opt(i)*51.4220629786602
+       end do
+       opt_forces_read = .true.
+    endif
+    if (opt_coords_read .and. opt_energy_read .and. opt_forces_read) exit    
   end do
 
   close(FGAUSS)
+
+  force_opt = forcea_opt
 
   open(unit=FLOG,file=LOGFILE,status='unknown',action='write',position='append',iostat=ierror)
   write(flog,*) 'End minimization'

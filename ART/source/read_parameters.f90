@@ -837,6 +837,7 @@ subroutine read_parameters( )
   allocate(typat(natoms))
   allocate(typat_read(natoms))
   allocate(force(vecsize))
+  allocate(force_opt(vecsize))
   allocate(pos(vecsize))
   allocate(posref(vecsize))
   allocate(initial_direction(vecsize))
@@ -845,6 +846,7 @@ subroutine read_parameters( )
   allocate(projection(VECSIZE))
 
   force(:) = 0.0d0
+  force_opt(:) = 0.0d0
   pos(:) = 0.0d0
   posref(:) = 0.0d0
   initial_direction(:) = 0.0d0
@@ -862,6 +864,10 @@ subroutine read_parameters( )
   fx => force(1:NATOMS)
   fy => force(NATOMS+1:2*NATOMS)
   fz => force(2*NATOMS+1:3*NATOMS)
+
+  fx_opt => force_opt(1:NATOMS)
+  fy_opt => force_opt(NATOMS+1:2*NATOMS)
+  fz_opt => force_opt(2*NATOMS+1:3*NATOMS)
 
   ! If LANCZOS_MIN, we check how it changes the energy of the system by applying the projection.
   ! This is done at the end of LANCZOS procedure, but this is done only for the minima.
@@ -896,7 +902,7 @@ subroutine write_parameters( )
   call date_and_time(values=values)
 
   if ( .not. setup_initial ) then
-     idum = -1 * mod( (1000 * values(7) + values(8))+iproc, 1024)
+     idum = -309!-1 * mod( (1000 * values(7) + values(8))+iproc, 1024)
   else
      idum = 0
   end if

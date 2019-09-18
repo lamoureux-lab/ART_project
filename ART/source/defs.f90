@@ -68,6 +68,7 @@ module defs
   integer, parameter :: PATH        = 21
   integer, parameter :: ALI         = 24
   integer, parameter :: ADJ         = 25
+  integer, parameter :: GFORCE      = 26
 
 
   ! Name of the file storing the current configurations
@@ -76,6 +77,7 @@ module defs
   character(len=3),  dimension(:), allocatable          :: typat    ! Atomic type
   character(len=3),  dimension(:), allocatable          :: typat_read    ! Atomic type in the file ART is reading from
   real(kind=8),      dimension(:), allocatable, target  :: force    ! Working forces on the atoms
+  real(kind=8),      dimension(:), allocatable, target  :: force_opt! Working forces on the min. str. 
   real(kind=8),      dimension(:), allocatable, target  :: pos      ! Working positions of the atoms
   real(kind=8),      dimension(:), allocatable, target  :: posref   ! Reference position
 
@@ -106,6 +108,7 @@ module defs
   real(kind=8), dimension(:), pointer :: x, y, z           ! Pointers for working position
   real(kind=8), dimension(:), pointer :: xref, yref, zref  ! Pointers for reference position
   real(kind=8), dimension(:), pointer :: fx, fy, fz        ! Pointers for working force
+  real(kind=8), dimension(:), pointer :: fx_opt, fy_opt, fz_opt ! Pointers for working force on the minimized structures
 
   real(kind=8) :: PUSH_OVER                                ! Fraction of displacement for pushing of saddle point.
 
