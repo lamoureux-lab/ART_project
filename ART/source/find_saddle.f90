@@ -179,6 +179,9 @@ subroutine global_move()
                 call noncovalent_attack()
         endif
 
+  case(8) !Dihedral Move
+	  call set_move_dihedral()
+
   endselect
 
   call center_and_norm ( INITSTEPSIZE )
@@ -962,6 +965,51 @@ SUBROUTINE set_move_avoid()
 
 END SUBROUTINE set_move_avoid
 
+SUBROUTINE set_move_dihedral()
+  use defs
+  use random
+  use saddles
+
+  implicit none
+
+  !Local variables
+  integer :: i
+  real(kind=8) :: dr2
+  real(kind=8), dimension(:), pointer :: dx, dy, dz
+  real(kind=8) :: ran3
+  real(kind=8), dimension(3) :: dihedral_displacement_vector
+  integer :: atom_to_move
+
+  allocate(dr(3*natoms)) 
+  allocate(atom_displaced(natoms))
+                                      ! We assign a few pointers. 
+  dx => dr(1:NATOMS)
+  dy => dr(NATOMS+1:2*NATOMS)
+  dz => dr(2*NATOMS+1:3*NATOMS)
+  
+  atom_displaced = 0 
+  natom_displaced = 0 
+  dr = 0.0d0
+
+  call find_dihedrals(dihedral_displacement_vector, atom_to_move)
+
+  do i = 1, natoms
+	if (i .eq. atom_to_move) then
+         	dx(i) = dihedral_displacement_vector(1)
+         	dy(i) = dihedral_displacement_vector(2)
+         	dz(i) = dihedral_displacement_vector(3)
+	else
+         	dx(i) = 0.0d0
+         	dy(i) = 0.0d0
+         	dz(i) = 0.0d0
+
+	endif
+        natom_displaced = natom_displaced + 1
+        atom_displaced(i) = 1
+  end do
+
+END SUBROUTINE set_move_dihedral
+
 
 SUBROUTINE read_and_transform ( dr_transformed_list, sad_transformed_list, success_count )
 
@@ -1651,30 +1699,55 @@ SUBROUTINE align ( read_min, current_min, align_well, read_sad, read_dr, dr_tran
         
 END SUBROUTINE align
 
-SUBROUTINE find_dihedrals ()
+SUBROUTINE find_dihedrals (dihedral_displacement_vector, atom_to_move)
 
         use defs
+	use random
 
         implicit none  
+
+	!Arguments
+	real(kind=8), dimension(3), intent(out) :: dihedral_displacement_vector
+	integer, intent(out) :: atom_to_move
+
+	!Parameters
+	real, parameter :: pi = 3.1415926535
 
         !Local variables
         integer :: i, j, k, l, dihedral_count
         real(kind=8), dimension(natoms, natoms) :: dist_matrix 
+  	real(kind=8) :: ran3
         logical, dimension(natoms, natoms) :: adj_matrix 
         character(len=1), dimension(4) :: atomic_kind
         real(kind=8), dimension(4) :: cov_rad
         real(kind=8), dimension(natoms) :: cov_radius_current
+
         integer, dimension(:,:), allocatable :: dihedral_atom_list
+        integer, dimension(:,:), allocatable :: dihedral_atom_list_refined
         real, dimension(:,:,:), allocatable :: dihedral_vectors
+        real, dimension(:,:,:), allocatable :: dihedral_vectors_refined
+        real, dimension(:,:,:), allocatable :: rotated_vectors
         real, dimension(:,:,:), allocatable :: dihedral_vector_cross
         real, dimension(:,:), allocatable :: magnitude_of_cross
+        real, dimension(:,:,:), allocatable :: normalized_cross
+        real, dimension(:), allocatable :: magnitude_of_middle_vector
+        real, dimension(:,:), allocatable :: normalized_middle_vector
+        real, dimension(:,:), allocatable :: unit_cross
+        real, dimension(:,:), allocatable :: one_cross_middle
         real, dimension(:), allocatable :: dihedral_angles
+
+        real, dimension(:,:,:), allocatable :: rotated_vector_cross
+        real, dimension(:), allocatable :: magnitude_of_rotated_cross
+        real, dimension(:,:), allocatable :: normalized_rotated_cross
+        real, dimension(:), allocatable :: rotated_dihedrals
+	real :: test_angle
+	real :: duplicate_count
+	integer :: random_dihedral_pick
 
         do i = 1, natoms
                 do j = 1, natoms
                       dist_matrix(i,j) = sqrt((x(i) - x(j))**2 + (y(i) - y(j))**2 + (z(i) - z(j))**2)
                 enddo
-                write(*,'(<natoms>(f14.8))') dist_matrix(i,1:natoms)
         enddo
 
 
@@ -1731,15 +1804,28 @@ SUBROUTINE find_dihedrals ()
                 enddo
         enddo
         
-        write(*,*) "The dihedral list is:"
-
-        do i = 1, dihedral_count
-                write(*,'(4(I))') dihedral_atom_list(i, 1:4)
-        enddo
         
 	allocate(dihedral_vectors(dihedral_count,3,3))
+	allocate(dihedral_atom_list_refined((dihedral_count/2),4))
+	allocate(dihedral_vectors_refined((dihedral_count/2),3,3))
+	allocate(dihedral_vector_cross(dihedral_count,2,3))
+	allocate(magnitude_of_cross(dihedral_count,2))
+	allocate(normalized_cross(dihedral_count,2,3))
+	allocate(magnitude_of_middle_vector(dihedral_count))
+	allocate(normalized_middle_vector(dihedral_count,3))
+	allocate(unit_cross(dihedral_count,3))
+	allocate(dihedral_angles(dihedral_count))
+	allocate(rotated_vectors(dihedral_count,1,3))
+	allocate(rotated_vector_cross(dihedral_count,1,3))
+	allocate(magnitude_of_rotated_cross(dihedral_count))
+	allocate(normalized_rotated_cross(dihedral_count,3))
+	allocate(one_cross_middle(dihedral_count,3))
+	allocate(rotated_dihedrals(dihedral_count))
 
-        do i = 1, dihedral_count
+	test_angle = 100*pi/180
+	write(*,*) "cosine of 100", cos(test_angle)
+
+	do i = 1, dihedral_count
 		dihedral_vectors(i,1,1) = x(dihedral_atom_list(i,1)) - x(dihedral_atom_list(i,2)) 
 		dihedral_vectors(i,1,2) = y(dihedral_atom_list(i,1)) - y(dihedral_atom_list(i,2)) 
 		dihedral_vectors(i,1,3) = z(dihedral_atom_list(i,1)) - z(dihedral_atom_list(i,2)) 
@@ -1753,50 +1839,133 @@ SUBROUTINE find_dihedrals ()
 		dihedral_vectors(i,3,3) = z(dihedral_atom_list(i,3)) - z(dihedral_atom_list(i,4)) 
 	enddo
 
-        do i = 1, dihedral_count
-		do j = 1, 3
-                	write(*,'(3(f14.8))') dihedral_vectors(i, j, 1:3)
-		enddo
-        enddo
-	write(*,'(a)') new_line('a')
-
-	allocate(dihedral_vector_cross(dihedral_count,2,3))
-
+	duplicate_count = 0
 	do i = 1, dihedral_count
-		dihedral_vector_cross(i,1,1) = (dihedral_vectors(i,1,2)*dihedral_vectors(i,2,3)) - (dihedral_vectors(i,2,2)*dihedral_vectors(i,1,3))
-		dihedral_vector_cross(i,1,2) = (dihedral_vectors(i,2,1)*dihedral_vectors(i,1,3)) - (dihedral_vectors(i,1,1)*dihedral_vectors(i,2,3))
-		dihedral_vector_cross(i,1,3) = (dihedral_vectors(i,1,1)*dihedral_vectors(i,2,2)) - (dihedral_vectors(i,2,1)*dihedral_vectors(i,1,2))
+		do j = 1, dihedral_count
+			if (dihedral_vectors(i,1,1) .eq. -1*dihedral_vectors(j,3,1) &
+			& .and. dihedral_vectors(i,1,2) .eq. -1*dihedral_vectors(j,3,2) &
+			& .and. dihedral_vectors(i,1,3) .eq. -1*dihedral_vectors(j,3,3) &
 
-		dihedral_vector_cross(i,2,1) = (dihedral_vectors(i,2,2)*dihedral_vectors(i,3,3)) - (dihedral_vectors(i,3,2)*dihedral_vectors(i,2,3))
-		dihedral_vector_cross(i,2,2) = (dihedral_vectors(i,3,1)*dihedral_vectors(i,2,3)) - (dihedral_vectors(i,2,1)*dihedral_vectors(i,3,3))
-		dihedral_vector_cross(i,2,3) = (dihedral_vectors(i,2,1)*dihedral_vectors(i,3,2)) - (dihedral_vectors(i,3,1)*dihedral_vectors(i,2,2))
-	enddo
+			& .and. dihedral_vectors(i,2,1) .eq. -1*dihedral_vectors(j,2,1) &
+			& .and. dihedral_vectors(i,2,2) .eq. -1*dihedral_vectors(j,2,2) &
+			& .and. dihedral_vectors(i,2,3) .eq. -1*dihedral_vectors(j,2,3) &
 
-        do i = 1, dihedral_count
-		do j = 1, 2
-                	write(*,'(3(f14.8))') dihedral_vector_cross(i, j, 1:3)
+			& .and. dihedral_vectors(i,3,1) .eq. -1*dihedral_vectors(j,1,1) &
+			& .and. dihedral_vectors(i,3,2) .eq. -1*dihedral_vectors(j,1,2) &
+			& .and. dihedral_vectors(i,3,3) .eq. -1*dihedral_vectors(j,1,3)) then
+
+				duplicate_count = duplicate_count + 1
+
+				dihedral_atom_list_refined(duplicate_count,1:4) = dihedral_atom_list(i,1:4)
+
+				dihedral_vectors_refined(duplicate_count,1,1:3) = dihedral_vectors(i,1,1:3)
+				dihedral_vectors_refined(duplicate_count,1,1:3) = dihedral_vectors(i,1,1:3)
+				dihedral_vectors_refined(duplicate_count,1,1:3) = dihedral_vectors(i,1,1:3)
+
+				dihedral_vectors_refined(duplicate_count,2,1:3) = dihedral_vectors(i,2,1:3)
+				dihedral_vectors_refined(duplicate_count,2,1:3) = dihedral_vectors(i,2,1:3)
+				dihedral_vectors_refined(duplicate_count,2,1:3) = dihedral_vectors(i,2,1:3)
+
+				dihedral_vectors_refined(duplicate_count,3,1:3) = dihedral_vectors(i,3,1:3)
+				dihedral_vectors_refined(duplicate_count,3,1:3) = dihedral_vectors(i,3,1:3)
+				dihedral_vectors_refined(duplicate_count,3,1:3) = dihedral_vectors(i,3,1:3)
+			endif
 		enddo
-        enddo
+		if (duplicate_count .eq. dihedral_count/2) exit
+	enddo	
 
-	allocate(magnitude_of_cross(dihedral_count,2))
+			
+        do i = 1, (dihedral_count/2)
+		call cross_product(dihedral_vectors_refined(i,1,1:3), dihedral_vectors_refined(i,2,1:3), dihedral_vector_cross(i,1,1:3))
+		call cross_product(dihedral_vectors_refined(i,2,1:3), dihedral_vectors_refined(i,3,1:3), dihedral_vector_cross(i,2,1:3))
 
-	do i = 1, dihedral_count
 		magnitude_of_cross(i,1) = sqrt(dihedral_vector_cross(i,1,1)**2 + dihedral_vector_cross(i,1,2)**2 + dihedral_vector_cross(i,1,3)**2)
 		magnitude_of_cross(i,2) = sqrt(dihedral_vector_cross(i,2,1)**2 + dihedral_vector_cross(i,2,2)**2 + dihedral_vector_cross(i,2,3)**2)
+
+		normalized_cross(i,1,1) = dihedral_vector_cross(i,1,1)/magnitude_of_cross(i,1)
+		normalized_cross(i,1,2) = dihedral_vector_cross(i,1,2)/magnitude_of_cross(i,1)
+		normalized_cross(i,1,3) = dihedral_vector_cross(i,1,3)/magnitude_of_cross(i,1)
+		normalized_cross(i,2,1) = dihedral_vector_cross(i,2,1)/magnitude_of_cross(i,2)
+		normalized_cross(i,2,2) = dihedral_vector_cross(i,2,2)/magnitude_of_cross(i,2)
+		normalized_cross(i,2,3) = dihedral_vector_cross(i,2,3)/magnitude_of_cross(i,2)
+
+		magnitude_of_middle_vector(i) = sqrt(dihedral_vectors_refined(i,2,1)**2 + dihedral_vectors_refined(i,2,2)**2 + dihedral_vectors_refined(i,2,3)**2)
+
+		normalized_middle_vector(i,1) = dihedral_vectors_refined(i,2,1)/magnitude_of_middle_vector(i)
+		normalized_middle_vector(i,2) = dihedral_vectors_refined(i,2,2)/magnitude_of_middle_vector(i)
+		normalized_middle_vector(i,3) = dihedral_vectors_refined(i,2,3)/magnitude_of_middle_vector(i)
+
+		!Take the cross of normalized middle vector and normalized cross number 2
+
+		call cross_product(normalized_middle_vector(i,1:3), normalized_cross(i,2,1:3), unit_cross(i,1:3))
+
+		dihedral_angles(i) = (atan2(dot_product(normalized_cross(i,1,1:3), unit_cross(i,1:3)), dot_product(normalized_cross(i,1,1:3), normalized_cross(i,2,1:3))))*(180/pi)
+
+                write(*,'(4(I), (1X,f14.2))') dihedral_atom_list(i,1:4), dihedral_angles(i)
+
 	enddo
 
-	allocate(dihedral_angles(dihedral_count))
+	random_dihedral_pick = ceiling((dihedral_count/2)*ran3())
+	!Now we will rotate the dihedrals by a certain angle using the Rodrigues' rotation formula
+	call cross_product(normalized_middle_vector(random_dihedral_pick,1:3), dihedral_vectors_refined(random_dihedral_pick,1,1:3), one_cross_middle(random_dihedral_pick,1:3))
+	rotated_vectors(random_dihedral_pick,1,1:3) = dihedral_vectors_refined(random_dihedral_pick,1,1:3)*(cos(test_angle)) &
+						 &  + one_cross_middle(random_dihedral_pick,1:3)*(sin(test_angle)) &
+           			                 &  + normalized_middle_vector(random_dihedral_pick,1:3) &
+					 	 &  * (dot_product(normalized_middle_vector(random_dihedral_pick,1:3),dihedral_vectors_refined(random_dihedral_pick,1,1:3)) &
+					         &  * (1-cos(test_angle)))
 
-	do i = 1, dihedral_count
-		!dihedral_angles(i) = acos((dot_product(dihedral_vector_cross(i,1,1:3), dihedral_vector_cross(i,2,1:3)))/(magnitude_of_cross(i,1)*magnitude_of_cross(i,2)))
-		dihedral_angles(i) = dot_product(dihedral_vector_cross(i,1,1:3), dihedral_vector_cross(i,2,1:3))
-		write(*,*) dihedral_angles(i)
-	enddo
+	call cross_product(rotated_vectors(random_dihedral_pick,1,1:3), dihedral_vectors_refined(random_dihedral_pick,2,1:3), rotated_vector_cross(random_dihedral_pick,1,1:3))
 
+	magnitude_of_rotated_cross(random_dihedral_pick) = sqrt(rotated_vector_cross(random_dihedral_pick,1,1)**2 &
+						       & + rotated_vector_cross(random_dihedral_pick,1,2)**2 &
+						       & + rotated_vector_cross(random_dihedral_pick,1,3)**2)
+
+	normalized_rotated_cross(random_dihedral_pick,1) = rotated_vector_cross(random_dihedral_pick,1,1)/magnitude_of_rotated_cross(random_dihedral_pick)
+	normalized_rotated_cross(random_dihedral_pick,2) = rotated_vector_cross(random_dihedral_pick,1,2)/magnitude_of_rotated_cross(random_dihedral_pick)
+	normalized_rotated_cross(random_dihedral_pick,3) = rotated_vector_cross(random_dihedral_pick,1,3)/magnitude_of_rotated_cross(random_dihedral_pick)
+
+	rotated_dihedrals(random_dihedral_pick) = (atan2(dot_product(normalized_rotated_cross(random_dihedral_pick,1:3), unit_cross(random_dihedral_pick,1:3)), &
+	       					& dot_product(normalized_rotated_cross(random_dihedral_pick,1:3), normalized_cross(random_dihedral_pick,2,1:3))))*(180/pi)
+
+        write(*,'(4(I), (1X,f14.2))') dihedral_atom_list(random_dihedral_pick,1:4), rotated_dihedrals(random_dihedral_pick)
+
+	dihedral_displacement_vector(1:3) = rotated_vectors(random_dihedral_pick,1,1:3) - dihedral_vectors_refined(random_dihedral_pick,1,1:3)
+
+	write(*,'(3(f14.8))') dihedral_displacement_vector(1:3)
+
+	atom_to_move = dihedral_atom_list_refined(random_dihedral_pick,1)
+
+	deallocate(rotated_dihedrals)
+	deallocate(one_cross_middle)
+	deallocate(normalized_rotated_cross)
+	deallocate(magnitude_of_rotated_cross)
+	deallocate(rotated_vector_cross)
+	deallocate(rotated_vectors)
 	deallocate(dihedral_angles)
+	deallocate(unit_cross)
+	deallocate(normalized_middle_vector)
+	deallocate(magnitude_of_middle_vector)
+	deallocate(normalized_cross)
 	deallocate(magnitude_of_cross)
 	deallocate(dihedral_vector_cross)
+	deallocate(dihedral_atom_list_refined)
+	deallocate(dihedral_vectors_refined)
 	deallocate(dihedral_vectors)
         deallocate(dihedral_atom_list)
 
 END SUBROUTINE find_dihedrals
+
+SUBROUTINE cross_product (vector_a, vector_b, vector_c)
+	
+	implicit none
+
+	real, dimension(3), intent(in) :: vector_a
+	real, dimension(3), intent(in) :: vector_b
+	real, dimension(3), intent(out) :: vector_c
+
+
+	vector_c(1) = vector_a(2)*vector_b(3) - vector_a(3)*vector_b(2)
+	vector_c(2) = vector_a(3)*vector_b(1) - vector_a(1)*vector_b(3)
+	vector_c(3) = vector_a(1)*vector_b(2) - vector_a(2)*vector_b(1)
+	
+END SUBROUTINE cross_product
