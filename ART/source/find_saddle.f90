@@ -186,7 +186,7 @@ subroutine global_move()
         call set_move_focused()
 
   case ( 10 ) ! "focused" strategy
-        call set_move_focused_carbons_only()
+        call set_move_focused_heavy_atoms_only()
           
   endselect
 
@@ -983,7 +983,7 @@ SUBROUTINE set_move_focused()
 
 END SUBROUTINE set_move_focused
 
-SUBROUTINE set_move_focused_carbons_only()
+SUBROUTINE set_move_focused_heavy_atoms_only()
 
   use defs
   use random
@@ -1000,7 +1000,7 @@ SUBROUTINE set_move_focused_carbons_only()
   real(kind=8) :: ran3
   real(kind=8), dimension(natoms) :: amplitude
   integer, dimension(:), allocatable :: atoms_to_focus
-  integer :: amp_compare, focus_count, carbon_count
+  integer :: amp_compare, focus_count, heavy_atom_count
 
   allocate(dr(3*natoms)) 
   allocate(focused_dr(3*natoms)) 
@@ -1037,10 +1037,10 @@ SUBROUTINE set_move_focused_carbons_only()
       endif
   end do
 
-  carbon_count = 0
+  heavy_atom_count = 0
   do i = 1, natoms
-	  if (typat(i) .eq. 'C') then
-		  carbon_count = carbon_count + 1
+	  if (typat(i) .ne. 'H') then
+		  heavy_atom_count = heavy_atom_count + 1
           endif
   enddo
 
@@ -1048,16 +1048,16 @@ SUBROUTINE set_move_focused_carbons_only()
   do i = 1, natoms
         amp_compare = 0
         do j = 1, natoms
-                if (i .ne. j .and. typat(i) .eq. 'C' .and. typat(j) .eq. 'C') then
+                if (i .ne. j .and. typat(i) .ne. 'H' .and. typat(j) .ne. 'H') then
                         if (amplitude(i) .gt. amplitude(j)) then
                                 amp_compare = amp_compare + 1
                         endif
                 endif
         enddo
         write(*,*) i, amp_compare
-        if (amp_compare .eq. (carbon_count-1)) then
+        if (amp_compare .eq. (heavy_atom_count-1)) then
                 do k = 1, natoms
-                       if (typat(k) .eq. 'C' .and. ((x(i) - x(k))**2 + (y(i) - y(k))**2 + (z(i) - z(k))**2)**0.5 .lt. focal_radius) then
+                       if (typat(k) .ne. 'H' .and. ((x(i) - x(k))**2 + (y(i) - y(k))**2 + (z(i) - z(k))**2)**0.5 .lt. focal_radius) then
                                focus_count = focus_count + 1
                        endif
                 enddo
@@ -1070,16 +1070,16 @@ SUBROUTINE set_move_focused_carbons_only()
   do i = 1, natoms
         amp_compare = 0
         do j = 1, natoms
-                if (i .ne. j .and. typat(i) .eq. 'C' .and. typat(j) .eq. 'C') then
+                if (i .ne. j .and. typat(i) .ne. 'H' .and. typat(j) .ne. 'H') then
                         if (amplitude(i) .gt. amplitude(j)) then
                                 amp_compare = amp_compare + 1
                         endif
                 endif
         enddo
-        if (amp_compare .eq. (carbon_count-1)) then
+        if (amp_compare .eq. (heavy_atom_count-1)) then
                 write(*,*) "most displaced atom", i
                 do k = 1, natoms
-                       if (typat(k) .eq. 'C' .and. ((x(i) - x(k))**2 + (y(i) - y(k))**2 + (z(i) - z(k))**2)**0.5 .lt. focal_radius) then
+                       if (typat(k) .ne. 'H' .and. ((x(i) - x(k))**2 + (y(i) - y(k))**2 + (z(i) - z(k))**2)**0.5 .lt. focal_radius) then
                                focus_count = focus_count + 1
                                atoms_to_focus(focus_count) = k
                        endif
@@ -1108,7 +1108,7 @@ SUBROUTINE set_move_focused_carbons_only()
         write(*,*) dx(i), dy(i), dz(i)
   enddo
 
-END SUBROUTINE set_move_focused_carbons_only
+END SUBROUTINE set_move_focused_heavy_atoms_only
 
 SUBROUTINE set_move_follow()
 
