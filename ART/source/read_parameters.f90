@@ -596,6 +596,15 @@ subroutine read_parameters( )
   end if
 
   !!__________________
+  ! Choose the focal radius
+  call getenv('radius_of_focus', temporary)
+  if (temporary .eq. '') then
+     focal_radius = 0 
+  else
+     read(temporary,*) focal_radius
+  end if
+
+  !!__________________
   ! Choose number of min read from log
   call getenv('nmin_read', temporary)
   if (temporary .eq. '') then

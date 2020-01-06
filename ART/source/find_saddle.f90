@@ -184,6 +184,9 @@ subroutine global_move()
 
   case ( 9 ) ! "focused" strategy
         call set_move_focused()
+
+  case ( 10 ) ! "focused" strategy
+        call set_move_focused_carbons_only()
           
   endselect
 
@@ -918,7 +921,7 @@ SUBROUTINE set_move_focused()
   do i = 1, natoms
         amp_compare = 0
         do j = 1, natoms
-                if (i .ne. j) then
+                if (i .ne. j ) then
                         if (amplitude(i) .gt. amplitude(j)) then
                                 amp_compare = amp_compare + 1
                         endif
@@ -927,7 +930,7 @@ SUBROUTINE set_move_focused()
         write(*,*) i, amp_compare
         if (amp_compare .eq. (natoms-1)) then
                 do k = 1, natoms
-                       if (((x(i) - x(k))**2 + (y(i) - y(k))**2 + (z(i) - z(k))**2)**0.5 .lt. 3) then
+                       if (((x(i) - x(k))**2 + (y(i) - y(k))**2 + (z(i) - z(k))**2)**0.5 .lt. focal_radius) then
                                focus_count = focus_count + 1
                        endif
                 enddo
@@ -949,7 +952,7 @@ SUBROUTINE set_move_focused()
         if (amp_compare .eq. (natoms-1)) then
                 write(*,*) "most displaced atom", i
                 do k = 1, natoms
-                       if (((x(i) - x(k))**2 + (y(i) - y(k))**2 + (z(i) - z(k))**2)**0.5 .lt. 3) then
+                       if (((x(i) - x(k))**2 + (y(i) - y(k))**2 + (z(i) - z(k))**2)**0.5 .lt. focal_radius) then
                                focus_count = focus_count + 1
                                atoms_to_focus(focus_count) = k
                        endif
@@ -961,6 +964,132 @@ SUBROUTINE set_move_focused()
 
   write(*,*) atoms_to_focus
 
+  write(*,*) "Focused Displacement"
+  do i = 1, natoms
+        do j = 1, focus_count
+                if (i .eq. atoms_to_focus(j)) then
+                        focused_dx(i) = dx(i)
+                        focused_dy(i) = dy(i)
+                        focused_dz(i) = dz(i)
+                endif
+        enddo
+
+        dx(i) = focused_dx(i)
+        dy(i) = focused_dy(i)
+        dz(i) = focused_dz(i)
+
+        write(*,*) dx(i), dy(i), dz(i)
+  enddo
+
+END SUBROUTINE set_move_focused
+
+SUBROUTINE set_move_focused_carbons_only()
+
+  use defs
+  use random
+  use saddles
+
+  implicit none
+
+  !Local variables
+  integer :: i, j, k
+  real(kind=8) :: dr2
+  real(kind=8), dimension(:), pointer :: dx, dy, dz
+  real(kind=8), dimension(:), allocatable, target :: focused_dr
+  real(kind=8), dimension(:), pointer :: focused_dx, focused_dy, focused_dz
+  real(kind=8) :: ran3
+  real(kind=8), dimension(natoms) :: amplitude
+  integer, dimension(:), allocatable :: atoms_to_focus
+  integer :: amp_compare, focus_count, carbon_count
+
+  allocate(dr(3*natoms)) 
+  allocate(focused_dr(3*natoms)) 
+  allocate(atom_displaced(natoms))
+                                      ! We assign a few pointers. 
+  dx => dr(1:NATOMS)
+  dy => dr(NATOMS+1:2*NATOMS)
+  dz => dr(2*NATOMS+1:3*NATOMS)
+
+  focused_dx => focused_dr(1:NATOMS)
+  focused_dy => focused_dr(NATOMS+1:2*NATOMS)
+  focused_dz => focused_dr(2*NATOMS+1:3*NATOMS)
+  
+  atom_displaced = 0 
+  natom_displaced = 0 
+  dr = 0.0d0
+  focused_dr = 0.0d0
+
+  do i = 1, natoms
+      do
+         dx(i) = 0.5d0 - ran3()
+         dy(i) = 0.5d0 - ran3()
+         dz(i) = 0.5d0 - ran3()                             
+         ! Ensures that the random displacement is isotropic
+         dr2 = dx(i)**2 + dy(i)**2 + dz(i)**2
+         if ( dr2 < 0.25d0 ) exit 
+      end do
+      natom_displaced = natom_displaced + 1
+      atom_displaced(i) = 1
+
+      amplitude(i) = (dx(i)**2 + dy(i)**2 + dz(i)**2)**0.5
+      if (typat(i) .eq. 'C') then
+      	write(*,*) "amplitude", i, amplitude(i)
+      endif
+  end do
+
+  carbon_count = 0
+  do i = 1, natoms
+	  if (typat(i) .eq. 'C') then
+		  carbon_count = carbon_count + 1
+          endif
+  enddo
+
+  focus_count = 0
+  do i = 1, natoms
+        amp_compare = 0
+        do j = 1, natoms
+                if (i .ne. j .and. typat(i) .eq. 'C' .and. typat(j) .eq. 'C') then
+                        if (amplitude(i) .gt. amplitude(j)) then
+                                amp_compare = amp_compare + 1
+                        endif
+                endif
+        enddo
+        write(*,*) i, amp_compare
+        if (amp_compare .eq. (carbon_count-1)) then
+                do k = 1, natoms
+                       if (typat(k) .eq. 'C' .and. ((x(i) - x(k))**2 + (y(i) - y(k))**2 + (z(i) - z(k))**2)**0.5 .lt. focal_radius) then
+                               focus_count = focus_count + 1
+                       endif
+                enddo
+        endif
+  enddo
+
+  allocate(atoms_to_focus(focus_count))
+
+  focus_count = 0
+  do i = 1, natoms
+        amp_compare = 0
+        do j = 1, natoms
+                if (i .ne. j .and. typat(i) .eq. 'C' .and. typat(j) .eq. 'C') then
+                        if (amplitude(i) .gt. amplitude(j)) then
+                                amp_compare = amp_compare + 1
+                        endif
+                endif
+        enddo
+        if (amp_compare .eq. (carbon_count-1)) then
+                write(*,*) "most displaced atom", i
+                do k = 1, natoms
+                       if (typat(k) .eq. 'C' .and. ((x(i) - x(k))**2 + (y(i) - y(k))**2 + (z(i) - z(k))**2)**0.5 .lt. focal_radius) then
+                               focus_count = focus_count + 1
+                               atoms_to_focus(focus_count) = k
+                       endif
+                enddo
+        endif
+  enddo
+
+  write(*,*) "focus_count", focus_count
+
+  write(*,*) atoms_to_focus
 
   write(*,*) "Focused Displacement"
   do i = 1, natoms
@@ -972,7 +1101,6 @@ SUBROUTINE set_move_focused()
                 endif
         enddo
 
-
         dx(i) = focused_dx(i)
         dy(i) = focused_dy(i)
         dz(i) = focused_dz(i)
@@ -980,8 +1108,7 @@ SUBROUTINE set_move_focused()
         write(*,*) dx(i), dy(i), dz(i)
   enddo
 
-END SUBROUTINE set_move_focused
-
+END SUBROUTINE set_move_focused_carbons_only
 
 SUBROUTINE set_move_follow()
 

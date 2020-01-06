@@ -37,6 +37,7 @@ module defs
   integer      :: VECSIZE            !Length of the force and position vectors
   integer      :: nbr_quantum        !Number of quantum atoms for BSW force_calc. These are the first atoms in the input file
   integer      :: SEARCH_STRATEGY    !Option to select which search strategy to use (eg. follow, avoid, etc.)
+  real(kind=8) :: focal_radius ! what all atoms to move in a focused_move
   real(kind=8) :: odds_follow_or_avoid !probabilistic approach to follow or avoid
   real(kind=8) :: odds_roll_or_attack  !probabilistic approach to roll or attack
   integer      :: nbr_quantum_trash  !Number of quantum atoms where the forces will be wrong (to close to the H bonds). The are the very first atoms in the file
