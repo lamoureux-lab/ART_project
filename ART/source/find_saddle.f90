@@ -182,10 +182,13 @@ subroutine global_move()
   case ( 8 ) !Dihedral Move
 	call set_move_dihedral()
 
-  case ( 9 ) ! "focused" strategy
-        call set_move_focused()
+  case ( 9 ) !Angle Move
+	call set_move_angles()
 
   case ( 10 ) ! "focused" strategy
+        call set_move_focused()
+
+  case ( 11 ) ! "focused" strategy modified
         call set_move_focused_heavy_atoms_only()
           
   endselect
@@ -1250,6 +1253,17 @@ SUBROUTINE set_move_dihedral()
 	
 END SUBROUTINE set_move_dihedral
 
+SUBROUTINE set_move_angles()
+
+  use defs
+  use random
+  use saddles
+
+  call find_bond_angles()
+  call end_art()
+
+END SUBROUTINE set_move_angles
+
 SUBROUTINE read_and_transform ( dr_transformed_list, sad_transformed_list, success_count )
 
         use defs
@@ -2079,7 +2093,7 @@ SUBROUTINE find_dihedrals (dihedral_displacement_vector)
 	test_angle_left = 10*pi/180
 	write(*,*) "cosine of 10", cos(test_angle_left)
 	test_angle_right = -10*pi/180
-	write(*,*) "cosine of 10", cos(test_angle_right)
+	write(*,*) "cosine of -10", cos(test_angle_right)
 
 	do i = 1, dihedral_count
 		dihedral_vectors(i,1,1) = x(dihedral_atom_list(i,1)) - x(dihedral_atom_list(i,2)) 
@@ -2280,6 +2294,179 @@ SUBROUTINE find_dihedrals (dihedral_displacement_vector)
         deallocate(dihedral_atom_list)
 
 END SUBROUTINE find_dihedrals
+
+SUBROUTINE find_bond_angles()
+
+        use defs
+        use random
+
+        implicit none
+
+	real, parameter :: pi = 3.1415926535
+        integer :: i, j, k
+        character(len=1), dimension(4) :: atomic_kind
+        real(kind=8), dimension(natoms,natoms) :: dist_matrix
+        real(kind=8), dimension(4) :: cov_rad
+        real(kind=8), dimension(natoms) :: cov_radius_current
+        integer :: bond_angle_count, duplicate_angle_count
+        integer, dimension(:,:), allocatable :: bond_angle_atom_list, bond_angle_atom_list_refined
+        real(kind=8), dimension(:,:,:), allocatable :: bond_angle_vectors, bond_angle_vectors_refined
+        real(kind=8), dimension(:), allocatable :: cosine_theta, cosine_theta_rotated, mag_rotated_vector, mag_cross_one_two
+        real(kind=8), dimension(:,:), allocatable :: mag_bav_refined
+        real(kind=8), dimension(:,:), allocatable :: cross_one_two, cross_cross_one_two, cross_one_two_norm
+        real(kind=8), dimension(:,:), allocatable :: rotated_vector
+
+        do i = 1, natoms
+                do j = 1, natoms
+                        if (i .ne. j) then
+                                dist_matrix(i,j) = sqrt((x(i) - x(j))**2 + (y(i) - y(j))**2 + (z(i) - z(j))**2)
+                                write(*,*) dist_matrix(i,j)
+                        endif
+                enddo
+        enddo
+
+        atomic_kind = [ 'C',  'H',  'N',  'O' ]            !Theoretical covalent radii of the
+        cov_rad     = [ 0.76, 0.31, 0.71, 0.66 ]           !four most common organic elements 
+
+        do i = 1, natoms
+                do j = 1,4
+                        if (typat(i) .eq. atomic_kind(j)) then
+                                cov_radius_current(i) = cov_rad(j)
+                        endif
+                enddo
+                write(*,*) cov_radius_current(i)
+        enddo
+        
+        bond_angle_count = 0
+        do i = 1, natoms
+                do j = 1, natoms
+                        do k = 1, natoms
+                                if(i .ne. j .and. i .ne. k .and. j .ne. k) then
+                                        if (abs(dist_matrix(i,j) - (cov_radius_current(i) + cov_radius_current(j))) < 0.30 &
+                                      & .and. abs(dist_matrix(j,k) - (cov_radius_current(j) + cov_radius_current(k))) < 0.30)then
+                                                bond_angle_count = bond_angle_count + 1
+                                                write(*,*) i, j ,k 
+                                        endif
+                                endif
+                        enddo
+                 enddo
+        enddo
+
+        write(*,*) "Bond_angle_count", bond_angle_count
+
+        allocate(bond_angle_atom_list(bond_angle_count,3))
+        allocate(bond_angle_atom_list_refined(bond_angle_count/2,3))
+        allocate(bond_angle_vectors(bond_angle_count,2,3))
+        allocate(bond_angle_vectors_refined(bond_angle_count/2,2,3))
+        allocate(rotated_vector(bond_angle_count/2,3))
+        allocate(cosine_theta(bond_angle_count/2))
+        allocate(cosine_theta_rotated(bond_angle_count/2))
+        allocate(mag_bav_refined(bond_angle_count/2,2))
+        allocate(mag_rotated_vector(bond_angle_count/2))
+        allocate(cross_one_two(bond_angle_count/2,3))
+        allocate(cross_one_two_norm(bond_angle_count/2,3))
+        allocate(mag_cross_one_two(bond_angle_count/2))
+        allocate(cross_cross_one_two(bond_angle_count/2,3))
+
+        bond_angle_count = 0
+        do i = 1, natoms
+                do j = 1, natoms
+                        do k = 1, natoms
+                                if(i .ne. j .and. i .ne. k .and. j .ne. k) then
+                                        if (abs(dist_matrix(i,j) - (cov_radius_current(i) + cov_radius_current(j))) < 0.30 &
+                                      & .and. abs(dist_matrix(j,k) - (cov_radius_current(j) + cov_radius_current(k))) < 0.30)then
+                                                bond_angle_count = bond_angle_count + 1
+                                                write(*,*) i, j, k
+                                                bond_angle_atom_list(bond_angle_count,1) = i
+                                                bond_angle_atom_list(bond_angle_count,2) = j
+                                                bond_angle_atom_list(bond_angle_count,3) = k
+                                        endif
+                                endif
+                        enddo
+                 enddo
+        enddo
+
+        write(*,*)"Bond_angle_list"
+        do i = 1,bond_angle_count
+                write(*,'(3(I))') bond_angle_atom_list(i,1), bond_angle_atom_list(i,2), bond_angle_atom_list(i,3)
+        enddo
+        write(*,*) "Bond_angle_count", bond_angle_count
+
+	do i = 1, bond_angle_count
+		bond_angle_vectors(i,1,1) = x(bond_angle_atom_list(i,1)) - x(bond_angle_atom_list(i,2)) 
+		bond_angle_vectors(i,1,2) = y(bond_angle_atom_list(i,1)) - y(bond_angle_atom_list(i,2)) 
+		bond_angle_vectors(i,1,3) = z(bond_angle_atom_list(i,1)) - z(bond_angle_atom_list(i,2)) 
+
+		bond_angle_vectors(i,2,1) = x(bond_angle_atom_list(i,3)) - x(bond_angle_atom_list(i,2)) 
+		bond_angle_vectors(i,2,2) = y(bond_angle_atom_list(i,3)) - y(bond_angle_atom_list(i,2)) 
+		bond_angle_vectors(i,2,3) = z(bond_angle_atom_list(i,3)) - z(bond_angle_atom_list(i,2)) 
+	enddo
+
+	duplicate_angle_count = 0
+	do i = 1, bond_angle_count
+		do j = 1, bond_angle_count
+			if (bond_angle_atom_list(i,1) .eq. bond_angle_atom_list(j,3) &
+			& .and. bond_angle_atom_list(i,2) .eq. bond_angle_atom_list(j,2) &
+			& .and. bond_angle_atom_list(i,3) .eq. bond_angle_atom_list(j,1)) then
+				if (j .gt. i) then
+					duplicate_angle_count = duplicate_angle_count + 1
+					write(*,*) "duplicate_angle_count, i, j", duplicate_angle_count, i, j
+					bond_angle_atom_list_refined(duplicate_angle_count,1:3) = bond_angle_atom_list(i,1:3)
+
+					bond_angle_vectors_refined(duplicate_angle_count,1,1:3) = bond_angle_vectors(i,1,1:3)
+					bond_angle_vectors_refined(duplicate_angle_count,1,1:3) = bond_angle_vectors(i,1,1:3)
+					bond_angle_vectors_refined(duplicate_angle_count,1,1:3) = bond_angle_vectors(i,1,1:3)
+
+					bond_angle_vectors_refined(duplicate_angle_count,2,1:3) = bond_angle_vectors(i,2,1:3)
+					bond_angle_vectors_refined(duplicate_angle_count,2,1:3) = bond_angle_vectors(i,2,1:3)
+					bond_angle_vectors_refined(duplicate_angle_count,2,1:3) = bond_angle_vectors(i,2,1:3)
+				endif
+			endif
+		enddo
+	enddo
+
+        do i = 1, bond_angle_count/2
+                mag_bav_refined(i,1) = sqrt(bond_angle_vectors_refined(i,1,1)**2 & 
+                                   & + bond_angle_vectors_refined(i,1,2)**2 &
+                                   & + bond_angle_vectors_refined(i,1,3)**2)
+                mag_bav_refined(i,2) = sqrt(bond_angle_vectors_refined(i,2,1)**2 &
+                                   & + bond_angle_vectors_refined(i,2,2)**2 &
+                                   & + bond_angle_vectors_refined(i,2,3)**2)
+                cosine_theta(i) = acos((bond_angle_vectors_refined(i,1,1)*bond_angle_vectors_refined(i,2,1)&
+                                   & + (bond_angle_vectors_refined(i,1,2)*bond_angle_vectors_refined(i,2,2))&
+                                   & + (bond_angle_vectors_refined(i,1,3)*bond_angle_vectors_refined(i,2,3)))&
+                                   & /(mag_bav_refined(i,1)*mag_bav_refined(i,2)))*180/pi
+                write(*,*) cosine_theta(i), mag_bav_refined(i,1), mag_bav_refined(i,2)
+                call cross_product(bond_angle_vectors_refined(i,1,1:3), bond_angle_vectors_refined(i,2,1:3), cross_one_two(i,1:3))
+                mag_cross_one_two(i) = sqrt(cross_one_two(i,1)**2 + cross_one_two(i,2)**2 + cross_one_two(i,3)**2)
+                cross_one_two_norm(i,1:3) = cross_one_two(i,1:3)/mag_cross_one_two(i)
+                call cross_product(cross_one_two_norm(i,1:3), bond_angle_vectors_refined(i,1,1:3), cross_cross_one_two(i,1:3))
+                rotated_vector(i,1:3) = cos(10*pi/180)*bond_angle_vectors_refined(i,1,1:3) &
+                                   & + (sin(10*pi/180)*cross_cross_one_two(i,1:3)) &
+                                   & + ((cross_one_two_norm(i,1:3)) &
+                                   & * (dot_product(cross_one_two_norm(i,1:3),bond_angle_vectors_refined(i,1,1:3))) &
+                                   & * (1-cos(10*pi/180)))
+                mag_rotated_vector(i) = sqrt(rotated_vector(i,1)**2 + rotated_vector(i,2)**2 + rotated_vector(i,3)**2)
+                cosine_theta_rotated(i) = acos(dot_product(rotated_vector(i,1:3),&
+                                        & bond_angle_vectors_refined(i,1,1:3))/(mag_bav_refined(i,2)*mag_rotated_vector(i)))*180/pi
+                write(*,*) "Rotated", cosine_theta_rotated(i), mag_bav_refined(i,1), mag_bav_refined(i,2)
+        enddo
+        
+        deallocate(bond_angle_atom_list)
+        deallocate(bond_angle_atom_list_refined)
+        deallocate(bond_angle_vectors)
+        deallocate(bond_angle_vectors_refined)
+        deallocate(rotated_vector)
+        deallocate(cosine_theta)
+        deallocate(cosine_theta_rotated)
+        deallocate(mag_bav_refined)
+        deallocate(mag_rotated_vector)
+        deallocate(cross_one_two)
+        deallocate(cross_one_two_norm)
+        deallocate(mag_cross_one_two)
+        deallocate(cross_cross_one_two)
+
+END SUBROUTINE find_bond_angles
 
 SUBROUTINE cross_product (vector_a, vector_b, vector_c)
 	
